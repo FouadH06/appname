@@ -26,3 +26,4 @@ Specs are the source of truth. Code follows them; deviations need a decision-log
 | Milestone | Report |
 |---|---|
 | M0 Project foundation | [milestones/M0-report.md](milestones/M0-report.md) |
+| M1 Database foundations | [milestones/M1-report.md](milestones/M1-report.md) |

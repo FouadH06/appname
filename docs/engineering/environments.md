@@ -3,8 +3,21 @@
 | Environment | Database | Apps | Purpose |
 |---|---|---|---|
 | **local** | Supabase CLI stack in Docker (`pnpm db:start`) | `pnpm dev` | Development, pgTAP, e2e |
-| **staging** | Supabase project `app-name-staging` | Preview/staging deploys of web + admin | Every merge to `main`; smoke tests; pilot rehearsal |
+| **staging** | Supabase project `oplwsnpyavnqnhlzyhxr` ("Newapp", eu-central-1) | Preview/staging deploys of web + admin (hosting TBD) | Migrations verified here before each milestone closes; smoke tests; pilot rehearsal |
 | **production** | Supabase project `app-name-prod` (PITR on before launch) | Production deploys | Real users |
+
+### Staging verification routine (run before closing a milestone that adds migrations)
+
+```bash
+pnpm exec supabase db push --linked --dry-run      # review
+pnpm exec supabase db push --linked                # apply
+pnpm exec supabase test db --linked                # full pgTAP on hosted
+SUPABASE_URL=https://<ref>.supabase.co SUPABASE_ANON_KEY=<publishable> bash scripts/hosted-smoke.sh
+pnpm exec supabase test db --linked supabase/diagnostics/schema-fingerprint.sql   # compare with local run
+pnpm exec supabase test db --linked supabase/diagnostics/data-residue.sql         # must be all zeros
+```
+
+The CLI connects as a temporary login role (`supabase login` once per machine), so no DB password is needed. `db dump --linked` doesn't work with that role through the pooler; use the fingerprint script.
 
 Rules:
 - Migrations reach staging and production **only through CI**, never from a laptop.

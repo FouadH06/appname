@@ -35,6 +35,14 @@ Workspace packages are imported by name (`@app/core`) and ship TypeScript source
 - Reference data production needs (catalog, areas) is seeded **in migrations**; `seed.sql` is
   for local fixtures.
 
+## Database rules learned in M1
+
+- End every migration that creates objects with `select private.assign_app_ownership();`.
+- SECURITY DEFINER functions use `private.uid()` / `private.jwt()`, **never** `auth.uid()` / `auth.jwt()` (app_owner has no access to the `auth` schema). A hygiene test enforces it.
+- New functions get no PUBLIC execute by default. Grant `anon`/`authenticated` explicitly when clients or RLS policies need them.
+- Extensions added in later migrations must explicitly grant what clients need (global default privileges strip PUBLIC execute).
+- Cast literals to enums in `UNION`/`VALUES` inserts (`'en'::public.synonym_lang`).
+
 ## Code review checklist (every change, AI-generated or not)
 
 - [ ] Matches the spec section it implements (link it in the PR description).

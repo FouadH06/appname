@@ -241,11 +241,20 @@ One user can be a customer and a member of several businesses at once. Roles are
 create function private.set_updated_at() returns trigger language plpgsql as $$
 begin new.updated_at := now(); return new; end $$;
 
--- Current user id (wrapped for RLS performance: call as (select private.uid()))
-create function private.uid() returns uuid language sql stable as $$ select auth.uid() $$;
+-- Caller identity. [Amended in M1, decision log 2026-09-27] These read the request GUCs
+-- directly (exactly what auth.uid()/auth.jwt() do) because functions owned by app_owner
+-- cannot be granted the auth schema in Supabase. Every SECURITY DEFINER function uses
+-- private.jwt()/private.uid(), never auth.*(). RLS policies may use either.
+create function private.jwt() returns jsonb language sql stable as $$
+  select coalesce(nullif(current_setting('request.jwt.claim', true), ''),
+                  nullif(current_setting('request.jwt.claims', true), ''))::jsonb $$;
+
+create function private.uid() returns uuid language sql stable as $$
+  select coalesce(nullif(current_setting('request.jwt.claim.sub', true), ''),
+                  private.jwt() ->> 'sub')::uuid $$;
 
 create function private.is_anonymous() returns boolean language sql stable as $$
-  select coalesce((auth.jwt() ->> 'is_anonymous')::boolean, false) $$;
+  select coalesce((private.jwt() ->> 'is_anonymous')::boolean, false) $$;
 
 -- Business membership check (SECURITY DEFINER so it can read business_members regardless of RLS)
 create function private.has_business_role(p_business_id uuid, p_roles public.business_role[] default null)
