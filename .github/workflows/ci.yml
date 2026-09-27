@@ -41,14 +41,16 @@ jobs:
       - uses: supabase/setup-cli@v1
         with:
           version: ${{ env.SUPABASE_CLI_VERSION }}
-      - name: Start Postgres only
-        run: supabase db start
+      # Each step goes through scripts/ci-annotate.sh, which turns the tail of a failed
+      # command's output into a GitHub annotation (readable without signing in).
+      - name: Start Postgres only (applies migrations)
+        run: bash scripts/ci-annotate.sh "db start" supabase db start
       - name: Apply migrations + seed from zero
-        run: supabase db reset
+        run: bash scripts/ci-annotate.sh "db reset" supabase db reset
       - name: pgTAP
-        run: supabase test db
+        run: bash scripts/ci-annotate.sh "pgTAP" supabase test db
       - name: Schema lint
-        run: supabase db lint --level warning --fail-on error
+        run: bash scripts/ci-annotate.sh "db lint" supabase db lint --level warning --fail-on error
 
   build:
     name: Build web + admin
