@@ -1,0 +1,9 @@
+{
+  "app": {
+    "name": "APP_NAME"
+  },
+  "errors": {
+    "generic": "Something went wrong. Please try again.",
+    "offline": "You're offline"
+  }
+}

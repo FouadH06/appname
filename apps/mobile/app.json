@@ -1,0 +1,21 @@
+{
+  "expo": {
+    "name": "APP_NAME",
+    "slug": "app-name",
+    "scheme": "appname",
+    "version": "0.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.appname.customer"
+    },
+    "android": {
+      "package": "com.appname.customer"
+    },
+    "extra": {
+      "supportsRTL": true
+    },
+    "plugins": ["expo-status-bar"]
+  }
+}

@@ -1,0 +1,3 @@
+-- Local/dev seed data. Loaded by `supabase db reset` after migrations.
+-- Reference data that production also needs (catalog, Lebanese areas, clusters) belongs in
+-- migrations, not here (M1). This file is for fixtures only.

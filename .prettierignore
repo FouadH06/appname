@@ -1,0 +1,14 @@
+node_modules
+pnpm-lock.yaml
+.next
+.turbo
+.expo
+dist
+coverage
+playwright-report
+test-results
+next-env.d.ts
+supabase/.temp
+supabase/.branches
+# Spec docs are hand-formatted; don't reflow them.
+docs

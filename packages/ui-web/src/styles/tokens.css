@@ -1,0 +1,95 @@
+/*
+ * APP_NAME design tokens (Phase 2 Part 1 §2). Placeholder values; roles are locked.
+ * Tailwind v4 picks these up through the @theme block, so utilities like `bg-surface-50`
+ * and `text-ink-900` exist in every app that imports this file.
+ */
+
+:root {
+  --ink-900: #16181d;
+  --ink-700: #3d3f45;
+  --ink-500: #7a7c82;
+  --line-200: #e6e4df;
+  --surface-0: #ffffff;
+  --surface-50: #f7f6f3;
+  --surface-100: #efede8;
+  --accent-600: #b4532e;
+  --trust-600: #0e7a6b;
+  --star-500: #d69a00;
+  --success-600: #1f8a55;
+  --warning-600: #b7791f;
+  --danger-600: #c2362b;
+  --info-600: #2f66d0;
+
+  --radius-control: 6px;
+  --radius-card: 10px;
+  --radius-sheet: 14px;
+
+  --font-sans: 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif;
+
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --ink-900: #f2f1ee;
+    --ink-700: #c9c8c4;
+    --ink-500: #8f8e8a;
+    --line-200: #2e3036;
+    --surface-0: #1b1d22;
+    --surface-50: #121317;
+    --surface-100: #24262c;
+    --accent-600: #e07a52;
+    --trust-600: #2fb39f;
+    --star-500: #f0b429;
+    --success-600: #3cb77a;
+    --warning-600: #e0a13c;
+    --danger-600: #ef6358;
+    --info-600: #6b97f0;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme='dark'] {
+  --ink-900: #f2f1ee;
+  --ink-700: #c9c8c4;
+  --ink-500: #8f8e8a;
+  --line-200: #2e3036;
+  --surface-0: #1b1d22;
+  --surface-50: #121317;
+  --surface-100: #24262c;
+  --accent-600: #e07a52;
+  --trust-600: #2fb39f;
+  --star-500: #f0b429;
+  --success-600: #3cb77a;
+  --warning-600: #e0a13c;
+  --danger-600: #ef6358;
+  --info-600: #6b97f0;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-ink-900: var(--ink-900);
+  --color-ink-700: var(--ink-700);
+  --color-ink-500: var(--ink-500);
+  --color-line-200: var(--line-200);
+  --color-surface-0: var(--surface-0);
+  --color-surface-50: var(--surface-50);
+  --color-surface-100: var(--surface-100);
+  --color-accent-600: var(--accent-600);
+  --color-trust-600: var(--trust-600);
+  --color-star-500: var(--star-500);
+  --color-success-600: var(--success-600);
+  --color-warning-600: var(--warning-600);
+  --color-danger-600: var(--danger-600);
+  --color-info-600: var(--info-600);
+  --radius-control: var(--radius-control);
+  --radius-card: var(--radius-card);
+  --radius-sheet: var(--radius-sheet);
+  --font-sans: var(--font-sans);
+}
+
+body {
+  background: var(--surface-50);
+  color: var(--ink-900);
+  font-family: var(--font-sans);
+}

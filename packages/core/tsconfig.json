@@ -1,0 +1,4 @@
+{
+  "extends": "@app/tsconfig/library.json",
+  "include": ["src", "vitest.config.ts"]
+}
