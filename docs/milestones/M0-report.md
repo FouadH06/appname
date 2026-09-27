@@ -1,6 +1,17 @@
 # M0 — Project foundation: report
 
-Status: **complete, awaiting approval** · Date: 2026-09-27
+Status: **closed** · Date: 2026-09-27 · Commit `8937173` · CI run `36343527291`: all 4 jobs green
+
+## CI results (GitHub Actions, ubuntu-latest, Node 24)
+
+| Job | Result |
+|---|---|
+| Format · Lint · Typecheck · Unit tests | ✅ success |
+| Database (db start → db reset → pgTAP → db lint) | ✅ success (pgTAP harness 3/3) |
+| Build web + admin | ✅ success |
+| E2E (Playwright, bundled Chromium) | ✅ success |
+
+Local Docker was verified (Docker Desktop 29.8.0, `hello-world` ran). The local Supabase Postgres image was still downloading on the slow connection at close, so pgTAP was verified in CI rather than locally.
 
 ## What was built
 

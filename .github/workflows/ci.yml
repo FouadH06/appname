@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: ['**'] # milestone branches get CI before merging to main
   pull_request:
 
 concurrency:
