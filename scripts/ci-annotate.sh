@@ -14,7 +14,9 @@ status=${PIPESTATUS[0]}
 
 if [ "$status" -ne 0 ]; then
   # Escape per the workflow-command spec: % → %25, CR → %0D, LF → %0A
-  msg="$(tail -n 80 "$log" | sed -e 's/%/%25/g' -e 's/\r/%0D/g' | awk '{printf "%s%%0A", $0}')"
+  # Keep the useful part: drop docker pull noise, then take the tail.
+  msg="$(grep -vE 'Pulling|Download complete|Verifying Checksum|Pull complete|Waiting$|Already exists' "$log" \
+         | tail -n 120 | sed -e 's/%/%25/g' -e 's/\r/%0D/g' | awk '{printf "%s%%0A", $0}')"
   echo "::error title=${title} failed::${msg}"
 fi
 

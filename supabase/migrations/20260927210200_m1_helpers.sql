@@ -80,7 +80,7 @@ create function private.arabizi_fold(p text) returns text
 language plpgsql immutable parallel safe set search_path = '' as $$
 declare
   tok text;
-  out_tokens text[] := '{}';
+  result text := '';
 begin
   if p is null then
     return null;
@@ -101,10 +101,10 @@ begin
       tok := regexp_replace(tok, '([a-z])\1+', '\1', 'g');
     end if;
     if tok <> '' then
-      out_tokens := out_tokens || tok;
+      result := case when result = '' then tok else result || ' ' || tok end;
     end if;
   end loop;
-  return array_to_string(out_tokens, ' ');
+  return result;
 end $$;
 
 -- The key used for every search comparison (synonyms, aliases, search documents, queries)

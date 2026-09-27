@@ -50,7 +50,8 @@ jobs:
       - name: pgTAP
         run: bash scripts/ci-annotate.sh "pgTAP" supabase test db
       - name: Schema lint
-        run: bash scripts/ci-annotate.sh "db lint" supabase db lint --level warning --fail-on error
+        # Only our schemas; extension code (e.g. PostGIS) is not ours to lint.
+        run: bash scripts/ci-annotate.sh "db lint" supabase db lint --schema public,private,audit --level warning --fail-on error
 
   build:
     name: Build web + admin
