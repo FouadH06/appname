@@ -43,6 +43,12 @@ Workspace packages are imported by name (`@app/core`) and ship TypeScript source
 - Extensions added in later migrations must explicitly grant what clients need (global default privileges strip PUBLIC execute).
 - Cast literals to enums in `UNION`/`VALUES` inserts (`'en'::public.synonym_lang`).
 
+## Database rules learned in M2
+
+- **CHECK constraints must be NULL-safe.** A CHECK that evaluates to NULL *passes*. Guard every comparison on a nullable column (`x is not null and x > y`) and compare nullable enums with `is not distinct from`. Every CHECK gets a pgTAP test for the NULL case.
+- **Every tenant-owned row whose `business_id` is used by RLS needs a composite FK that proves it**, e.g. `(staff_id, business_id) → staff_members(id, business_id)`, even when another FK already links the row indirectly.
+- Shared test fixtures live in `supabase/tests/helpers/fixtures.psql` (included with `\ir ../helpers/fixtures.psql`). Keep the `.psql` extension so the runner doesn't execute it on its own.
+
 ## Code review checklist (every change, AI-generated or not)
 
 - [ ] Matches the spec section it implements (link it in the PR description).
