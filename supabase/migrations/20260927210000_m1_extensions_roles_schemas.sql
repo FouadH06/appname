@@ -47,8 +47,11 @@ alter default privileges for role postgres, app_owner in schema public
   revoke all on tables from anon, authenticated;
 alter default privileges for role postgres, app_owner in schema public
   revoke all on sequences from anon, authenticated;
-alter default privileges for role postgres, app_owner in schema public, private, audit
-  revoke execute on functions from public;
+-- EXECUTE-to-PUBLIC on functions is a *global* default; per-schema default privileges can only
+-- add to it, never remove it. So this revoke is global for the two roles that create
+-- application objects. (Extensions above were created before this, so they keep their grants.
+-- Extensions added in later migrations must re-grant what clients need.)
+alter default privileges for role postgres, app_owner revoke execute on functions from public;
 alter default privileges for role postgres, app_owner in schema public, private, audit
   revoke execute on functions from anon, authenticated;
 

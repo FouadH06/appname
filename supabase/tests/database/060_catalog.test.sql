@@ -43,7 +43,7 @@ select is(
 select ok(not exists (select 1 from public.areas where level = 'area' and centroid is null),
   'every seeded area has a centroid');
 select is(
-  (select array_agg(key order by sort) from public.rating_dimensions rd
+  (select array_agg(rd.key order by rd.sort) from public.rating_dimensions rd
    join public.categories c on c.id = rd.category_id where c.slug = 'beauty-grooming'),
   array['service_quality', 'cleanliness', 'punctuality', 'staff_friendliness', 'value_for_money', 'ambience'],
   'beauty rating dimensions (locked)');
