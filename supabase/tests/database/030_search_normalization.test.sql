@@ -1,6 +1,10 @@
 -- Phase 3 Part 5 §1 + Part 7 §9 #53 — normalization, Arabizi folding, synonym & alias matching
 begin;
 create extension if not exists pgtap with schema extensions;
+-- Hosted sessions (CLI login role) do not have extensions on search_path; be explicit.
+set local search_path = extensions, public;
+-- Run as postgres everywhere (hosted CLI connects as a temporary login role).
+set local role postgres;
 select plan(18);
 
 -- normalize_text

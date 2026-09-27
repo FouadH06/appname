@@ -2,6 +2,10 @@
 -- Real suites start in M1 (Phase 3 Part 7). Naming: NNN_<area>.test.sql, one plan per file.
 begin;
 create extension if not exists pgtap with schema extensions;
+-- Hosted sessions (CLI login role) do not have extensions on search_path; be explicit.
+set local search_path = extensions, public;
+-- Run as postgres everywhere (hosted CLI connects as a temporary login role).
+set local role postgres;
 
 select plan(3);
 

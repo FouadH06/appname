@@ -1,6 +1,10 @@
 -- Phase 3 Part 5 §8, Part 7 §1 #5 and §10 #60 — audit capture and immutability
 begin;
 create extension if not exists pgtap with schema extensions;
+-- Hosted sessions (CLI login role) do not have extensions on search_path; be explicit.
+set local search_path = extensions, public;
+-- Run as postgres everywhere (hosted CLI connects as a temporary login role).
+set local role postgres;
 select plan(10);
 
 -- ─── test helpers (rolled back with the transaction) ───
@@ -56,7 +60,7 @@ select is(
 insert into public.admin_users (user_id, role) values (tests.id('super'), 'superadmin');
 select tests.act_as('super', 'aal2');
 update public.admin_users set is_active = false where user_id = tests.id('ops_admin');
-reset role;
+set local role postgres;
 select is(
   (select actor_kind::text || ':' || actor_user_id::text from audit.entity_changes
    where table_name = 'public.admin_users' and row_id = tests.id('ops_admin') and op = 'UPDATE'
@@ -76,10 +80,10 @@ select throws_ok($$ delete from audit.admin_actions $$,                'P0001', 
 -- 9–10. Client roles can't read audit tables at all
 select tests.act_as('super', 'aal2');
 select throws_ok($$ select * from audit.entity_changes $$, '42501', null, 'authenticated cannot read audit');
-reset role;
+set local role postgres;
 select set_config('role', 'anon', true);
 select throws_ok($$ select * from audit.admin_actions $$, '42501', null, 'anon cannot read audit');
-reset role;
+set local role postgres;
 
 select * from finish();
 rollback;

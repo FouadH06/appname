@@ -1,6 +1,10 @@
 -- Phase 3 Part 2 §3–4 (seed), Part 6 §3.1 (reference data RLS)
 begin;
 create extension if not exists pgtap with schema extensions;
+-- Hosted sessions (CLI login role) do not have extensions on search_path; be explicit.
+set local search_path = extensions, public;
+-- Run as postgres everywhere (hosted CLI connects as a temporary login role).
+set local role postgres;
 select plan(17);
 
 -- ─── test helpers ───
@@ -64,27 +68,27 @@ select ok(not exists (select 1 from public.categories where slug = 'aesthetics')
 select throws_ok($$ insert into public.service_synonyms (canonical_service_id, term, lang)
                     select id, 'x', 'en' from public.canonical_services limit 1 $$,
   '42501', null, 'anon cannot write catalog');
-reset role;
+set local role postgres;
 
 -- ─── authenticated non-admin ───
 select tests.act_as('customer', 'aal2');
 select throws_ok($$ insert into public.service_synonyms (canonical_service_id, term, lang)
                     select id, 'hack', 'en' from public.canonical_services where slug = 'balayage' $$,
   '42501', null, 'customer cannot write catalog');
-reset role;
+set local role postgres;
 
 -- ─── ops admin ───
 select tests.act_as('ops', 'aal1');
 select throws_ok($$ insert into public.service_synonyms (canonical_service_id, term, lang)
                     select id, 'balayage libanais', 'fr' from public.canonical_services where slug = 'balayage' $$,
   '42501', null, 'ops without MFA (aal1) cannot write catalog');
-reset role;
+set local role postgres;
 select tests.act_as('ops', 'aal2');
 select lives_ok($$ insert into public.service_synonyms (canonical_service_id, term, lang)
                    select id, 'balayage libanais', 'fr' from public.canonical_services where slug = 'balayage' $$,
   'ops with aal2 can add a synonym');
 select ok(exists (select 1 from public.categories where slug = 'aesthetics'), 'ops sees unlaunched category');
-reset role;
+set local role postgres;
 select is(
   (select actor_kind::text from audit.entity_changes
    where table_name = 'public.service_synonyms' and changed ->> 'term' = 'balayage libanais'),

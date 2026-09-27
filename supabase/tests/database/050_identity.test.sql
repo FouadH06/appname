@@ -1,6 +1,10 @@
 -- Phase 3 Part 2 §1, Part 1 §6–7, Part 7 §6 #34 (phone sync only) and §8 #50 (aal2)
 begin;
 create extension if not exists pgtap with schema extensions;
+-- Hosted sessions (CLI login role) do not have extensions on search_path; be explicit.
+set local search_path = extensions, public;
+-- Run as postgres everywhere (hosted CLI connects as a temporary login role).
+set local role postgres;
 select plan(20);
 
 -- ─── test helpers ───
@@ -55,29 +59,29 @@ select isnt((select phone_verified_at from public.profiles where id = tests.id('
 -- ─── is_active_customer ───
 select tests.act_as('moe');
 select ok(private.is_active_customer(), 'verified active user is a customer');
-reset role;
+set local role postgres;
 select tests.act_as('anon_visitor', 'aal1', true);
 select ok(not private.is_active_customer(), 'anonymous user is not a customer');
-reset role;
+set local role postgres;
 update public.profiles set status = 'suspended', status_reason = 'test' where id = tests.id('rita');
 select tests.act_as('rita');
 select ok(not private.is_active_customer(), 'suspended user is not a customer');
-reset role;
+set local role postgres;
 
 -- ─── is_admin requires aal2 ───
 select tests.act_as('mod', 'aal1');
 select ok(not private.is_admin(), 'admin with aal1 → not admin');
-reset role;
+set local role postgres;
 select tests.act_as('mod', 'aal2');
 select ok(private.is_admin('{moderator}'), 'moderator with aal2 → moderator');
 select ok(not private.is_admin('{ops}'), 'moderator is not ops');
-reset role;
+set local role postgres;
 select tests.act_as('boss', 'aal2');
 select ok(private.is_admin('{ops}'), 'superadmin satisfies any role');
-reset role;
+set local role postgres;
 select tests.act_as('moe', 'aal2');
 select ok(not private.is_admin(), 'non-admin with aal2 → not admin');
-reset role;
+set local role postgres;
 
 -- ─── profiles RLS ───
 select tests.act_as('moe');
@@ -89,7 +93,7 @@ select throws_ok($$ update public.profiles set status = 'active' where id = auth
 select throws_ok($$ update public.profiles set phone_e164 = '+96170000000' where id = auth.uid() $$,
   '42501', null, 'user cannot change phone (comes from Auth)');
 update public.profiles set first_name = 'Hacked' where id = tests.id('rita');
-reset role;
+set local role postgres;
 select is((select first_name from public.profiles where id = tests.id('rita')), null,
   'user cannot edit someone else''s profile');
 
@@ -98,7 +102,7 @@ select tests.act_as('moe', 'aal2');
 select is((select count(*)::int from public.admin_users), 0, 'non-admin sees no admin rows');
 select throws_ok($$ insert into public.admin_users (user_id, role) values (auth.uid(), 'superadmin') $$,
   '42501', null, 'non-admin cannot grant themselves admin');
-reset role;
+set local role postgres;
 
 select * from finish();
 rollback;

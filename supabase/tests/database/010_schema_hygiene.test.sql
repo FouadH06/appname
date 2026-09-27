@@ -1,7 +1,11 @@
 -- Phase 3 Part 7 §1 — schema hygiene (runs on every migration)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(10);
+-- Hosted sessions (CLI login role) do not have extensions on search_path; be explicit.
+set local search_path = extensions, public;
+-- Run as postgres everywhere (hosted CLI connects as a temporary login role).
+set local role postgres;
+select plan(12);
 
 -- 1. RLS on every table in public
 select is(
@@ -30,6 +34,20 @@ select is(
    where grantee = 'service_role' and table_schema = 'audit'
      and privilege_type in ('UPDATE', 'DELETE', 'TRUNCATE')),
   0, 'service_role has no UPDATE/DELETE/TRUNCATE on audit');
+
+-- 4b. service_role (server-only, bypasses RLS) has DML on every public table — same locally and hosted
+select is(
+  (select count(*)::int from pg_class c join pg_namespace n on n.oid = c.relnamespace
+   where n.nspname = 'public' and c.relkind in ('r', 'p')
+     and not (has_table_privilege('service_role', c.oid, 'SELECT') and has_table_privilege('service_role', c.oid, 'INSERT')
+          and has_table_privilege('service_role', c.oid, 'UPDATE') and has_table_privilege('service_role', c.oid, 'DELETE'))),
+  0, 'service_role has DML on every public table');
+
+-- 4c. service_role has no table access in private
+select is(
+  (select count(*)::int from information_schema.role_table_grants
+   where grantee = 'service_role' and table_schema = 'private'),
+  0, 'service_role has no grants in private');
 
 -- 5. every SECURITY DEFINER function pins search_path
 select is(

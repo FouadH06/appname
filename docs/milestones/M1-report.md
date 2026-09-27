@@ -1,6 +1,32 @@
 # M1 — Database foundations: report
 
-Status: **implemented, awaiting review** · Branch `m1-database-foundations`
+Status: **closed** (reviewed + hosted staging verified) · Branch `m1-database-foundations` → merged to `main`
+
+## Hosted staging verification (2026-09-28)
+
+Staging project `oplwsnpyavnqnhlzyhxr` (Frankfurt, Postgres 17.6.1.166). No real customer or business data was used. Test runs are transactional, and a residue check confirmed nothing remained.
+
+| # | Check | Result |
+|---|---|---|
+| 1 | Repo linked to staging (CLI login role, no DB password shared) | ✅ |
+| 2 | M1 migrations applied from zero (`db push`, dry run first) | ✅ 11/11 (incl. the alignment migration below) |
+| 3 | Seed: catalog and location reference data (lives in migrations; `seed.sql` is local-only fixtures and isn't pushed) | ✅ row counts identical to local |
+| 4 | `app_owner` ownership model on hosted | ✅ role created, all 18 relations / 16 functions / 54 enums owned by `app_owner`, trigger on `auth.users` installed. **The open risk is closed** |
+| 5 | Grants and RLS | ✅ full pgTAP suite on staging: **101/101** |
+| 6 | Definer functions via `private.uid()`/`private.jwt()` | ✅ covered by the identity, audit and catalog suites (is_admin aal2, is_active_customer, audit actor attribution) |
+| 7 | Anonymous/public default-deny through the real Data API (`scripts/hosted-smoke.sh`) | ✅ **11/11**: catalog readable, hidden category invisible, profiles/admin/catalog writes → 401, `private`/`audit` not exposed |
+| 8 | Hosted lint (`db lint --linked`, app schemas) | ✅ no issues |
+| 9 | Hosted schema = local schema (`supabase/diagnostics/schema-fingerprint.sql`, 11 catalog fingerprints) | ✅ **identical** |
+| 10 | No leftover data (`supabase/diagnostics/data-residue.sql`) | ✅ 0 users, profiles, admins, rate-limit rows, human audit rows |
+
+### What staging revealed (and the fixes)
+
+| Finding | Fix |
+|---|---|
+| Hosted grants `service_role` DML on new `public` tables via platform default privileges; local didn't (**40 grants differed**). `anon`/`authenticated` were identical | New migration `20260927211000_m1_service_role_grants.sql` grants it explicitly (matches Phase 3 Part 1 §6.1: service_role is server-only and bypasses RLS). `audit`/`private` stay closed to it. Two hygiene tests added |
+| Hosted CLI connects as a temporary `cli_login_postgres` role without `extensions` on `search_path` → pgTAP functions not found | Test files set `search_path` and `role postgres` explicitly (test-only change) |
+| `db dump --linked` fails through the pooler with the temporary login role (CLI limitation) | Schema comparison via catalog fingerprint instead, which is more targeted than a dump diff anyway |
+| Index definitions printed differently (opclass schema-qualified or not) | Cosmetic; fingerprint pins `search_path` |
 
 ## What was implemented
 
@@ -32,6 +58,7 @@ Status: **implemented, awaiting review** · Branch `m1-database-foundations`
 | 8 | `20260927210700_m1_profiles.sql` | Profiles, auth sync trigger + backfill, `is_active_customer`, RLS, device/IP tables |
 | 9 | `20260927210800_m1_seed_locations.sql` | Governorates, districts, areas, aliases, clusters |
 | 10 | `20260927210900_m1_seed_catalog.sql` | Categories, rating dimensions, 31 canonical services + fallback, 199 synonyms |
+| 11 | `20260927211000_m1_service_role_grants.sql` | Explicit `service_role` DML on `public` (local = hosted); added after staging verification |
 
 TypeScript types regenerated: `packages/db/src/database.types.ts` (920 lines).
 
@@ -70,7 +97,9 @@ Three CI iterations were needed. Each exposed something real, and each fix is in
 | D4 | Part 1 §4 extension list | pgTAP installed by the test suite, not by migrations | Test-only dependency shouldn't exist in production | None |
 | D5 | CI (not spec) | `scripts/ci-annotate.sh` surfaces failure output as public annotations; CI runs on all branches; lint limited to app schemas | Job logs require sign-in; branch CI before merge; PostGIS internals aren't ours to lint | Tooling only |
 
-**Open risk (to verify when staging exists):** the `app_owner` ownership model works in the local Supabase image and CI. Hosted Supabase uses the same non-superuser `postgres` role, so it should behave identically, but that isn't proven until the first staging deploy. If it fails there, the fallback is a single ALTER OWNER migration back to `postgres`, and no schema redesign would be needed.
+| D6 | Part 6 §2 baseline privileges | `service_role` gets explicit DML on `public` tables (new migration) | Hosted already grants it via platform defaults; local must match. Consistent with Part 1 §6.1 | Local = hosted; no client-role change |
+
+**Open risk, resolved 2026-09-28:** the `app_owner` ownership model was verified on hosted staging (see top of this report).
 
 ## Suggested manual checks
 

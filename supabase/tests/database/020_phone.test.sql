@@ -1,6 +1,10 @@
 -- Phase 3 Part 1 §7 — Lebanon-aware phone normalization
 begin;
 create extension if not exists pgtap with schema extensions;
+-- Hosted sessions (CLI login role) do not have extensions on search_path; be explicit.
+set local search_path = extensions, public;
+-- Run as postgres everywhere (hosted CLI connects as a temporary login role).
+set local role postgres;
 select plan(16);
 
 select is(private.normalize_phone('03 123 456'),        '+9613123456',   'local mobile with leading 0');
