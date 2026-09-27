@@ -89,11 +89,11 @@ from public.categories where slug = 'beauty-grooming';
 -- ─── Synonyms ──────────────────────────────────────────────────────────────
 -- Official names (EN/AR/FR) at weight 1.0 for every canonical service
 insert into public.service_synonyms (canonical_service_id, term, lang, weight)
-select id, name_en, 'en', 1.0 from public.canonical_services where slug <> 'other-beauty-grooming'
+select id, name_en, 'en'::public.synonym_lang, 1.0 from public.canonical_services where slug <> 'other-beauty-grooming'
 union all
-select id, name_ar, 'ar', 1.0 from public.canonical_services where slug <> 'other-beauty-grooming'
+select id, name_ar, 'ar'::public.synonym_lang, 1.0 from public.canonical_services where slug <> 'other-beauty-grooming'
 union all
-select id, name_fr, 'fr', 1.0 from public.canonical_services
+select id, name_fr, 'fr'::public.synonym_lang, 1.0 from public.canonical_services
  where slug <> 'other-beauty-grooming' and name_fr is not null and lower(name_fr) <> lower(name_en)
 on conflict (canonical_service_id, term) do nothing;
 
