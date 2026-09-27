@@ -18,10 +18,10 @@ create trigger admin_users_audit after insert or update or delete on public.admi
 -- superadmin satisfies every role check.
 create function private.is_admin(p_roles public.admin_role[] default null) returns boolean
 language sql stable security definer set search_path = '' as $$
-  select coalesce(auth.jwt() ->> 'aal', '') = 'aal2'
+  select coalesce(private.jwt() ->> 'aal', '') = 'aal2'
      and exists (
        select 1 from public.admin_users a
-       where a.user_id = auth.uid()
+       where a.user_id = private.uid()
          and a.is_active
          and (p_roles is null or a.role = any (p_roles) or a.role = 'superadmin')
      )

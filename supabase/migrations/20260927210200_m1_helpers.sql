@@ -4,14 +4,29 @@
 -- reference M2 tables and are created in M2.
 
 -- ─── Caller identity ───────────────────────────────────────────────────────
+-- Deviation (logged): Phase 3 Part 1 §7 wrote private.uid() as `select auth.uid()`.
+-- Functions owned by app_owner can't use the auth schema: the migration role has no grant
+-- option on it. These read the same request GUCs that auth.uid()/auth.jwt() read, so the
+-- behavior is identical. Every SECURITY DEFINER function must use private.jwt()/private.uid().
+create function private.jwt() returns jsonb
+language sql stable set search_path = '' as $$
+  select coalesce(
+    nullif(current_setting('request.jwt.claim', true), ''),
+    nullif(current_setting('request.jwt.claims', true), '')
+  )::jsonb
+$$;
+
 create function private.uid() returns uuid
 language sql stable set search_path = '' as $$
-  select auth.uid()
+  select coalesce(
+    nullif(current_setting('request.jwt.claim.sub', true), ''),
+    private.jwt() ->> 'sub'
+  )::uuid
 $$;
 
 create function private.is_anonymous() returns boolean
 language sql stable set search_path = '' as $$
-  select coalesce((auth.jwt() ->> 'is_anonymous')::boolean, false)
+  select coalesce((private.jwt() ->> 'is_anonymous')::boolean, false)
 $$;
 
 -- ─── Phone normalization (Lebanon-aware) ───────────────────────────────────
@@ -99,6 +114,7 @@ language sql immutable parallel safe set search_path = '' as $$
 $$;
 
 -- Helpers used inside RLS policies must be executable by client roles.
+grant execute on function private.jwt()          to anon, authenticated;
 grant execute on function private.uid()          to anon, authenticated;
 grant execute on function private.is_anonymous() to anon, authenticated;
 -- Pure functions are safe for everyone (used by generated columns and search RPCs).

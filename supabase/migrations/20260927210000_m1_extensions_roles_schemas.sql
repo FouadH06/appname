@@ -25,9 +25,10 @@ end $$;
 
 grant app_owner to postgres;                          -- lets migrations transfer ownership
 grant usage on schema extensions to app_owner;
-grant usage on schema auth to app_owner;              -- auth.uid(), auth.jwt()
-grant references on auth.users to app_owner;          -- FKs to auth.users
 grant usage, create on schema public to app_owner;
+-- No grants on the auth schema: the migration role can't grant them in Supabase. app_owner
+-- functions read identity via private.jwt()/private.uid() (request GUCs) instead, and
+-- FK checks against auth.users run as the referenced table's owner, so no REFERENCES is needed.
 
 -- ─── Schemas (Part 1 §3) ───────────────────────────────────────────────────
 create schema if not exists private authorization app_owner;   -- not exposed via the API

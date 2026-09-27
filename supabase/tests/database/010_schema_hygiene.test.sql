@@ -1,7 +1,7 @@
 -- Phase 3 Part 7 §1 — schema hygiene (runs on every migration)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(9);
+select plan(10);
 
 -- 1. RLS on every table in public
 select is(
@@ -37,6 +37,14 @@ select is(
    where n.nspname in ('public', 'private', 'audit') and p.prosecdef
      and not exists (select 1 from unnest(coalesce(p.proconfig, '{}')) cfg where cfg like 'search_path=%')),
   0, 'SECURITY DEFINER functions set search_path');
+
+-- 5b. definer functions (owned by app_owner) must not call the auth schema directly;
+--     they use private.uid()/private.jwt() (decision log 2026-09-27, M1)
+select is(
+  (select count(*)::int from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+   where n.nspname in ('public', 'private', 'audit') and p.prosecdef
+     and p.prosrc ~* 'auth\.(uid|jwt|role|email)\s*\('),
+  0, 'SECURITY DEFINER functions do not call auth.*()');
 
 -- 6. no application function is executable by PUBLIC
 select is(

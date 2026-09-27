@@ -66,7 +66,7 @@ declare
   v_new     jsonb := case when tg_op <> 'DELETE' then to_jsonb(new) end;
   v_old     jsonb := case when tg_op <> 'INSERT' then to_jsonb(old) end;
   v_row     jsonb := coalesce(v_new, v_old);
-  v_uid     uuid := auth.uid();
+  v_uid     uuid := private.uid();
   v_changed jsonb;
   v_kind    public.actor_kind;
 begin

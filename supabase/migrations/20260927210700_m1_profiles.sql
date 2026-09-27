@@ -65,10 +65,10 @@ on conflict (id) do nothing;
 -- Active, non-anonymous, not suspended, with a verified phone.
 create function private.is_active_customer() returns boolean
 language sql stable security definer set search_path = '' as $$
-  select not coalesce((auth.jwt() ->> 'is_anonymous')::boolean, false)
+  select not private.is_anonymous()
      and exists (
        select 1 from public.profiles p
-       where p.id = auth.uid()
+       where p.id = private.uid()
          and p.status in ('active', 'warned')
          and p.phone_verified_at is not null
      )
