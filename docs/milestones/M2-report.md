@@ -51,7 +51,7 @@ Shared fixtures: `supabase/tests/helpers/fixtures.psql` (users, role switching, 
 | Local `supabase test db` | ✅ **198/198** |
 | Local `db lint` (app schemas) | ✅ no issues |
 | `pnpm check` | ✅ |
-| CI | _see below_ |
+| CI run `36353045895` on `f961cae` | ✅ Quality · ✅ Database (reset from zero → 198 pgTAP → lint) · ✅ Build · ✅ E2E |
 
 ## Deviations from the Phase 3 specification
 
