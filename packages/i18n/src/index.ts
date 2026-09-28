@@ -45,3 +45,26 @@ export function messageForCode(
   const codes = messages[locale].codes as Record<string, string>;
   return format(codes[code] ?? codes.UNKNOWN ?? messages[locale].errors.generic, vars);
 }
+
+/** Labels for the shared phone → code flow (@app/ui-web PhoneOtpFlow). */
+export function phoneOtpLabels(locale: Locale) {
+  const a = messages[locale].auth;
+  return {
+    phoneLabel: a.phone.label,
+    phonePlaceholder: a.phone.placeholder,
+    phoneHelp: a.phone.help,
+    phoneEmpty: a.phone.empty,
+    phoneInvalid: a.phone.invalid,
+    phoneLbInvalid: a.phone.lbInvalid,
+    phoneLandline: a.phone.landline,
+    sendCode: a.sendCode,
+    otpLabel: a.otp.label,
+    sentWhatsapp: a.otp.sentWhatsapp,
+    sentSms: a.otp.sentSms,
+    resendIn: a.otp.resendIn,
+    resend: a.otp.resend,
+    useSms: a.otp.useSms,
+    changeNumber: a.otp.changeNumber,
+    verify: a.otp.verify,
+  };
+}

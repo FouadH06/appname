@@ -67,6 +67,50 @@
     "ACCOUNT_RESTRICTED": "This account can't do that right now. Contact support.",
     "RATE_LIMITED": "Too many attempts. Try again later.",
     "FORBIDDEN": "You don't have access to this.",
-    "UNKNOWN": "Something went wrong. Please try again."
+    "UNKNOWN": "Something went wrong. Please try again.",
+    "MFA_SETUP_BLOCKED": "Two-factor setup needs an email address on this admin account. Ask a superadmin to add it."
+  },
+  "roles": {
+    "owner": "Owner",
+    "manager": "Manager",
+    "reception": "Reception",
+    "staff": "Staff"
+  },
+  "pages": {
+    "bizLogin": {
+      "title": "Sign in to your business",
+      "subtitle": "Use the phone number your team invited."
+    },
+    "biz": {
+      "title": "Your businesses",
+      "empty": "You're not part of a business yet. Ask the owner to invite your number.",
+      "comingSoon": "The full dashboard arrives in the next release.",
+      "signedInAs": "Signed in as {phone}"
+    },
+    "invite": {
+      "title": "Join {business}",
+      "role": "Role: {role}",
+      "signInWith": "Sign in with {hint} to accept.",
+      "accept": "Accept invitation",
+      "accepted": "You're in. Welcome to {business}.",
+      "goToDashboard": "Go to dashboard",
+      "expired": "This invitation expired. Ask for a new one.",
+      "revoked": "This invitation was cancelled.",
+      "used": "This invitation was already accepted."
+    },
+    "claim": {
+      "title": "Your visit at {business}",
+      "signInWith": "Verify {hint} to add this visit to your account.",
+      "claimed": "Added to your account.",
+      "alreadyClaimed": "This visit is already in your account.",
+      "notClaimable": "This visit can't be added to an account.",
+      "offersTitle": "We found previous visits associated with this number. Add them to your account?",
+      "offerLine": "{count} visits · last in {month}",
+      "add": "Add to my account",
+      "notNow": "Not now",
+      "added": "Added to your account.",
+      "addVisit": "Add this visit to my account",
+      "offerLineOne": "1 visit · last in {month}"
+    }
   }
 }

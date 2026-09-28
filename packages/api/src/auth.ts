@@ -19,6 +19,7 @@ export type AuthErrorCode =
   | 'PHONE_INVALID'
   | 'RESEND_TOO_SOON'
   | 'MFA_INVALID'
+  | 'MFA_SETUP_BLOCKED'
   | 'UNKNOWN';
 
 export class AuthFlowError extends Error {
@@ -43,6 +44,8 @@ export function mapAuthError(e: unknown): AuthErrorCode {
   const code = err.code ?? '';
   const msg = (err.message ?? '').toLowerCase();
   if (code === 'captcha_failed' || msg.includes('captcha')) return 'CAPTCHA_FAILED';
+  // Auth's resend interval (30 s) uses the same code as the hourly limit; the message tells them apart
+  if (msg.includes('only request this after')) return 'RESEND_TOO_SOON';
   if (
     msg.includes('otp_too_many') ||
     code === 'over_sms_send_rate_limit' ||
@@ -51,6 +54,8 @@ export function mapAuthError(e: unknown): AuthErrorCode {
     return 'OTP_TOO_MANY';
   if (code === 'otp_expired' || msg.includes('expired')) return 'OTP_EXPIRED';
   if (code === 'mfa_verification_failed' || code === 'mfa_challenge_expired') return 'MFA_INVALID';
+  // Auth labels TOTP factors with the account email; a phone-only account can't enroll
+  if (msg.includes('generating qr code') || msg.includes('accountname')) return 'MFA_SETUP_BLOCKED';
   if (code === 'invalid_credentials' || (msg.includes('invalid') && msg.includes('token')))
     return 'OTP_INVALID';
   if (code === 'validation_failed' && msg.includes('phone')) return 'PHONE_INVALID';
@@ -149,9 +154,11 @@ export async function startAdminMfa(client: AppSupabaseClient): Promise<MfaState
     if (f.factor_type === 'totp' && f.status !== 'verified')
       await client.auth.mfa.unenroll({ factorId: f.id });
   }
+  // No friendly name: Auth requires names to be unique per user, and a retried enrollment
+  // would collide with the one being replaced.
   const { data, error } = await client.auth.mfa.enroll({
     factorType: 'totp',
-    friendlyName: 'Authenticator app',
+    issuer: 'APP_NAME Admin',
   });
   if (error || !data) throw new AuthFlowError(mapAuthError(error), error);
   return { step: 'enroll', factorId: data.id, qrCode: data.totp.qr_code, secret: data.totp.secret };

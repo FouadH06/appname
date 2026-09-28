@@ -126,6 +126,14 @@ describe('mapAuthError', () => {
       'RESEND_TOO_SOON',
     ],
     [{ code: 'mfa_verification_failed' }, 'MFA_INVALID'],
+    [
+      {
+        code: 'over_sms_send_rate_limit',
+        message: 'For security purposes, you can only request this after 21 seconds.',
+      },
+      'RESEND_TOO_SOON',
+    ],
+    [{ code: 'unexpected_failure', message: 'Error generating QR Code' }, 'MFA_SETUP_BLOCKED'],
     [{ message: 'something else' }, 'UNKNOWN'],
   ])('%o → %s', (err, code) => {
     expect(mapAuthError(err)).toBe(code);
