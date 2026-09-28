@@ -5,6 +5,7 @@
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import {
   fill,
+  replyText,
   formatVars,
   templateButtons,
   whatsappParams,
@@ -39,6 +40,7 @@ const ORDER = [
   ['booking_rescheduled_by_business', 'Rescheduled booking'],
   ['staff_changed', 'Staff changed'],
   ['booking_cancelled_by_business', 'Business cancellation'],
+  ['booking_cancelled_by_customer', 'Customer cancellation acknowledgement'],
   ['booking_no_show_marked', 'No-show'],
   ['biz_new_booking', 'Team alert: new online booking'],
   ['biz_new_request', 'Team alert: new request'],
@@ -61,8 +63,10 @@ Source of truth: \`scripts/notification-templates.py\` → \`supabase/migrations
   (only from the customer's number); Cancel replies with the booking link (never cancels directly).
 - **SMS** (backup for booking messages): same text without emoji, with the link written out.
 - Empty reason → "We're sorry for the inconvenience." / "نعتذر عن الإزعاج."
-- There is **no customer-cancellation acknowledgement** message today: the customer sees the
-  confirmation on screen (booking page, M8) and the team gets an alert.
+- *Change / Cancel* never cancels directly: the reply sends the booking page link (below), where the
+  customer sees the cancellation policy first.
+- The customer-cancellation acknowledgement is sent only after the cancellation succeeds (not for
+  account deletions).
 `;
 
 for (const [type, title] of ORDER) {
@@ -90,6 +94,24 @@ for (const [type, title] of ORDER) {
     if (sms)
       md += `\n**${locale === 'en' ? 'English' : 'Arabic'} — SMS**\n\n> ${fill(sms.body, vars)}\n`;
   }
+}
+md += `
+## Replies to button taps (sent in the customer's open WhatsApp session)
+`;
+for (const [kind, title] of [
+  ['confirmed', 'After Confirm'],
+  ['cancel_link', 'After Change / Cancel'],
+  ['cannot_confirm', 'Confirm on a booking that can no longer be confirmed'],
+  ['not_yours', 'Tap from a different number'],
+]) {
+  md += `
+**${title}**
+
+`;
+  for (const locale of ['en', 'ar'])
+    md += `> ${replyText({ ...sample, reply: kind, locale })}
+
+`;
 }
 mkdirSync('docs/notifications', { recursive: true });
 writeFileSync('docs/notifications/templates.md', md);

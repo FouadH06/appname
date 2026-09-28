@@ -3684,6 +3684,7 @@ export type Database = {
         | 'booking_reminder_24h'
         | 'booking_reminder_2h'
         | 'booking_cancelled_by_business'
+        | 'booking_cancelled_by_customer'
         | 'booking_rescheduled_by_business'
         | 'staff_changed'
         | 'booking_no_show_marked'
@@ -3996,6 +3997,7 @@ export const Constants = {
         'booking_reminder_24h',
         'booking_reminder_2h',
         'booking_cancelled_by_business',
+        'booking_cancelled_by_customer',
         'booking_rescheduled_by_business',
         'staff_changed',
         'booking_no_show_marked',

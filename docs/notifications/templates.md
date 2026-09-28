@@ -9,8 +9,10 @@ Source of truth: `scripts/notification-templates.py` → `supabase/migrations/20
   (only from the customer's number); Cancel replies with the booking link (never cancels directly).
 - **SMS** (backup for booking messages): same text without emoji, with the link written out.
 - Empty reason → "We're sorry for the inconvenience." / "نعتذر عن الإزعاج."
-- There is **no customer-cancellation acknowledgement** message today: the customer sees the
-  confirmation on screen (booking page, M8) and the team gets an alert.
+- *Change / Cancel* never cancels directly: the reply sends the booking page link (below), where the
+  customer sees the cancellation policy first.
+- The customer-cancellation acknowledgement is sent only after the cancellation succeeds (not for
+  account deletions).
 
 ## Booking confirmed `booking_confirmed`
 
@@ -26,13 +28,13 @@ Source of truth: `scripts/notification-templates.py` → `supabase/migrations/20
 
 **Arabic — WhatsApp** (template `booking_confirmed_v1`, 5 parameters)
 
-> ✅ تم تأكيد حجزك في Fade District: Haircut مع Karim، الثلاثاء، ١٣ تشرين الأول الساعة ٤:٣٠ م. سنرسل لك تذكيرًا قبل موعدك.
+> ✅ تم تأكيد حجزك في Fade District: Haircut مع Karim، الثلاثاء، 13 تشرين الأول الساعة 4:30 م. سنرسل لك تذكيرًا قبل موعدك.
 >
 > [ عرض الحجز ↗ ](https://platform.com/m/{token})
 
 **Arabic — SMS**
 
-> تم تأكيد حجزك في Fade District: Haircut مع Karim، الثلاثاء، ١٣ تشرين الأول الساعة ٤:٣٠ م. سنرسل لك تذكيرًا قبل موعدك. حجزك: https://platform.com/m/Xk3f9QpL2a
+> تم تأكيد حجزك في Fade District: Haircut مع Karim، الثلاثاء، 13 تشرين الأول الساعة 4:30 م. سنرسل لك تذكيرًا قبل موعدك. حجزك: https://platform.com/m/Xk3f9QpL2a
 
 ## Booking request received `booking_requested`
 
@@ -48,13 +50,13 @@ Source of truth: `scripts/notification-templates.py` → `supabase/migrations/20
 
 **Arabic — WhatsApp** (template `booking_requested_v1`, 4 parameters)
 
-> شكرًا! استلم Fade District طلبك لخدمة Haircut يوم الثلاثاء، ١٣ تشرين الأول الساعة ٤:٣٠ م. سنخبرك فور ردّهم.
+> شكرًا! استلم Fade District طلبك لخدمة Haircut يوم الثلاثاء، 13 تشرين الأول الساعة 4:30 م. سنخبرك فور ردّهم.
 >
 > [ عرض الحجز ↗ ](https://platform.com/m/{token})
 
 **Arabic — SMS**
 
-> شكرًا! استلم Fade District طلبك لخدمة Haircut يوم الثلاثاء، ١٣ تشرين الأول الساعة ٤:٣٠ م. سنخبرك فور ردّهم. حجزك: https://platform.com/m/Xk3f9QpL2a
+> شكرًا! استلم Fade District طلبك لخدمة Haircut يوم الثلاثاء، 13 تشرين الأول الساعة 4:30 م. سنخبرك فور ردّهم. حجزك: https://platform.com/m/Xk3f9QpL2a
 
 ## Request accepted `request_accepted`
 
@@ -70,13 +72,13 @@ Source of truth: `scripts/notification-templates.py` → `supabase/migrations/20
 
 **Arabic — WhatsApp** (template `request_accepted_v1`, 5 parameters)
 
-> ✅ خبر سار! أكّد Fade District موعد Haircut مع Karim، الثلاثاء، ١٣ تشرين الأول الساعة ٤:٣٠ م. نراك قريبًا.
+> ✅ خبر سار! أكّد Fade District موعد Haircut مع Karim، الثلاثاء، 13 تشرين الأول الساعة 4:30 م. نراك قريبًا.
 >
 > [ عرض الحجز ↗ ](https://platform.com/m/{token})
 
 **Arabic — SMS**
 
-> خبر سار! أكّد Fade District موعد Haircut مع Karim، الثلاثاء، ١٣ تشرين الأول الساعة ٤:٣٠ م. نراك قريبًا. حجزك: https://platform.com/m/Xk3f9QpL2a
+> خبر سار! أكّد Fade District موعد Haircut مع Karim، الثلاثاء، 13 تشرين الأول الساعة 4:30 م. نراك قريبًا. حجزك: https://platform.com/m/Xk3f9QpL2a
 
 ## Request declined `request_declined`
 
@@ -92,35 +94,35 @@ Source of truth: `scripts/notification-templates.py` → `supabase/migrations/20
 
 **Arabic — WhatsApp** (template `request_declined_v1`, 4 parameters)
 
-> نعتذر، لا يستطيع Fade District قبول طلبك ليوم الثلاثاء، ١٣ تشرين الأول الساعة ٤:٣٠ م. السبب: كريم مريض. يمكنك اختيار وقت آخر من صفحة الحجز الخاصة بهم.
+> نعتذر، لا يستطيع Fade District قبول طلبك ليوم الثلاثاء، 13 تشرين الأول الساعة 4:30 م. السبب: كريم مريض. يمكنك اختيار وقت آخر من صفحة الحجز الخاصة بهم.
 >
 > [ احجز موعدًا آخر ↗ ](https://platform.com/{business slug})
 
 **Arabic — SMS**
 
-> نعتذر، لا يستطيع Fade District قبول طلبك ليوم الثلاثاء، ١٣ تشرين الأول الساعة ٤:٣٠ م. السبب: كريم مريض. يمكنك اختيار وقت آخر من صفحة الحجز الخاصة بهم. احجز من جديد: https://platform.com/fade-district
+> نعتذر، لا يستطيع Fade District قبول طلبك ليوم الثلاثاء، 13 تشرين الأول الساعة 4:30 م. السبب: كريم مريض. يمكنك اختيار وقت آخر من صفحة الحجز الخاصة بهم. احجز من جديد: https://platform.com/fade-district
 
 ## Request expired `request_expired`
 
 **English — WhatsApp** (template `request_expired_v1`, 3 parameters)
 
-> Sorry, Fade District didn't reply in time to your request for Tue 13 Oct at 4:30 PM, so it was cancelled. You can choose another time on their booking page.
+> Sorry, Fade District didn't reply in time to your request for Tue 13 Oct at 4:30 PM. Your request expired. You can choose another time on their booking page.
 >
 > [ Book another time ↗ ](https://platform.com/{business slug})
 
 **English — SMS**
 
-> Sorry, Fade District didn't reply in time to your request for Tue 13 Oct at 4:30 PM, so it was cancelled. You can choose another time on their booking page. Book again: https://platform.com/fade-district
+> Sorry, Fade District didn't reply in time to your request for Tue 13 Oct at 4:30 PM. Your request expired. You can choose another time on their booking page. Book again: https://platform.com/fade-district
 
 **Arabic — WhatsApp** (template `request_expired_v1`, 3 parameters)
 
-> نعتذر، لم يردّ Fade District على طلبك ليوم الثلاثاء، ١٣ تشرين الأول الساعة ٤:٣٠ م في الوقت المحدد، فتم إلغاؤه. يمكنك اختيار وقت آخر من صفحة الحجز الخاصة بهم.
+> نعتذر، لم يردّ Fade District في الوقت المحدد على طلبك ليوم الثلاثاء، 13 تشرين الأول الساعة 4:30 م. انتهت صلاحية طلبك. يمكنك اختيار وقت آخر من صفحة الحجز الخاصة بهم.
 >
 > [ احجز موعدًا آخر ↗ ](https://platform.com/{business slug})
 
 **Arabic — SMS**
 
-> نعتذر، لم يردّ Fade District على طلبك ليوم الثلاثاء، ١٣ تشرين الأول الساعة ٤:٣٠ م في الوقت المحدد، فتم إلغاؤه. يمكنك اختيار وقت آخر من صفحة الحجز الخاصة بهم. احجز من جديد: https://platform.com/fade-district
+> نعتذر، لم يردّ Fade District في الوقت المحدد على طلبك ليوم الثلاثاء، 13 تشرين الأول الساعة 4:30 م. انتهت صلاحية طلبك. يمكنك اختيار وقت آخر من صفحة الحجز الخاصة بهم. احجز من جديد: https://platform.com/fade-district
 
 ## 24-hour reminder `booking_reminder_24h`
 
@@ -128,7 +130,7 @@ Source of truth: `scripts/notification-templates.py` → `supabase/migrations/20
 
 > ⏰ Reminder: Haircut at Fade District tomorrow, Tue 13 Oct at 4:30 PM, with Karim. Please tap Confirm if you're coming.
 >
-> [ Confirm ]  [ Cancel ]  [ View booking ↗ ](https://platform.com/m/{token})
+> [ Confirm ]  [ Change / Cancel ]  [ View booking ↗ ](https://platform.com/m/{token})
 
 **English — SMS**
 
@@ -136,21 +138,21 @@ Source of truth: `scripts/notification-templates.py` → `supabase/migrations/20
 
 **Arabic — WhatsApp** (template `booking_reminder_24h_v1`, 5 parameters)
 
-> ⏰ تذكير: Haircut في Fade District غدًا، الثلاثاء، ١٣ تشرين الأول الساعة ٤:٣٠ م، مع Karim. اضغط «تأكيد» إذا كنت ستحضر.
+> ⏰ تذكير: Haircut في Fade District غدًا، الثلاثاء، 13 تشرين الأول الساعة 4:30 م، مع Karim. اضغط «تأكيد» إذا كنت ستحضر.
 >
-> [ تأكيد ]  [ إلغاء ]  [ عرض الحجز ↗ ](https://platform.com/m/{token})
+> [ تأكيد ]  [ تعديل / إلغاء ]  [ عرض الحجز ↗ ](https://platform.com/m/{token})
 
 **Arabic — SMS**
 
-> تذكير: Haircut في Fade District غدًا، الثلاثاء، ١٣ تشرين الأول الساعة ٤:٣٠ م، مع Karim. للتأكيد أو التعديل: https://platform.com/m/Xk3f9QpL2a
+> تذكير: Haircut في Fade District غدًا، الثلاثاء، 13 تشرين الأول الساعة 4:30 م، مع Karim. للتأكيد أو التعديل: https://platform.com/m/Xk3f9QpL2a
 
 ## 2-hour reminder `booking_reminder_2h`
 
 **English — WhatsApp** (template `booking_reminder_2h_v1`, 4 parameters)
 
-> See you soon! Haircut at Fade District today at 4:30 PM with Karim. Tap Confirm to let them know you're on your way.
+> See you soon! Haircut at Fade District today at 4:30 PM with Karim. Please confirm that you're still coming.
 >
-> [ Confirm ]  [ Cancel ]  [ View booking ↗ ](https://platform.com/m/{token})
+> [ Confirm ]  [ Change / Cancel ]  [ View booking ↗ ](https://platform.com/m/{token})
 
 **English — SMS**
 
@@ -158,13 +160,13 @@ Source of truth: `scripts/notification-templates.py` → `supabase/migrations/20
 
 **Arabic — WhatsApp** (template `booking_reminder_2h_v1`, 4 parameters)
 
-> نراك قريبًا! Haircut في Fade District اليوم الساعة ٤:٣٠ م مع Karim. اضغط «تأكيد» ليعرفوا أنك في الطريق.
+> نراك قريبًا! Haircut في Fade District اليوم الساعة 4:30 م مع Karim. يرجى تأكيد أنك ما زلت قادمًا.
 >
-> [ تأكيد ]  [ إلغاء ]  [ عرض الحجز ↗ ](https://platform.com/m/{token})
+> [ تأكيد ]  [ تعديل / إلغاء ]  [ عرض الحجز ↗ ](https://platform.com/m/{token})
 
 **Arabic — SMS**
 
-> نراك قريبًا! Haircut في Fade District اليوم الساعة ٤:٣٠ م مع Karim. حجزك: https://platform.com/m/Xk3f9QpL2a
+> نراك قريبًا! Haircut في Fade District اليوم الساعة 4:30 م مع Karim. حجزك: https://platform.com/m/Xk3f9QpL2a
 
 ## Rescheduled booking `booking_rescheduled_by_business`
 
@@ -180,13 +182,13 @@ Source of truth: `scripts/notification-templates.py` → `supabase/migrations/20
 
 **Arabic — WhatsApp** (template `booking_rescheduled_by_business_v1`, 6 parameters)
 
-> 📅 تم تغيير موعدك في Fade District. أصبح موعد Haircut يوم الثلاثاء، ١٣ تشرين الأول الساعة ٤:٣٠ م (بدلًا من الاثنين، ١٢ تشرين الأول الساعة ٦:٠٠ م). إذا لم يناسبك الوقت الجديد، يمكنك تعديله أو إلغاؤه من صفحة الحجز.
+> 📅 تم تغيير موعدك في Fade District. أصبح موعد Haircut يوم الثلاثاء، 13 تشرين الأول الساعة 4:30 م (بدلًا من الاثنين، 12 تشرين الأول الساعة 6:00 م). إذا لم يناسبك الوقت الجديد، يمكنك تعديله أو إلغاؤه من صفحة الحجز.
 >
 > [ عرض الحجز ↗ ](https://platform.com/m/{token})
 
 **Arabic — SMS**
 
-> تم تغيير موعدك في Fade District. أصبح موعد Haircut يوم الثلاثاء، ١٣ تشرين الأول الساعة ٤:٣٠ م (بدلًا من الاثنين، ١٢ تشرين الأول الساعة ٦:٠٠ م). إذا لم يناسبك الوقت الجديد، يمكنك تعديله أو إلغاؤه من صفحة الحجز. حجزك: https://platform.com/m/Xk3f9QpL2a
+> تم تغيير موعدك في Fade District. أصبح موعد Haircut يوم الثلاثاء، 13 تشرين الأول الساعة 4:30 م (بدلًا من الاثنين، 12 تشرين الأول الساعة 6:00 م). إذا لم يناسبك الوقت الجديد، يمكنك تعديله أو إلغاؤه من صفحة الحجز. حجزك: https://platform.com/m/Xk3f9QpL2a
 
 ## Staff changed `staff_changed`
 
@@ -202,13 +204,13 @@ Source of truth: `scripts/notification-templates.py` → `supabase/migrations/20
 
 **Arabic — WhatsApp** (template `staff_changed_v1`, 5 parameters)
 
-> تحديث من Fade District: موعد Haircut يوم الثلاثاء، ١٣ تشرين الأول الساعة ٤:٣٠ م سيكون الآن مع Karim. إذا أردت تغييره، يمكنك ذلك من صفحة الحجز.
+> تحديث من Fade District: موعد Haircut يوم الثلاثاء، 13 تشرين الأول الساعة 4:30 م سيكون الآن مع Karim. إذا أردت تغييره، يمكنك ذلك من صفحة الحجز.
 >
 > [ عرض الحجز ↗ ](https://platform.com/m/{token})
 
 **Arabic — SMS**
 
-> تحديث من Fade District: موعد Haircut يوم الثلاثاء، ١٣ تشرين الأول الساعة ٤:٣٠ م سيكون الآن مع Karim. إذا أردت تغييره، يمكنك ذلك من صفحة الحجز. حجزك: https://platform.com/m/Xk3f9QpL2a
+> تحديث من Fade District: موعد Haircut يوم الثلاثاء، 13 تشرين الأول الساعة 4:30 م سيكون الآن مع Karim. إذا أردت تغييره، يمكنك ذلك من صفحة الحجز. حجزك: https://platform.com/m/Xk3f9QpL2a
 
 ## Business cancellation `booking_cancelled_by_business`
 
@@ -224,13 +226,35 @@ Source of truth: `scripts/notification-templates.py` → `supabase/migrations/20
 
 **Arabic — WhatsApp** (template `booking_cancelled_by_business_v1`, 5 parameters)
 
-> نعتذر، اضطر Fade District إلى إلغاء موعد Haircut يوم الثلاثاء، ١٣ تشرين الأول الساعة ٤:٣٠ م. السبب: كريم مريض. يمكنك حجز وقت آخر من صفحة الحجز الخاصة بهم.
+> نعتذر، اضطر Fade District إلى إلغاء موعد Haircut يوم الثلاثاء، 13 تشرين الأول الساعة 4:30 م. السبب: كريم مريض. يمكنك حجز وقت آخر من صفحة الحجز الخاصة بهم.
 >
 > [ احجز موعدًا آخر ↗ ](https://platform.com/{business slug})
 
 **Arabic — SMS**
 
-> نعتذر، اضطر Fade District إلى إلغاء موعد Haircut يوم الثلاثاء، ١٣ تشرين الأول الساعة ٤:٣٠ م. السبب: كريم مريض. يمكنك حجز وقت آخر من صفحة الحجز الخاصة بهم. احجز من جديد: https://platform.com/fade-district
+> نعتذر، اضطر Fade District إلى إلغاء موعد Haircut يوم الثلاثاء، 13 تشرين الأول الساعة 4:30 م. السبب: كريم مريض. يمكنك حجز وقت آخر من صفحة الحجز الخاصة بهم. احجز من جديد: https://platform.com/fade-district
+
+## Customer cancellation acknowledgement `booking_cancelled_by_customer`
+
+**English — WhatsApp** (template `booking_cancelled_by_customer_v1`, 4 parameters)
+
+> Your Haircut booking at Fade District on Tue 13 Oct at 4:30 PM has been cancelled.
+>
+> [ Book another time ↗ ](https://platform.com/{business slug})
+
+**English — SMS**
+
+> Your Haircut booking at Fade District on Tue 13 Oct at 4:30 PM has been cancelled. Book again: https://platform.com/fade-district
+
+**Arabic — WhatsApp** (template `booking_cancelled_by_customer_v1`, 4 parameters)
+
+> تم إلغاء حجز Haircut في Fade District يوم الثلاثاء، 13 تشرين الأول الساعة 4:30 م.
+>
+> [ احجز موعدًا آخر ↗ ](https://platform.com/{business slug})
+
+**Arabic — SMS**
+
+> تم إلغاء حجز Haircut في Fade District يوم الثلاثاء، 13 تشرين الأول الساعة 4:30 م. احجز من جديد: https://platform.com/fade-district
 
 ## No-show `booking_no_show_marked`
 
@@ -246,13 +270,13 @@ Source of truth: `scripts/notification-templates.py` → `supabase/migrations/20
 
 **Arabic — WhatsApp** (template `booking_no_show_marked_v1`, 4 parameters)
 
-> مرحبًا، سجّل Fade District أنك لم تحضر موعد Haircut يوم الثلاثاء، ١٣ تشرين الأول الساعة ٤:٣٠ م. إذا كان ذلك خطأ، افتح صفحة الحجز لإبلاغنا.
+> مرحبًا، سجّل Fade District أنك لم تحضر موعد Haircut يوم الثلاثاء، 13 تشرين الأول الساعة 4:30 م. إذا كان ذلك خطأ، افتح صفحة الحجز لإبلاغنا.
 >
 > [ عرض الحجز ↗ ](https://platform.com/m/{token})
 
 **Arabic — SMS**
 
-> مرحبًا، سجّل Fade District أنك لم تحضر موعد Haircut يوم الثلاثاء، ١٣ تشرين الأول الساعة ٤:٣٠ م. إذا كان ذلك خطأ، افتح صفحة الحجز لإبلاغنا. حجزك: https://platform.com/m/Xk3f9QpL2a
+> مرحبًا، سجّل Fade District أنك لم تحضر موعد Haircut يوم الثلاثاء، 13 تشرين الأول الساعة 4:30 م. إذا كان ذلك خطأ، افتح صفحة الحجز لإبلاغنا. حجزك: https://platform.com/m/Xk3f9QpL2a
 
 ## Team alert: new online booking `biz_new_booking`
 
@@ -264,7 +288,7 @@ Source of truth: `scripts/notification-templates.py` → `supabase/migrations/20
 
 **Arabic — WhatsApp** (template `biz_new_booking_v1`, 5 parameters)
 
-> 📅 حجز جديد: Moe، Haircut مع Karim، الثلاثاء، ١٣ تشرين الأول الساعة ٤:٣٠ م.
+> 📅 حجز جديد: Moe، Haircut مع Karim، الثلاثاء، 13 تشرين الأول الساعة 4:30 م.
 >
 > [ فتح الحجوزات ↗ ](https://platform.com/biz/{business}/bookings)
 
@@ -278,7 +302,7 @@ Source of truth: `scripts/notification-templates.py` → `supabase/migrations/20
 
 **Arabic — WhatsApp** (template `biz_new_request_v1`, 4 parameters)
 
-> ⏳ طلب جديد بانتظار ردّك: Moe، Haircut، الثلاثاء، ١٣ تشرين الأول الساعة ٤:٣٠ م. اقبله أو ارفضه من صفحة الحجوزات.
+> ⏳ طلب جديد بانتظار ردّك: Moe، Haircut، الثلاثاء، 13 تشرين الأول الساعة 4:30 م. اقبله أو ارفضه من صفحة الحجوزات.
 >
 > [ فتح الحجوزات ↗ ](https://platform.com/biz/{business}/bookings)
 
@@ -292,6 +316,36 @@ Source of truth: `scripts/notification-templates.py` → `supabase/migrations/20
 
 **Arabic — WhatsApp** (template `biz_booking_cancelled_v1`, 5 parameters)
 
-> ❌ ألغى الزبون: Moe، Haircut مع Karim، الثلاثاء، ١٣ تشرين الأول الساعة ٤:٣٠ م. أصبح الوقت متاحًا من جديد.
+> ❌ ألغى الزبون: Moe، Haircut مع Karim، الثلاثاء، 13 تشرين الأول الساعة 4:30 م. أصبح الوقت متاحًا من جديد.
 >
 > [ فتح الحجوزات ↗ ](https://platform.com/biz/{business}/bookings)
+
+## Replies to button taps (sent in the customer's open WhatsApp session)
+
+**After Confirm**
+
+> Thanks! You're confirmed for Haircut at Fade District on Tue 13 Oct at 4:30 PM.
+
+> شكرًا! تم تأكيد حضورك لـ Haircut في Fade District يوم الثلاثاء، 13 تشرين الأول الساعة 4:30 م.
+
+
+**After Change / Cancel**
+
+> To change or cancel your booking, open your booking page: https://platform.com/m/Xk3f9QpL2a (the cancellation policy is shown there before you confirm).
+
+> لتعديل الحجز أو إلغائه، افتح صفحة الحجز: https://platform.com/m/Xk3f9QpL2a (تظهر سياسة الإلغاء هناك قبل التأكيد).
+
+
+**Confirm on a booking that can no longer be confirmed**
+
+> This booking can't be confirmed anymore. Details: https://platform.com/m/Xk3f9QpL2a
+
+> لم يعد بالإمكان تأكيد هذا الحجز. التفاصيل: https://platform.com/m/Xk3f9QpL2a
+
+
+**Tap from a different number**
+
+> We couldn't match this booking to your number.
+
+> لم نتمكن من ربط هذا الحجز برقمك.
+

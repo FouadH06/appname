@@ -110,7 +110,8 @@ insert into private.notification_routes (type, primary_channels, fallback_channe
 select t::public.notification_type, '{whatsapp}', '{sms}', true
 from unnest(array['booking_confirmed', 'booking_requested', 'request_accepted', 'request_declined', 'request_expired',
                   'booking_reminder_24h', 'booking_reminder_2h', 'booking_cancelled_by_business',
-                  'booking_rescheduled_by_business', 'staff_changed', 'booking_no_show_marked']) t;
+                  'booking_rescheduled_by_business', 'staff_changed', 'booking_no_show_marked',
+                  'booking_cancelled_by_customer']) t;
 insert into private.notification_routes (type, primary_channels, fallback_channels, critical)
 select t::public.notification_type, '{whatsapp}', '{}', false
 from unnest(array['biz_new_booking', 'biz_new_request', 'biz_booking_cancelled']) t;
@@ -354,6 +355,11 @@ begin
     perform private.cancel_reminders(v_id);
     if new.actor_kind = 'customer' then
       perform private.notify_business('biz_booking_cancelled', v_id);
+      -- acknowledgement (the event is written in the same transaction as the cancellation, so it
+      -- only exists if the cancellation succeeded); not for account deletions
+      if coalesce(new.data ->> 'reason', '') <> 'account_deleted' then
+        perform private.notify_customer('booking_cancelled_by_customer', v_id, '{}', v_key);
+      end if;
     elsif v_notify and not v_undo then
       perform private.notify_customer('booking_cancelled_by_business', v_id,
                                       jsonb_build_object('reason', new.data ->> 'reason'), v_key);

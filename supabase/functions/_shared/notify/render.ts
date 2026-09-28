@@ -3,7 +3,8 @@ import type { Locale, Template, TemplateButton } from './types.ts';
 // Rendering: dates and times are formatted per locale in the business's time zone (Asia/Beirut),
 // never the server's. Missing optional values (e.g. no decline reason) leave no gaps.
 
-const INTL_LOCALE: Record<Locale, string> = { en: 'en-GB', ar: 'ar-LB', fr: 'fr-FR' };
+// Arabic keeps the Levantine month names with Latin digits ("13 تشرين الأول الساعة 4:30 م")
+const INTL_LOCALE: Record<Locale, string> = { en: 'en-GB', ar: 'ar-LB-u-nu-latn', fr: 'fr-FR' };
 
 function when(iso: unknown, tz: string, locale: Locale) {
   if (typeof iso !== 'string' || Number.isNaN(Date.parse(iso))) return { date: '', time: '' };
@@ -101,8 +102,8 @@ const REPLIES: Record<string, Record<'en' | 'ar', string>> = {
     ar: 'لم يعد بالإمكان تأكيد هذا الحجز. التفاصيل: {link}',
   },
   cancel_link: {
-    en: 'To cancel or change your booking, open {link} (the cancellation policy is shown there).',
-    ar: 'لإلغاء الحجز أو تعديله افتح {link} (تظهر سياسة الإلغاء هناك).',
+    en: 'To change or cancel your booking, open your booking page: {link} (the cancellation policy is shown there before you confirm).',
+    ar: 'لتعديل الحجز أو إلغائه، افتح صفحة الحجز: {link} (تظهر سياسة الإلغاء هناك قبل التأكيد).',
   },
   not_yours: {
     en: "We couldn't match this booking to your number.",

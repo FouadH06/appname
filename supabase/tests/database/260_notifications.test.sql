@@ -6,7 +6,7 @@ create extension if not exists pgtap with schema extensions;
 set local search_path = extensions, public;
 set local role postgres;
 \ir ../helpers/fixtures.psql
-select plan(47);
+select plan(49);
 
 create table tests.v (k text primary key, j jsonb);
 grant select, insert on tests.v to authenticated;
@@ -111,6 +111,12 @@ select results_eq($$ select recipient_user_id, recipient_phone from public.notif
                      where booking_id = tests.bk('quiet') and type = 'biz_booking_cancelled' order by recipient_phone $$,
                   $$ values (tests.id('owner'), '+96170111001'), (tests.id('recep'), '+96170111002') $$,
   'customer cancellation alerts owner and reception by default (not staff)');
+select results_eq($$ select recipient_phone, status::text from tests.n(tests.bk('quiet'), 'booking_cancelled_by_customer') $$,
+                  $$ values ('+96171000112', 'queued') $$, 'the customer gets a cancellation acknowledgement');
+insert into public.booking_events (booking_id, business_id, event, actor_kind, from_status, to_status, data)
+values (tests.bk('early'), tests.id('biz'), 'cancelled', 'customer', 'confirmed', 'cancelled', '{"reason":"account_deleted"}');
+select is((select count(*)::int from tests.n(tests.bk('early'), 'booking_cancelled_by_customer')), 0,
+  'no acknowledgement when the cancellation comes from deleting the account');
 select tests.act_as('recep');
 select throws_ok($$ select public.biz_set_notification_setting(tests.id('biz'), tests.id('owner'), 'biz_new_booking', false) $$,
   'P0001', 'FORBIDDEN', 'reception changes only their own alerts');

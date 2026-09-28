@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parent.parent
 
 LABELS = {
     'confirm': ('Confirm', 'تأكيد'),
-    'cancel': ('Cancel', 'إلغاء'),
+    'cancel': ('Change / Cancel', 'تعديل / إلغاء'),
     'view': ('View booking', 'عرض الحجز'),
     'book': ('Book another time', 'احجز موعدًا آخر'),
     'dashboard': ('Open bookings', 'فتح الحجوزات'),
@@ -45,16 +45,16 @@ T = {
         "نعتذر، لا يستطيع {business_name} قبول طلبك ليوم {date} الساعة {time}. {reason} يمكنك اختيار وقت آخر من صفحة الحجز الخاصة بهم.",
         ['book'], 'book', True),
     'request_expired': (
-        "Sorry, {business_name} didn't reply in time to your request for {date} at {time}, so it was cancelled. You can choose another time on their booking page.",
-        "نعتذر، لم يردّ {business_name} على طلبك ليوم {date} الساعة {time} في الوقت المحدد، فتم إلغاؤه. يمكنك اختيار وقت آخر من صفحة الحجز الخاصة بهم.",
+        "Sorry, {business_name} didn't reply in time to your request for {date} at {time}. Your request expired. You can choose another time on their booking page.",
+        "نعتذر، لم يردّ {business_name} في الوقت المحدد على طلبك ليوم {date} الساعة {time}. انتهت صلاحية طلبك. يمكنك اختيار وقت آخر من صفحة الحجز الخاصة بهم.",
         ['book'], 'book', True),
     'booking_reminder_24h': (
         "⏰ Reminder: {service_name} at {business_name} tomorrow, {date} at {time}, with {staff_name}. Please tap Confirm if you're coming.",
         "⏰ تذكير: {service_name} في {business_name} غدًا، {date} الساعة {time}، مع {staff_name}. اضغط «تأكيد» إذا كنت ستحضر.",
         ['confirm', 'cancel', 'view'], 'remind', True),
     'booking_reminder_2h': (
-        "See you soon! {service_name} at {business_name} today at {time} with {staff_name}. Tap Confirm to let them know you're on your way.",
-        "نراك قريبًا! {service_name} في {business_name} اليوم الساعة {time} مع {staff_name}. اضغط «تأكيد» ليعرفوا أنك في الطريق.",
+        "See you soon! {service_name} at {business_name} today at {time} with {staff_name}. Please confirm that you're still coming.",
+        "نراك قريبًا! {service_name} في {business_name} اليوم الساعة {time} مع {staff_name}. يرجى تأكيد أنك ما زلت قادمًا.",
         ['confirm', 'cancel', 'view'], 'remind', True),
     'booking_rescheduled_by_business': (
         "📅 Your appointment at {business_name} has moved. {service_name} is now on {date} at {time} (it was {old_date} at {old_time}). If the new time doesn't suit you, you can change or cancel it from your booking.",
@@ -67,6 +67,10 @@ T = {
     'booking_cancelled_by_business': (
         "Sorry, {business_name} had to cancel your {service_name} on {date} at {time}. {reason} You can book another time on their booking page.",
         "نعتذر، اضطر {business_name} إلى إلغاء موعد {service_name} يوم {date} الساعة {time}. {reason} يمكنك حجز وقت آخر من صفحة الحجز الخاصة بهم.",
+        ['book'], 'book', True),
+    'booking_cancelled_by_customer': (
+        "Your {service_name} booking at {business_name} on {date} at {time} has been cancelled.",
+        "تم إلغاء حجز {service_name} في {business_name} يوم {date} الساعة {time}.",
         ['book'], 'book', True),
     'booking_no_show_marked': (
         "Hi, {business_name} recorded that you missed your {service_name} on {date} at {time}. If this is a mistake, open your booking to let us know.",

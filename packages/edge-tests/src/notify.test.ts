@@ -63,6 +63,10 @@ describe('render', () => {
     const ar = formatVars(payload, 'ar');
     expect(ar.time).not.toBe(en.time);
     expect(ar.date).not.toMatch(/Mon/);
+    // Latin digits, Levantine month names
+    expect(ar.date).toContain('12 تشرين الأول');
+    expect(ar.time).toMatch(/^4:30/);
+    expect(`${ar.date} ${ar.time}`).not.toMatch(/[٠-٩]/);
   });
 
   it('leaves no gaps for missing values and gives WhatsApp non-empty parameters', () => {

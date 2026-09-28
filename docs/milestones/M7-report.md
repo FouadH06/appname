@@ -1,6 +1,6 @@
 # M7 — Notifications & WhatsApp: report
 
-Status: **approved technically (D1–D9); final copy review pending** · Branch `m7-notifications`
+Status: **closed** (approved 2026-09-28: D1–D9, reception alerts, quiet hours, final copy) · merged to `main`
 
 Hosted staging verification is deferred together with M4–M6 (see the M4 report checklist, now
 including M7). Real WhatsApp / SMS delivery needs the external accounts (Meta business number and
@@ -35,7 +35,7 @@ approved templates, Twilio) and is a launch dependency, not a milestone blocker.
 
 | Layer | Result | What it proves |
 |---|---|---|
-| pgTAP | **608/608** (47 new in `260_notifications`) | Confirmation + link queued only with "Send confirmation"; reminder times; no reminders when booked < 2 h ahead; only the 2 h one when < 24 h; reschedule cancels and re-creates reminders and tells the customer the old time; business cancellation with reason; **Undo sends nothing**; customer cancellation alerts owners (not reception) by default; alert settings (reception only their own; staff refused); dispatcher RPCs **service_role only**; claim returns only due rows with WhatsApp → SMS order and the template; **a second claim returns nothing**; failed WhatsApp receipt → one SMS retry (SMS only); receipts never go backwards; backoff then failure after 4 attempts; **Confirm from another number refused**, from the customer's number confirms, duplicate webhook handled once, Cancel never cancels; Arabic → approved English template; preferences (last channel kept); inbox only your own; ops-only report |
+| pgTAP | **610/610** (49 new in `260_notifications`) | Confirmation + link queued only with "Send confirmation"; reminder times; no reminders when booked < 2 h ahead; only the 2 h one when < 24 h; reschedule cancels and re-creates reminders and tells the customer the old time; business cancellation with reason; **Undo sends nothing**; customer cancellation alerts owners (not reception) by default; alert settings (reception only their own; staff refused); dispatcher RPCs **service_role only**; claim returns only due rows with WhatsApp → SMS order and the template; **a second claim returns nothing**; failed WhatsApp receipt → one SMS retry (SMS only); receipts never go backwards; backoff then failure after 4 attempts; **Confirm from another number refused**, from the customer's number confirms, duplicate webhook handled once, Cancel never cancels; Arabic → approved English template; preferences (last channel kept); inbox only your own; ops-only report |
 | Edge unit (Vitest) | **45** (13 new) | Beirut-time rendering per locale, tidy text with missing values, non-empty WhatsApp parameters, Confirm/Cancel payloads; dispatcher: WhatsApp send, **SMS fallback**, unapproved template → SMS in live / sent in log mode, retry vs fail, no channel, **double run sends once**; Meta template + quick-reply request body; Twilio mapping; config; signed webhook button → database + session reply; unsigned ignored |
 | E2E web (local stack) | **14 passed** (1 new) | Reception books a regular customer with "Send confirmation" → confirmation + 24 h + 2 h reminders queued; **the real `notify-dispatch` function** sends the due confirmation (log provider) and refuses calls without the secret; a **signed WhatsApp Confirm webhook** from the customer's number confirms attendance and the timeline shows it; manager changes team alerts (persisted); overview flags failing customer messages |
 | Also verified locally | ✅ | pg_cron → Vault → pg_net → `notify-dispatch` sends a queued message within a minute |
@@ -91,3 +91,10 @@ approved templates, Twilio) and is a launch dependency, not a milestone blocker.
 - Tests: pgTAP +5 (8:00 visit keeps only the 24 h reminder; 23:30 visit's 24 h reminder moves to
   08:00; team alert at 23:00 waits; a request expiring early is surfaced now; daytime immediate;
   reception default), edge unit tests for URL buttons and the reason sentence.
+- **Final copy changes (approved)**: reminder quick reply renamed **Change / Cancel** (تعديل / إلغاء)
+  — tapping it replies with the booking-page link (policy shown before confirming); 2 h reminder
+  asks "Please confirm that you're still coming."; expired requests say "Your request expired.";
+  new **customer cancellation acknowledgement** (`booking_cancelled_by_customer`, sent only after
+  the cancellation succeeds, not for account deletions, with **Book another time**); Arabic dates
+  use Latin digits with Levantine month names ("الثلاثاء، 13 تشرين الأول الساعة 4:30 م").
+  Final rendering: `docs/notifications/templates.md`.
