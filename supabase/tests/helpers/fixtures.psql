@@ -168,4 +168,41 @@ begin
   return v_bid;
 end $$;
 
+-- ─── M4 claim fixtures ─────────────────────────────────────────────────────
+-- The business's own record for a phone (a shadow unless p_user is given). Registers <key>.
+create function tests.customer_record(p_key text, p_biz text, p_name text, p_phone text,
+                                      p_user text default null) returns uuid language plpgsql as $$
+declare v uuid;
+begin
+  insert into public.business_customers (business_id, user_id, phone_e164, display_name, acquired_via, claimed_at)
+  values (tests.id(p_biz), case when p_user is not null then tests.id(p_user) end, p_phone, p_name, 'manual',
+          case when p_user is not null then now() end)
+  returning id into v;
+  insert into tests.ids values (p_key, v);
+  return v;
+end $$;
+
+-- A visit on a customer record (confirmed / completed / no_show), written directly. Registers <key>.
+create function tests.visit(p_key text, p_biz text, p_staff text, p_service text, p_record text,
+                            p_start timestamptz, p_status public.booking_status default 'completed')
+returns uuid language plpgsql as $$
+declare v uuid;
+begin
+  insert into public.bookings (business_id, location_id, business_customer_id, status, source, starts_at, ends_at,
+                               created_by_kind, confirmed_at, completed_at, no_show_at)
+  values (tests.id(p_biz), tests.id(p_biz || '_loc'), tests.id(p_record), p_status, 'manual',
+          p_start, p_start + interval '30 minutes', 'business', now(),
+          case when p_status = 'completed' then p_start + interval '30 minutes' end,
+          case when p_status = 'no_show' then p_start + interval '30 minutes' end)
+  returning id into v;
+  insert into public.booking_items (booking_id, business_id, location_id, service_id, canonical_service_id, staff_id,
+                                    selection_mode, starts_at, ends_at, occupied, duration_min, price_type, price_min)
+  select v, tests.id(p_biz), tests.id(p_biz || '_loc'), s.id, s.canonical_service_id, tests.id(p_staff),
+         'business', p_start, p_start + interval '30 minutes',
+         tstzrange(p_start, p_start + interval '30 minutes', '[)'), 30, 'fixed', 20
+  from public.services s where s.id = tests.id(p_service);
+  insert into tests.ids values (p_key, v);
+  return v;
+end $$;
+
 grant execute on all functions in schema tests to anon, authenticated;

@@ -31,3 +31,15 @@ describe('i18n', () => {
     expect(messages.fr).toBe(messages.en);
   });
 });
+
+describe('format and codes', () => {
+  it('fills placeholders and leaves unknown ones', async () => {
+    const { format, messageForCode } = await import('./index');
+    expect(format('Resend in {seconds}s', { seconds: 9 })).toBe('Resend in 9s');
+    expect(format('{a} {b}', { a: 1 })).toBe('1 {b}');
+    expect(messageForCode('en', 'INVITE_PHONE_MISMATCH', { hint: '+961 70 ••• 200' })).toContain(
+      '+961 70 ••• 200',
+    );
+    expect(messageForCode('en', 'NOT_A_CODE')).toBe(messageForCode('en', 'UNKNOWN'));
+  });
+});

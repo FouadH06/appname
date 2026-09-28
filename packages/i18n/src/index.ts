@@ -30,3 +30,41 @@ export const messages: Record<Locale, Messages> = {
   ar: ar satisfies Messages,
   fr: en,
 };
+
+/** Fills `{name}` placeholders: format('Resend in {seconds}s', { seconds: 12 }). */
+export function format(template: string, vars: Record<string, string | number> = {}): string {
+  return template.replace(/\{(\w+)\}/g, (m, k: string) => (k in vars ? String(vars[k]) : m));
+}
+
+/** Copy for a stable server/auth code, falling back to the generic message. */
+export function messageForCode(
+  locale: Locale,
+  code: string,
+  vars: Record<string, string | number> = {},
+): string {
+  const codes = messages[locale].codes as Record<string, string>;
+  return format(codes[code] ?? codes.UNKNOWN ?? messages[locale].errors.generic, vars);
+}
+
+/** Labels for the shared phone → code flow (@app/ui-web PhoneOtpFlow). */
+export function phoneOtpLabels(locale: Locale) {
+  const a = messages[locale].auth;
+  return {
+    phoneLabel: a.phone.label,
+    phonePlaceholder: a.phone.placeholder,
+    phoneHelp: a.phone.help,
+    phoneEmpty: a.phone.empty,
+    phoneInvalid: a.phone.invalid,
+    phoneLbInvalid: a.phone.lbInvalid,
+    phoneLandline: a.phone.landline,
+    sendCode: a.sendCode,
+    otpLabel: a.otp.label,
+    sentWhatsapp: a.otp.sentWhatsapp,
+    sentSms: a.otp.sentSms,
+    resendIn: a.otp.resendIn,
+    resend: a.otp.resend,
+    useSms: a.otp.useSms,
+    changeNumber: a.otp.changeNumber,
+    verify: a.otp.verify,
+  };
+}

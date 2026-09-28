@@ -176,7 +176,8 @@ refresh_token_reuse_interval = 10
 # Allow/disallow new user signups to your project.
 enable_signup = true
 # Allow/disallow anonymous sign-ins to your project.
-enable_anonymous_sign_ins = false
+# M4: the web booking funnel signs visitors in anonymously before a hold (Part 1 §6.1)
+enable_anonymous_sign_ins = true
 # Allow/disallow testing manual linking of accounts
 enable_manual_linking = false
 # Passwords shorter than this value will be rejected as weak. Minimum 6, recommended 8 or more.
@@ -212,10 +213,12 @@ token_verifications = 30
 web3 = 30
 
 # Configure one of the supported captcha providers: `hcaptcha`, `turnstile`.
-# [auth.captcha]
-# enabled = true
-# provider = "hcaptcha"
-# secret = ""
+# M4: Turnstile on OTP send and anonymous sign-in. Local/CI use Cloudflare's official always-pass
+# TEST secret (site key 1x00000000000000000000AA). Staging/production secrets are set in the dashboard.
+[auth.captcha]
+enabled = true
+provider = "turnstile"
+secret = "1x0000000000000000000000000000000AA"
 
 [auth.email]
 # Allow/disallow new user signups via email to your project.
@@ -257,17 +260,26 @@ otp_expiry = 3600
 
 [auth.sms]
 # Allow/disallow new user signups via SMS to your project.
-enable_signup = false
+# M4: customers sign up with their phone (OTP delivered by the Send SMS hook below).
+enable_signup = true
 # If enabled, users need to confirm their phone number before signing in.
-enable_confirmations = false
+# M4: on. A phone is only trusted after its OTP (never auto-confirmed).
+enable_confirmations = true
 # Template for sending OTP to users
 template = "Your code is {{ .Code }}"
 # Controls the minimum amount of time that must pass before sending another sms otp.
-max_frequency = "5s"
+# M4: 30 s, matching "Send by SMS instead" (Phase 2 C10): a resend after 30 s goes by SMS.
+max_frequency = "30s"
 
 # Use pre-defined map of phone number to OTP for testing.
-# [auth.sms.test_otp]
-# 4152127777 = "123456"
+# M4: fixed codes for the e2e tests (these numbers skip the hook). Local only.
+[auth.sms.test_otp]
+96170000001 = "123456"
+96170000002 = "123456"
+96170000003 = "123456"
+96170000004 = "123456"
+96170000005 = "123456"
+96170000006 = "123456"
 
 # Configure logged in session timeouts.
 # [auth.sessions]
@@ -275,6 +287,13 @@ max_frequency = "5s"
 # timebox = "24h"
 # Force log out if the user has been inactive longer than the specified duration.
 # inactivity_timeout = "8h"
+
+# M4: phone OTPs go through our Edge Function (WhatsApp first, SMS fallback). LOCAL secret only;
+# staging/production configure the hook and its secret in the dashboard.
+[auth.hook.send_sms]
+enabled = true
+uri = "http://host.docker.internal:54321/functions/v1/auth-send-sms"
+secrets = "v1,whsec_BFhLwuMpEUK6MvLr2ZS5MB3kl1bw3uPO4iB1Ri8fW5M="
 
 # This hook runs before a new user is created and allows developers to reject the request based on the incoming user object.
 # [auth.hook.before_user_created]
@@ -287,12 +306,14 @@ max_frequency = "5s"
 # uri = "pg-functions://<database>/<schema>/<hook_name>"
 
 # Configure one of the supported SMS providers: `twilio`, `twilio_verify`, `messagebird`, `textlocal`, `vonage`.
+# M4: enabled with PLACEHOLDERS only so the local stack turns phone auth on. The Send SMS hook
+# above takes precedence, so this provider never sends anything. Real Twilio credentials live in
+# the Edge Function secrets (TWILIO_*), never here.
 [auth.sms.twilio]
-enabled = false
-account_sid = ""
-message_service_sid = ""
-# DO NOT commit your Twilio auth token to git. Use environment variable substitution instead:
-auth_token = "env(SUPABASE_AUTH_SMS_TWILIO_AUTH_TOKEN)"
+enabled = true
+account_sid = "local-placeholder"
+message_service_sid = "local-placeholder"
+auth_token = "local-placeholder"
 
 # Multi-factor-authentication is available to Supabase Pro plan.
 [auth.mfa]
@@ -301,8 +322,9 @@ max_enrolled_factors = 10
 
 # Control MFA via App Authenticator (TOTP)
 [auth.mfa.totp]
-enroll_enabled = false
-verify_enabled = false
+# M4: admins must use TOTP (aal2 is checked by private.is_admin)
+enroll_enabled = true
+verify_enabled = true
 
 # Configure MFA via Phone Messaging
 [auth.mfa.phone]
@@ -383,8 +405,22 @@ inspector_port = 8083
 # The Deno major version to use.
 deno_version = 2
 
-# [edge_runtime.secrets]
-# secret_key = "env(SECRET_VALUE)"
+# M4: LOCAL values only (staging/production use `supabase secrets set`). Log mode prints OTPs to
+# the function log and is refused on hosted projects.
+[edge_runtime.secrets]
+OTP_PROVIDER_MODE = "log"
+SMS_ALLOWED_PREFIXES = "+961"
+SEND_SMS_HOOK_SECRETS = "v1,whsec_BFhLwuMpEUK6MvLr2ZS5MB3kl1bw3uPO4iB1Ri8fW5M="
+
+# Auth calls these with their own signatures, not a user JWT.
+[functions.auth-send-sms]
+verify_jwt = false
+
+[functions.twilio-status]
+verify_jwt = false
+
+[functions.whatsapp-webhook]
+verify_jwt = false
 
 [analytics]
 enabled = true

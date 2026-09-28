@@ -1187,7 +1187,7 @@ export type Database = {
       };
       customer_notes: {
         Row: {
-          author_user_id: string;
+          author_user_id: string | null;
           body: string;
           business_customer_id: string;
           business_id: string;
@@ -1195,11 +1195,12 @@ export type Database = {
           deleted_at: string | null;
           id: string;
           is_pinned: boolean;
+          is_system: boolean;
           updated_at: string;
           visible_to_staff: boolean;
         };
         Insert: {
-          author_user_id: string;
+          author_user_id?: string | null;
           body: string;
           business_customer_id: string;
           business_id: string;
@@ -1207,11 +1208,12 @@ export type Database = {
           deleted_at?: string | null;
           id?: string;
           is_pinned?: boolean;
+          is_system?: boolean;
           updated_at?: string;
           visible_to_staff?: boolean;
         };
         Update: {
-          author_user_id?: string;
+          author_user_id?: string | null;
           body?: string;
           business_customer_id?: string;
           business_id?: string;
@@ -1219,6 +1221,7 @@ export type Database = {
           deleted_at?: string | null;
           id?: string;
           is_pinned?: boolean;
+          is_system?: boolean;
           updated_at?: string;
           visible_to_staff?: boolean;
         };
@@ -2033,6 +2036,7 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      accept_invitation: { Args: { p_token: string }; Returns: Json };
       accept_request: {
         Args: { p_booking_id: string };
         Returns: {
@@ -2082,6 +2086,17 @@ export type Database = {
           isOneToOne: true;
           isSetofReturn: false;
         };
+      };
+      admin_otp_delivery_stats: {
+        Args: { p_days?: number };
+        Returns: {
+          channel: string;
+          delivered: number;
+          failed: number;
+          median_seconds: number;
+          p90_seconds: number;
+          sent: number;
+        }[];
       };
       biz_cancel_booking: {
         Args: { p_booking_id: string; p_notify?: boolean; p_reason?: string };
@@ -2257,6 +2272,16 @@ export type Database = {
           staff_id: string;
         }[];
       };
+      change_member_role: {
+        Args: {
+          p_business_id: string;
+          p_role: Database['public']['Enums']['business_role'];
+          p_user_id: string;
+        };
+        Returns: undefined;
+      };
+      claim_booking: { Args: { p_token: string }; Returns: Json };
+      claim_visits: { Args: { p_business_ids: string[] }; Returns: Json };
       confirm_booking: {
         Args: {
           p_booking_id: string;
@@ -2455,6 +2480,8 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      delete_my_account: { Args: Record<PropertyKey, never>; Returns: Json };
+      dismiss_claimable_visits: { Args: { p_business_ids: string[] }; Returns: undefined };
       extend_hold: { Args: { p_booking_id: string; p_hold_token: string }; Returns: string };
       get_available_days: {
         Args: {
@@ -2481,9 +2508,41 @@ export type Database = {
           slot_start: string;
         }[];
       };
+      get_claimable_visits: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          area_name: string;
+          business_id: string;
+          business_name: string;
+          latest_month: string;
+          visit_count: number;
+        }[];
+      };
+      get_invitation: { Args: { p_token: string }; Returns: Json };
+      get_my_access: { Args: Record<PropertyKey, never>; Returns: Json };
       get_next_available: {
         Args: { p_location_id: string; p_service_id: string; p_staff_id?: string };
         Returns: string;
+      };
+      invite_member: {
+        Args: {
+          p_business_id: string;
+          p_phone: string;
+          p_role: Database['public']['Enums']['business_role'];
+          p_staff_id?: string;
+        };
+        Returns: Json;
+      };
+      list_invitations: {
+        Args: { p_business_id: string };
+        Returns: {
+          created_at: string;
+          expires_at: string;
+          invitation_id: string;
+          phone_e164: string;
+          role: Database['public']['Enums']['business_role'];
+          staff_id: string;
+        }[];
       };
       mark_completed: {
         Args: { p_booking_id: string };
@@ -2586,6 +2645,30 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      otp_mark: {
+        Args: {
+          p_delivery_id: string;
+          p_error?: string;
+          p_message_id?: string;
+          p_provider: string;
+          p_status: string;
+        };
+        Returns: undefined;
+      };
+      otp_route: {
+        Args: { p_force_channel?: string; p_phone: string; p_sms_prefixes?: string[] };
+        Returns: Json;
+      };
+      otp_status_update: {
+        Args: {
+          p_at?: string;
+          p_error?: string;
+          p_message_id: string;
+          p_provider: string;
+          p_status: string;
+        };
+        Returns: boolean;
+      };
       reassign_booking_item: {
         Args: { p_item_id: string; p_new_staff_id: string; p_notify?: boolean };
         Returns: {
@@ -2672,6 +2755,13 @@ export type Database = {
           isOneToOne: true;
           isSetofReturn: false;
         };
+      };
+      resolve_access_token: { Args: { p_token: string }; Returns: Json };
+      revoke_invitation: { Args: { p_invitation_id: string }; Returns: undefined };
+      revoke_member: { Args: { p_business_id: string; p_user_id: string }; Returns: undefined };
+      transfer_ownership: {
+        Args: { p_business_id: string; p_new_owner_user_id: string };
+        Returns: undefined;
       };
       undo_no_show: {
         Args: { p_booking_id: string };

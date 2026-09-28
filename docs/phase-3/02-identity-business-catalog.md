@@ -2,6 +2,14 @@
 
 Conventions from Part 1 apply. `…timestamps` = `created_at`/`updated_at` + trigger.
 
+> **Amendments from the M4 implementation (2026-09-28, decision log).** The design below stands; the code is more precise here:
+> 1. **System-authored CRM notes:** `customer_notes.author_user_id` is nullable only for `is_system = true` notes. The safe merge writes its "Also known as …" note this way (§2.3 step 3 has no human author).
+> 2. **Claim tokens:** `private.access_tokens` gains `used_by` (idempotent retries, support). A `claim_visit` token must carry booking, customer record and phone. `resolve_access_token` also returns a masked phone hint (`+961 70 ••• 456`) so the holder knows which number to verify.
+> 3. **Offers exclude records claimed by someone else** (recycled numbers), and a visit recorded after a dismissal brings the offer back (`booking.created_at > dismissed_at`).
+> 4. **Invitations:** `revoked_at` added. A new invite for the same number replaces the pending one. Owner invitations only come from ops admins (aal2) for a business without an owner (Phase 2 A4 "Send owner invite"). Extra RPCs: `get_invitation` (logged-out preview), `list_invitations`, `revoke_invitation`. Revoking a member also unlinks their staff profile's login.
+> 5. **`get_my_access()`** (new): the caller's phone hint, memberships, admin role and whether MFA is satisfied, for app routing and the admin MFA gate. `is_admin()` itself stays aal2-only.
+> 6. **Account deletion** runs as `private.job_process_account_deletions` (every 15 min). An active owner is routed to support first. The auth user is deleted last by a service worker (Auth admin API, M7/ops). Reviews/results removal joins in M9/M10.
+
 ---
 
 ## 1. Identity
