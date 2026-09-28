@@ -1346,6 +1346,122 @@ export type Database = {
           },
         ];
       };
+      dispute_messages: {
+        Row: {
+          author_kind: Database['public']['Enums']['actor_kind'];
+          author_user_id: string | null;
+          body: string;
+          created_at: string;
+          dispute_id: string;
+          id: string;
+          media_ids: string[];
+          visibility: string;
+        };
+        Insert: {
+          author_kind: Database['public']['Enums']['actor_kind'];
+          author_user_id?: string | null;
+          body: string;
+          created_at?: string;
+          dispute_id: string;
+          id?: string;
+          media_ids?: string[];
+          visibility?: string;
+        };
+        Update: {
+          author_kind?: Database['public']['Enums']['actor_kind'];
+          author_user_id?: string | null;
+          body?: string;
+          created_at?: string;
+          dispute_id?: string;
+          id?: string;
+          media_ids?: string[];
+          visibility?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'dispute_messages_dispute_id_fkey';
+            columns: ['dispute_id'];
+            isOneToOne: false;
+            referencedRelation: 'disputes';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      disputes: {
+        Row: {
+          assigned_to: string | null;
+          booking_id: string | null;
+          business_id: string;
+          created_at: string;
+          customer_user_id: string | null;
+          due_at: string;
+          id: string;
+          legal_hold: boolean;
+          opened_by_kind: Database['public']['Enums']['actor_kind'];
+          opened_by_user_id: string;
+          outcome: Database['public']['Enums']['dispute_outcome'] | null;
+          resolution_note: string | null;
+          resolved_at: string | null;
+          resolved_by: string | null;
+          review_id: string | null;
+          status: Database['public']['Enums']['dispute_status'];
+          type: Database['public']['Enums']['dispute_type'];
+        };
+        Insert: {
+          assigned_to?: string | null;
+          booking_id?: string | null;
+          business_id: string;
+          created_at?: string;
+          customer_user_id?: string | null;
+          due_at: string;
+          id?: string;
+          legal_hold?: boolean;
+          opened_by_kind: Database['public']['Enums']['actor_kind'];
+          opened_by_user_id: string;
+          outcome?: Database['public']['Enums']['dispute_outcome'] | null;
+          resolution_note?: string | null;
+          resolved_at?: string | null;
+          resolved_by?: string | null;
+          review_id?: string | null;
+          status?: Database['public']['Enums']['dispute_status'];
+          type: Database['public']['Enums']['dispute_type'];
+        };
+        Update: {
+          assigned_to?: string | null;
+          booking_id?: string | null;
+          business_id?: string;
+          created_at?: string;
+          customer_user_id?: string | null;
+          due_at?: string;
+          id?: string;
+          legal_hold?: boolean;
+          opened_by_kind?: Database['public']['Enums']['actor_kind'];
+          opened_by_user_id?: string;
+          outcome?: Database['public']['Enums']['dispute_outcome'] | null;
+          resolution_note?: string | null;
+          resolved_at?: string | null;
+          resolved_by?: string | null;
+          review_id?: string | null;
+          status?: Database['public']['Enums']['dispute_status'];
+          type?: Database['public']['Enums']['dispute_type'];
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'disputes_booking_id_fkey';
+            columns: ['booking_id'];
+            isOneToOne: false;
+            referencedRelation: 'bookings';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'disputes_business_id_fkey';
+            columns: ['business_id'];
+            isOneToOne: false;
+            referencedRelation: 'businesses';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       location_closures: {
         Row: {
           business_id: string;
@@ -2922,6 +3038,10 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      contest_no_show: {
+        Args: { p_booking_id: string; p_evidence_media_ids?: string[]; p_statement: string };
+        Returns: string;
+      };
       create_hold: {
         Args: {
           p_attribution?: Json;
@@ -3095,6 +3215,7 @@ export type Database = {
           slot_start: string;
         }[];
       };
+      get_business_page: { Args: { p_slug: string }; Returns: Json };
       get_claimable_visits: {
         Args: Record<PropertyKey, never>;
         Returns: {
@@ -3108,6 +3229,12 @@ export type Database = {
       get_go_live_checklist: { Args: { p_business_id: string }; Returns: Json };
       get_invitation: { Args: { p_token: string }; Returns: Json };
       get_my_access: { Args: Record<PropertyKey, never>; Returns: Json };
+      get_my_booking: { Args: { p_booking_id: string }; Returns: Json };
+      get_my_bookings: {
+        Args: { p_before?: string; p_limit?: number; p_scope?: string };
+        Returns: Json;
+      };
+      get_my_next_booking_at: { Args: { p_business_id: string }; Returns: Json };
       get_my_notification_preferences: {
         Args: Record<PropertyKey, never>;
         Returns: {
@@ -3130,6 +3257,7 @@ export type Database = {
         Args: { p_location_id: string; p_service_id: string; p_staff_id?: string };
         Returns: string;
       };
+      get_staff_options: { Args: { p_location_id: string; p_service_id: string }; Returns: Json };
       invite_member: {
         Args: {
           p_business_id: string;
@@ -3327,6 +3455,17 @@ export type Database = {
         Args: { p_business_id: string; p_paused: boolean };
         Returns: undefined;
       };
+      preview_reschedule_any: {
+        Args: { p_booking_id: string; p_new_start: string };
+        Returns: {
+          duration_min: number;
+          price_max: number;
+          price_min: number;
+          price_type: Database['public']['Enums']['price_type'];
+          staff_first_name: string;
+          staff_id: string;
+        }[];
+      };
       publish_business: { Args: { p_business_id: string }; Returns: Json };
       reassign_booking_item: {
         Args: { p_item_id: string; p_new_staff_id: string; p_notify?: boolean };
@@ -3386,6 +3525,56 @@ export type Database = {
       };
       reschedule_my_booking: {
         Args: { p_booking_id: string; p_new_start: string; p_staff_id?: string };
+        Returns: {
+          attribution: NonNullable<Json>;
+          business_customer_id: string | null;
+          business_id: string;
+          cancel_reason: string | null;
+          cancelled_at: string | null;
+          cancelled_by_kind: Database['public']['Enums']['actor_kind'] | null;
+          completed_at: string | null;
+          completed_by_kind: Database['public']['Enums']['actor_kind'] | null;
+          confirmed_at: string | null;
+          created_at: string;
+          created_by_kind: Database['public']['Enums']['actor_kind'];
+          created_by_user_id: string | null;
+          currency: string;
+          customer_confirmed_at: string | null;
+          customer_note: string | null;
+          customer_user_id: string | null;
+          ends_at: string;
+          expires_at: string | null;
+          hold_owner_user_id: string | null;
+          hold_token_hash: string | null;
+          id: string;
+          idempotency_key: string | null;
+          internal_note: string | null;
+          is_late_cancel: boolean;
+          is_request: boolean;
+          location_id: string;
+          no_show_at: string | null;
+          no_show_disputed: boolean;
+          payment_status: Database['public']['Enums']['payment_status'];
+          policy_snapshot: NonNullable<Json>;
+          ref: string;
+          rescheduled_count: number;
+          review_eligible_until: string | null;
+          source: Database['public']['Enums']['booking_source'];
+          starts_at: string;
+          status: Database['public']['Enums']['booking_status'];
+          total_price_max: number | null;
+          total_price_min: number | null;
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'bookings';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      reschedule_my_booking_any: {
+        Args: { p_booking_id: string; p_new_start: string; p_staff_id: string };
         Returns: {
           attribution: NonNullable<Json>;
           business_customer_id: string | null;

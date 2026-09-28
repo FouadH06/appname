@@ -82,7 +82,12 @@
     "NAME_REQUIRED": "Enter a name.",
     "INVALID_PHONE": "Check the phone number.",
     "NOT_SUPPORTED": "That isn't supported yet.",
-    "LAST_CHANNEL": "Keep at least one of WhatsApp, SMS or app notifications on — booking messages need a way to reach you."
+    "LAST_CHANNEL": "Keep at least one of WhatsApp, SMS or app notifications on — booking messages need a way to reach you.",
+    "HOLD_EXPIRED": "Your hold expired. We'll check if the time is still free.",
+    "HOLD_NOT_FOUND": "That time isn't held anymore. Pick a time again.",
+    "CUSTOMER_BLOCKED": "Online booking isn't available for this account. Contact the business on WhatsApp.",
+    "TOO_MANY_ACTIVE_BOOKINGS": "You already have the maximum number of upcoming bookings here. Manage them in My bookings.",
+    "OVERLAP_SAME_BUSINESS": "You already have a booking here at that time."
   },
   "roles": {
     "owner": "Owner",

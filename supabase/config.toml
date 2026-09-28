@@ -285,6 +285,7 @@ max_frequency = "30s"
 96170000009 = "123456"
 96170000010 = "123456"
 96170000011 = "123456"
+96170000012 = "123456"
 
 # Configure logged in session timeouts.
 # [auth.sessions]

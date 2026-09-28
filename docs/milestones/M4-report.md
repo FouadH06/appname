@@ -19,6 +19,7 @@ Status: **closed (local + CI verified); hosted staging verification DEFERRED** �
 > - [ ] Also apply and verify the M5 migrations (business setup, media bucket + storage policies, CRM, team) on staging
 > - [ ] Also apply and verify the M6 migration (calendar read models, block time, Realtime publication) on staging; hosted Realtime: a booking change reaches a second signed-in tab, staff only receive their own items
 > - [ ] Also apply and verify the M7 migrations; deploy `notify-dispatch` and the updated `whatsapp-webhook`; set `NOTIFY_DISPATCH_SECRET`, the two Vault secrets and `web_base_url`; hosted smoke: a queued message is dispatched by pg_cron, a signed Confirm webhook confirms attendance, receipts update deliveries
+> - [ ] Also apply and verify the M8 migration; deploy the web app to staging; Lighthouse on a pilot business page (LCP < 2.5 s on slow 4G, CLS < 0.1); in-app browser matrix for the full funnel (Instagram / TikTok / WhatsApp × iOS / Android): page, phone code, confirm, WhatsApp link → manage
 
 Provider decisions from the M3 review are applied: WhatsApp Cloud API is the primary OTP channel and
 Twilio the SMS fallback, both behind one provider interface; Cloudflare Turnstile protects OTP send
