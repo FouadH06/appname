@@ -2276,6 +2276,20 @@ export type Database = {
         };
         Returns: string;
       };
+      biz_affected_bookings: {
+        Args: { p_from?: string; p_staff_id: string; p_to?: string };
+        Returns: Json;
+      };
+      biz_block_time: {
+        Args: {
+          p_end: string;
+          p_kind?: Database['public']['Enums']['time_off_kind'];
+          p_reason?: string;
+          p_staff_id: string;
+          p_start: string;
+        };
+        Returns: string;
+      };
       biz_cancel_booking: {
         Args: { p_booking_id: string; p_notify?: boolean; p_reason?: string };
         Returns: {
@@ -2327,6 +2341,21 @@ export type Database = {
         };
       };
       biz_delete_note: { Args: { p_note_id: string }; Returns: undefined };
+      biz_find_customers: {
+        Args: { p_business_id: string; p_limit?: number; p_q: string };
+        Returns: {
+          display_name: string;
+          favorite_service_id: string;
+          id: string;
+          is_blocked_online: boolean;
+          last_visit_at: string;
+          phone_e164: string;
+          preferred_staff_id: string;
+          preferred_staff_name: string;
+          reliability_label: string;
+          visit_count: number;
+        }[];
+      };
       biz_get_available_slots: {
         Args: { p_date?: string; p_location_id: string; p_service_id: string; p_staff_id?: string };
         Returns: {
@@ -2334,6 +2363,44 @@ export type Database = {
           staff_ids: string[];
         }[];
       };
+      biz_get_booking: { Args: { p_booking_id: string }; Returns: Json };
+      biz_get_calendar: {
+        Args: {
+          p_from: string;
+          p_include_cancelled?: boolean;
+          p_location_id: string;
+          p_staff_ids?: string[];
+          p_to: string;
+        };
+        Returns: Json;
+      };
+      biz_get_customer: { Args: { p_business_id: string; p_customer_id: string }; Returns: Json };
+      biz_list_bookings: {
+        Args: {
+          p_business_id: string;
+          p_customer_id?: string;
+          p_from?: string;
+          p_limit?: number;
+          p_offset?: number;
+          p_q?: string;
+          p_service_id?: string;
+          p_source?: string;
+          p_staff_id?: string;
+          p_tab?: string;
+          p_to?: string;
+        };
+        Returns: Json;
+      };
+      biz_reassign_options: {
+        Args: { p_item_id: string };
+        Returns: {
+          display_name: string;
+          in_hours: boolean;
+          is_free: boolean;
+          staff_id: string;
+        }[];
+      };
+      biz_remove_block: { Args: { p_time_off_id: string }; Returns: undefined };
       biz_reschedule_booking: {
         Args: {
           p_allow_outside_hours?: boolean;
@@ -2412,6 +2479,15 @@ export type Database = {
           visit_count: number;
         }[];
       };
+      biz_service_usage: {
+        Args: { p_business_id: string };
+        Returns: {
+          bookings: number;
+          service_id: string;
+        }[];
+      };
+      biz_today: { Args: { p_business_id: string }; Returns: Json };
+      biz_undo_manual_booking: { Args: { p_booking_id: string }; Returns: undefined };
       biz_update_note: {
         Args: { p_body: string; p_note_id: string; p_pinned: boolean; p_visible_to_staff: boolean };
         Returns: undefined;

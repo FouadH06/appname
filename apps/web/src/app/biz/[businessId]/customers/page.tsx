@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
 import { parsePhone } from '@app/core';
@@ -158,7 +159,14 @@ function Customers() {
               <tbody>
                 {data.map((r) => (
                   <tr key={r.id} className="border-b border-line-200 last:border-0">
-                    <td className="px-3 py-2 font-medium">{r.display_name}</td>
+                    <td className="px-3 py-2 font-medium">
+                      <Link
+                        href={`/biz/${business.id}/customers/${r.id}`}
+                        className="hover:underline"
+                      >
+                        {r.display_name}
+                      </Link>
+                    </td>
                     {desk ? (
                       <td className="px-3 py-2" dir="ltr">
                         {r.phone_e164 ? (

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useBiz } from '@/lib/biz/context';
-import { navFor, type NavItem } from '@/lib/biz/nav';
+import { NEW_APPOINTMENT_EVENT, navFor, type NavItem } from '@/lib/biz/nav';
 import { t } from '@/lib/copy';
 import { supabase } from '@/lib/supabase';
 
@@ -125,6 +125,13 @@ export function BizShell({ children }: { children: ReactNode }) {
           href={`${base}/calendar?new=1`}
           className="m-1 grid place-items-center rounded-full bg-accent-600 text-2xl text-white"
           aria-label="New appointment"
+          onClick={(e) => {
+            // already on the calendar: open the drawer in place (keeps the day and view)
+            if (pathname === `${base}/calendar`) {
+              e.preventDefault();
+              window.dispatchEvent(new Event(NEW_APPOINTMENT_EVENT));
+            }
+          }}
         >
           ＋
         </Link>

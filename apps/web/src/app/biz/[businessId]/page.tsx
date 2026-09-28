@@ -2,12 +2,13 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { Today } from '@/components/biz/today';
 import { Body, Notice, PageHeader, Section, btn } from '@/components/biz/ui';
 import { canManage, useBiz } from '@/lib/biz/context';
 import { CHECKLIST_COPY, type ChecklistItem } from '@/lib/biz/checklist';
 import { supabase } from '@/lib/supabase';
 
-// B2 Overview (lean). The "Today" agenda arrives with the calendar in M6.
+// B2 Overview (lean): go-live checklist while in draft, then the day (attention, today, tiles).
 export default function OverviewPage() {
   const { business, role, settings } = useBiz();
   const [checklist, setChecklist] = useState<ChecklistItem[] | null>(null);
@@ -81,9 +82,7 @@ export default function OverviewPage() {
           </Section>
         ) : null}
 
-        <Notice>
-          The day&apos;s agenda (appointments, requests, walk-ins) arrives with the calendar in M6.
-        </Notice>
+        {business.status !== 'draft' ? <Today /> : null}
       </Body>
     </>
   );

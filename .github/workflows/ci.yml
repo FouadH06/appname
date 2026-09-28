@@ -99,7 +99,7 @@ jobs:
       # Auth flows (M4) run against the real local stack: Auth with Turnstile test keys and fixed
       # test OTPs (supabase/config.toml), the database RPCs and the Edge Functions.
       - name: Start local Supabase
-        run: bash scripts/ci-annotate.sh "supabase start" supabase start -x studio,imgproxy,logflare,vector,inbucket,realtime,postgres-meta,supavisor
+        run: bash scripts/ci-annotate.sh "supabase start" supabase start -x studio,imgproxy,logflare,vector,inbucket,postgres-meta,supavisor
       - name: App env from the local stack
         run: |
           eval "$(supabase status -o env | grep -E '^(API_URL|PUBLISHABLE_KEY)=')"

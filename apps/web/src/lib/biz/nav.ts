@@ -37,3 +37,6 @@ export function navFor(role: Role, isDraft: boolean): NavItem[] {
     i.key === 'overview' && role === 'staff' ? { ...i, label: 'Today' } : i,
   );
 }
+
+/** Fired by the global ＋ when the calendar is already open (opens the drawer in place). */
+export const NEW_APPOINTMENT_EVENT = 'biz:new-appointment';
