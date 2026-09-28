@@ -1,6 +1,6 @@
 # M6 — Business dashboard II: calendar & daily operations: report
 
-Status: **implemented, awaiting review** · Branch `m6-calendar`
+Status: **closed** (approved 2026-09-28, D1–D11) · merged to `main`
 
 Hosted staging verification is deferred together with M4's and M5's (see the M4 report checklist,
 now including the M6 migration and hosted Realtime). It must be completed before any real users or
@@ -28,13 +28,14 @@ paths to bookings were added except Undo.
 
 | File | Contents |
 |---|---|
+| `20261002100100_m6_booking_timing.sql` | Gate B creation timing (private table, creator-only logging RPC, ops report) |
 | `20261002100000_m6_calendar.sql` | Role-projected read models (calendar, bookings list, booking + timeline, customer detail, today), block time, reassign options, affected bookings, smart-field lookup, service usage, Undo, CRM stats fix, Realtime publication |
 
 ## Tests executed
 
 | Layer | Result | What it proves |
 |---|---|---|
-| pgTAP | **550/550** (52 new in `240_calendar`) | Scope: owner sees all columns; selected staff; **staff only their own column whatever is asked**; cancelled hidden unless asked. Projection: reason on time off only for owner/manager and the staff member; reception phone + price; staff no phone/price/staff-hidden note (phone when the business allows). Pinned note, ★ Requested, coarse label. Range cap; other business refused. Block time: blocks online availability, staff can't block colleagues, removal. Reassign options (performs the service, free, in hours; busy marked; staff refused). Affected bookings window. Bookings list tabs, name + ref search, staff filter, staff forced to own. Timeline actor. Customer detail per role (reception no spend; staff name + upcoming only; NOT_FOUND for out-of-scope and other businesses). Smart field with usual staff. Undo (creator only; not counted against the customer). Today: staff without revenue. Realtime publication |
+| pgTAP | **561/561** (63 new: 52 in `240_calendar`, 11 in `250_booking_timing`) | Scope: owner sees all columns; selected staff; **staff only their own column whatever is asked**; cancelled hidden unless asked. Projection: reason on time off only for owner/manager and the staff member; reception phone + price; staff no phone/price/staff-hidden note (phone when the business allows). Pinned note, ★ Requested, coarse label. Range cap; other business refused. Block time: blocks online availability, staff can't block colleagues, removal. Reassign options (performs the service, free, in hours; busy marked; staff refused). Affected bookings window. Bookings list tabs, name + ref search, staff filter, staff forced to own. Timeline actor. Customer detail per role (reception no spend; staff name + upcoming only; NOT_FOUND for out-of-scope and other businesses). Smart field with usual staff. Undo (creator only; not counted against the customer). Today: staff without revenue. Realtime publication |
 | E2E web (local stack) | **13 passed** (2 new M6 + 11 earlier) | **Speed targets**: existing customer from a slot click in **4** interactions, new customer in **5** (≤ 6). **Keyboard-only** creation (N → phone → Enter → time → Enter) + **Undo**. **Conflict toast** when dragging onto a busy colleague; drag-to-move; **reassign**; **block time → reassign the affected booking**; **walk-in** (with the outside-hours override when run at night); customer detail + pinned note; **Realtime: a booking made in tab A appears in tab B within 2 s**; staff booking history; bookings search. **Role: staff see only their own column** |
 | E2E admin | **1 passed** | Unchanged M4/M5 flows |
 | Unit | web 13 (6 new: DST day lengths and labels — Beirut skips 00:00 in March and repeats 23:00 in October —, lanes for overlapping blocks, off-shift hatching, week start, free-typed times) + other packages | |
@@ -64,9 +65,7 @@ the Complete / No-show actions).
 ## Known gaps / notes
 
 - **Gate B (pilot) is external**: 3–5 salons in one cluster for 2 weeks, ≥ 80% of appointments in
-  the calendar, top-10 friction fixes. The "median creation time < 15 s in real use" metric needs
-  instrumentation; proposal: log drawer-open → saved duration per booking (no customer data) in
-  M11 analytics or as a small M6 follow-up if you want it before the pilot.
+  the calendar, top-10 friction fixes.
 - Hosted staging verification of M4 + M5 + M6 is deferred (see the M4 checklist).
 
 ## Suggested manual checks
@@ -75,3 +74,28 @@ the Complete / No-show actions).
 2. Drag a booking to a colleague who was specifically requested: is the mandatory-notify wording right?
 3. Block an hour over existing bookings: is Reassign / Cancel & notify / Keep the right set of choices?
 4. On a phone, is the Agenda + staff chips enough, or do you want the one-column day grid as default?
+
+## Approval follow-up: Gate B creation timing (added before merge)
+
+Measures the pilot target "median appointment creation < 15 s in real use".
+
+- The drawer measures **opened → saved** on the device's monotonic clock and, after a successful
+  save, calls `biz_log_booking_timing(booking, duration_ms, customer_kind, flow)`. "Save & add
+  another" restarts the clock.
+- Stored in `private.booking_creation_timings` (not readable by business members): booking id,
+  business id, actor role, customer kind (`existing` / `new` / `walk_in`), flow (`slot`, `button`,
+  `keyboard`, `walk_in`, `customer_page`, `add_another`), booking source, opened/saved timestamps,
+  duration. `saved_at` is the booking's server timestamp; `opened_at` is derived from the duration,
+  so device clock skew doesn't matter. **No customer name, phone, notes or free text.**
+- Only the person who created the manual booking / walk-in can log it, within 10 minutes, once.
+- Report for ops (aal2): `admin_booking_timing_stats(from, to, business)` → bookings, median / p75 /
+  p90 seconds per business, and per role × customer kind.
+- Tests: pgTAP `250_booking_timing` (creator only, first report wins, validation, raw table not
+  readable, server-stamped times, column list has no customer data, ops-only report); the calendar
+  e2e checks that its real saves record `existing/slot`, `new/slot`, `existing/keyboard` and a
+  walk-in, all as reception.
+
+Kept as decided at approval: Agenda default on phones with Day · Single available; reception may
+block/unblock time; staff get no broad customer search; customer-caused cancellations only in CRM
+stats; mobile swipe / long-press / drag-resize deferred; notification choices recorded now, sending
+in M7. Hosted M4–M6 staging verification remains a mandatory pre-real-user gate.

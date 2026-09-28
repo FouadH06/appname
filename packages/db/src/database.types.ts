@@ -2241,6 +2241,19 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      admin_booking_timing_stats: {
+        Args: { p_business_id?: string; p_from?: string; p_to?: string };
+        Returns: {
+          actor_role: Database['public']['Enums']['business_role'];
+          bookings: number;
+          business_id: string;
+          business_name: string;
+          customer_kind: string;
+          median_seconds: number;
+          p75_seconds: number;
+          p90_seconds: number;
+        }[];
+      };
       admin_create_business: {
         Args: {
           p_address_line: string;
@@ -2390,6 +2403,15 @@ export type Database = {
           p_to?: string;
         };
         Returns: Json;
+      };
+      biz_log_booking_timing: {
+        Args: {
+          p_booking_id: string;
+          p_customer_kind: string;
+          p_duration_ms: number;
+          p_flow: string;
+        };
+        Returns: undefined;
       };
       biz_reassign_options: {
         Args: { p_item_id: string };

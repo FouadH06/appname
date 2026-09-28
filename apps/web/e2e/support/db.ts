@@ -364,3 +364,15 @@ export async function bookingRow(
     [bookingId],
   );
 }
+
+/** Gate B timing rows recorded for a business (operational fields only). */
+export async function creationTimings(
+  businessId: string,
+): Promise<{ customer_kind: string; flow: string; actor_role: string; duration_ms: number }[]> {
+  const r = await pool.query(
+    `select customer_kind, flow, actor_role::text as actor_role, duration_ms
+     from private.booking_creation_timings where business_id = $1 order by saved_at`,
+    [businessId],
+  );
+  return r.rows;
+}

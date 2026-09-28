@@ -7,6 +7,7 @@ import { parseTime, reliabilityHint, timeLabel, walkInStart } from '@/lib/biz/ca
 import type { Role } from '@/lib/biz/context';
 import { beirutParts, beirutToUtc } from '@/lib/biz/schedule';
 import { toHHMM } from '@/lib/biz/time';
+import { clockMs } from '@/lib/biz/timing';
 import { useLoad } from '@/lib/biz/use-load';
 import { useNow } from '@/lib/biz/use-now';
 import { supabase } from '@/lib/supabase';
@@ -40,6 +41,8 @@ export interface Prefill {
   customer?: FoundCustomer | null;
 }
 
+export type CreationFlow = 'slot' | 'button' | 'walk_in' | 'keyboard' | 'customer_page';
+
 export interface SavedBooking {
   bookingId: string;
   summary: string;
@@ -69,6 +72,7 @@ export function NewAppointment({
   services,
   prefill,
   walkIn,
+  flow,
   onClose,
   onSaved,
 }: {
@@ -80,6 +84,8 @@ export function NewAppointment({
   services: Service[];
   prefill: Prefill;
   walkIn: boolean;
+  /** How the drawer was opened (Gate B timing; no customer data is recorded) */
+  flow: CreationFlow;
   onClose: () => void;
   onSaved: (b: SavedBooking, addAnother: boolean) => void;
 }) {
@@ -121,6 +127,8 @@ export function NewAppointment({
   const [done, setDone] = useState<boolean | null>(null);
   const [outside, setOutside] = useState(false);
   const [busy, setBusy] = useState(false);
+  // Gate B: drawer opened → saved, on a monotonic clock (reset for "Save & add another")
+  const [timing, setTiming] = useState(() => ({ start: clockMs(), flow: flow as string }));
   const [error, setError] = useState<{ code: string; text: string } | null>(null);
   const customerRef = useRef<HTMLInputElement>(null);
   const firstRef = useRef<HTMLInputElement>(null);
@@ -244,6 +252,16 @@ export function NewAppointment({
       return setError(bookingError(err, name));
     }
     const b = data as { id: string; ends_at: string };
+    void supabase()
+      .rpc('biz_log_booking_timing', {
+        p_booking_id: b.id,
+        p_duration_ms: Math.round(clockMs() - timing.start),
+        p_customer_kind:
+          customer.kind === 'existing' ? 'existing' : customer.kind === 'new' ? 'new' : 'walk_in',
+        p_flow: timing.flow,
+      })
+      .then(() => undefined);
+    setTiming({ start: clockMs(), flow: 'add_another' });
     onSaved({ bookingId: b.id, summary, endsAt: b.ends_at }, addAnother);
     if (addAnother) {
       const p = beirutParts(b.ends_at);

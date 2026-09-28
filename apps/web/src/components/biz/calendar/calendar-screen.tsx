@@ -33,7 +33,7 @@ import { beirutParts } from '@/lib/biz/schedule';
 import { useLoad } from '@/lib/biz/use-load';
 import { supabase } from '@/lib/supabase';
 import { BookingDrawer, bookingError } from '../booking-drawer';
-import { NewAppointment, type Prefill } from '../new-appointment';
+import { NewAppointment, type CreationFlow, type Prefill } from '../new-appointment';
 import { Drawer, Toasts, useToasts } from '../overlay';
 import { Notice, Toggle, btn } from '../ui';
 import { Agenda } from './agenda';
@@ -97,11 +97,15 @@ export function CalendarScreen() {
 
   // drawers
   const [openBooking, setOpenBooking] = useState<string | null>(params.get('booking'));
-  const [newAppt, setNewAppt] = useState<{ prefill: Prefill; walkIn: boolean } | null>(
+  const [newAppt, setNewAppt] = useState<{
+    prefill: Prefill;
+    walkIn: boolean;
+    flow: CreationFlow;
+  } | null>(
     params.get('new') === '1'
-      ? { prefill: { date: today }, walkIn: false }
+      ? { prefill: { date: today }, walkIn: false, flow: 'button' }
       : params.get('walkin') === '1'
-        ? { prefill: { date: today }, walkIn: true }
+        ? { prefill: { date: today }, walkIn: true, flow: 'walk_in' }
         : null,
   );
   const [block, setBlock] = useState<{ staffId: string; date: string; minutes: number } | null>(
@@ -114,7 +118,7 @@ export function CalendarScreen() {
       router.replace(pathname);
   }, [params, pathname, router]);
   useEffect(() => {
-    const open = () => setNewAppt({ prefill: { date }, walkIn: false });
+    const open = () => setNewAppt({ prefill: { date }, walkIn: false, flow: 'button' });
     window.addEventListener(NEW_APPOINTMENT_EVENT, open);
     return () => window.removeEventListener(NEW_APPOINTMENT_EVENT, open);
   }, [date]);
@@ -189,7 +193,7 @@ export function CalendarScreen() {
       const k = e.key.toLowerCase();
       if (k === 'n' && online) {
         e.preventDefault();
-        setNewAppt({ prefill: { date }, walkIn: false });
+        setNewAppt({ prefill: { date }, walkIn: false, flow: 'keyboard' });
       } else if (k === 't') setDate(beirutToday());
       else if (e.key === 'ArrowLeft') setDate((d) => addDays(d, -step));
       else if (e.key === 'ArrowRight') setDate((d) => addDays(d, step));
@@ -343,7 +347,7 @@ export function CalendarScreen() {
             type="button"
             className={btn.secondary}
             disabled={!online}
-            onClick={() => setNewAppt({ prefill: { date: today }, walkIn: true })}
+            onClick={() => setNewAppt({ prefill: { date: today }, walkIn: true, flow: 'walk_in' })}
           >
             Walk-in
           </button>
@@ -351,7 +355,7 @@ export function CalendarScreen() {
             type="button"
             className={btn.primary}
             disabled={!online}
-            onClick={() => setNewAppt({ prefill: { date }, walkIn: false })}
+            onClick={() => setNewAppt({ prefill: { date }, walkIn: false, flow: 'button' })}
           >
             + New appointment
           </button>
@@ -450,7 +454,11 @@ export function CalendarScreen() {
             staff={cal.staff}
             items={agendaItems}
             onOpen={(b) => setOpenBooking(b.booking_id)}
-            onGap={online ? () => setNewAppt({ prefill: { date }, walkIn: false }) : undefined}
+            onGap={
+              online
+                ? () => setNewAppt({ prefill: { date }, walkIn: false, flow: 'button' })
+                : undefined
+            }
           />
         </div>
       ) : (
@@ -469,6 +477,7 @@ export function CalendarScreen() {
               setNewAppt({
                 prefill: { date: p.date, minutes: p.minutes, staffId: col.staff.id },
                 walkIn: false,
+                flow: 'slot',
               });
             }}
             onOpen={(b) => setOpenBooking(b.booking_id)}
@@ -514,6 +523,7 @@ export function CalendarScreen() {
           services={services}
           prefill={newAppt.prefill}
           walkIn={newAppt.walkIn}
+          flow={newAppt.flow}
           onClose={() => setNewAppt(null)}
           onSaved={(saved, again) => {
             if (!again) setNewAppt(null);

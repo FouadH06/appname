@@ -7,6 +7,7 @@ import {
   bookingRow,
   closePool,
   createCalendarBusiness,
+  creationTimings,
   linkStaffUser,
 } from './support/db';
 
@@ -210,6 +211,21 @@ test('reception runs the day from the calendar', async ({ page, context }) => {
     await expect(toast.filter({ hasText: 'Saved · Lina' })).toBeVisible();
     await expect(karimB.getByTestId('appt')).toHaveCount(before + 1, { timeout: 2_000 });
     await tabB.close();
+  });
+
+  await test.step('Gate B: each save records a privacy-safe creation time', async () => {
+    const rows = await creationTimings(b.businessId);
+    expect(rows.slice(0, 3).map((r) => [r.customer_kind, r.flow])).toEqual([
+      ['existing', 'slot'],
+      ['new', 'slot'],
+      ['existing', 'keyboard'],
+    ]);
+    expect(
+      rows.every(
+        (r) => r.actor_role === 'reception' && r.duration_ms > 0 && r.duration_ms < 120_000,
+      ),
+    ).toBe(true);
+    expect(rows.some((r) => r.customer_kind === 'walk_in' && r.flow === 'walk_in')).toBe(true);
   });
 
   await test.step('staff booking history and the bookings list', async () => {

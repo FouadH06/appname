@@ -282,6 +282,7 @@ export default function CustomerDetailPage() {
           services={meta?.[1] ?? []}
           prefill={{ date: beirutToday(), customer: found }}
           walkIn={false}
+          flow="customer_page"
           onClose={() => setNewOpen(false)}
           onSaved={(saved, again) => {
             if (!again) setNewOpen(false);
