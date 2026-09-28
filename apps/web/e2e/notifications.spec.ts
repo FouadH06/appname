@@ -79,9 +79,17 @@ test('booking messages: queue → dispatch → WhatsApp Confirm; alert settings;
     expect(res.status).toBe(200);
     const unauthorized = await fetch(`${FUNCTIONS}/notify-dispatch`, { method: 'POST' });
     expect(unauthorized.status).toBe(401);
+    // each run claims the oldest due messages first, so keep dispatching until ours is out
     await expect
-      .poll(async () =>
-        (await notificationsFor(booking)).find((n) => n.type === 'booking_confirmed'),
+      .poll(
+        async () => {
+          await fetch(`${FUNCTIONS}/notify-dispatch`, {
+            method: 'POST',
+            headers: { 'x-dispatch-secret': DISPATCH_SECRET },
+          });
+          return (await notificationsFor(booking)).find((n) => n.type === 'booking_confirmed');
+        },
+        { timeout: 60_000 },
       )
       .toMatchObject({ status: 'sent', phone: '+96171555111', provider: 'log' });
     const reminders = (await notificationsFor(booking)).filter((n) =>

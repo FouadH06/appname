@@ -76,6 +76,7 @@ export const getMyAccess = (c: AppSupabaseClient) => call<MyAccess>(c, 'get_my_a
 // ─── WhatsApp links & claims (Part 2 §2.3) ─────────────────────────────────
 export interface TokenSummary {
   purpose: 'claim_visit' | 'manage_booking' | 'review';
+  booking_id: string;
   state: 'valid' | 'used';
   expires_at: string;
   phone_hint: string | null;

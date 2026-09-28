@@ -1,5 +1,7 @@
 'use client';
 
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import {
   claimBooking,
@@ -32,6 +34,7 @@ const month = (isoDate: string) =>
 
 export function ClaimClient({ token }: { token: string }) {
   const { loading, signedIn } = useSession();
+  const router = useRouter();
   const [summary, setSummary] = useState<TokenSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [claimed, setClaimed] = useState<'new' | 'already' | null>(null);
@@ -103,9 +106,35 @@ export function ClaimClient({ token }: { token: string }) {
     <Card title={title}>
       {details}
       {claimed ? (
-        <p className="text-ink-900" data-testid="claimed">
-          {claimed === 'new' ? t.pages.claim.claimed : t.pages.claim.alreadyClaimed}
-        </p>
+        <>
+          <p className="text-ink-900" data-testid="claimed">
+            {claimed === 'new' ? t.pages.claim.claimed : t.pages.claim.alreadyClaimed}
+          </p>
+          <Link
+            className={secondaryButton + ' flex items-center justify-center'}
+            href={`/bookings/${summary.booking_id}`}
+          >
+            View booking
+          </Link>
+        </>
+      ) : summary.purpose === 'manage_booking' ? (
+        // online booking: verify the phone it was booked with, then manage it (C13)
+        loading ? null : signedIn ? (
+          <Link
+            className={primaryButton + ' flex items-center justify-center'}
+            href={`/bookings/${summary.booking_id}`}
+            data-testid="manage-booking"
+          >
+            Manage booking
+          </Link>
+        ) : (
+          <>
+            <p className="text-sm text-ink-700">
+              Verify {summary.phone_hint ?? 'your number'} to manage this booking.
+            </p>
+            <PhoneSignIn onVerified={() => router.push(`/bookings/${summary.booking_id}`)} />
+          </>
+        )
       ) : summary.claimable ? (
         loading ? null : signedIn ? (
           <button

@@ -419,3 +419,30 @@ export async function failCustomerMessages(bookingId: string) {
     [bookingId],
   );
 }
+
+// ─── M8 public booking fixtures ───────────────────────────────────────────
+export async function businessSlug(businessId: string): Promise<string> {
+  return (
+    await one<{ slug: string }>(`select slug::text as slug from public.businesses where id = $1`, [
+      businessId,
+    ])
+  ).slug;
+}
+
+export async function setStaffPublic(staffId: string, isPublic: boolean) {
+  await db().query(
+    `update public.staff_members set publicly_bookable = $2, accepts_any_assignment = $2 where id = $1`,
+    [staffId, isPublic],
+  );
+}
+
+export async function setBookingMode(businessId: string, mode: 'instant' | 'request') {
+  await db().query(`update public.business_settings set booking_mode = $2 where business_id = $1`, [
+    businessId,
+    mode,
+  ]);
+}
+
+export async function renameSlug(businessId: string, slug: string) {
+  await db().query(`update public.businesses set slug = $2 where id = $1`, [businessId, slug]);
+}
