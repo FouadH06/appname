@@ -1,6 +1,21 @@
 # M4 — Auth, identity & claim model: report
 
-Status: **implemented, awaiting review** · Branch `m4-auth-identity`
+Status: **closed (local + CI verified); hosted staging verification DEFERRED** · Branch `m4-auth-identity` → `main`
+
+> **Deferred, not cancelled (decision 2026-09-28).** M4 was approved (D1–D9) and merged on the
+> strength of local and CI coverage. Hosted staging verification was blocked by a tooling issue
+> (the session's command-safety layer) and is an **open integration task that must be completed
+> before any real users or launch**. Staging still runs the M3 schema until then. Checklist:
+>
+> - [ ] Apply the 3 M4 migrations to staging; hosted pgTAP (429); logged-out/API/RLS smoke incl. M4 checks
+> - [ ] Hosted Auth configuration: phone sign-in, anonymous sign-ins, phone confirmations, Send SMS hook + secret, TOTP, staging test numbers (`docs/engineering/environments.md`)
+> - [ ] Hosted Edge Function deployment (`auth-send-sms`, `whatsapp-webhook`, `twilio-status`) + non-provider secrets: signed hook requests accepted, unsigned rejected, clean `OTP_DELIVERY_FAILED` with no provider configured
+> - [ ] Hosted Turnstile with Cloudflare's official test secret (decision 2026-09-28): no token → rejected, official test token → accepted; replace with real staging keys once the staging web app has a domain
+> - [ ] Hosted admin MFA/TOTP: enroll, challenge, admin RPCs only at aal2
+> - [ ] Hosted claims/invitations smoke: claim link, offers, phone-bound invite accept, wrong number refused
+> - [ ] Real WhatsApp Cloud API / Twilio SMS delivery and timing (external: Meta approval, Twilio account); does not block M5
+> - [ ] Real-phone checks: iPhone Safari, Android Chrome, Instagram and TikTok in-app browsers (Round 1 local, Round 2 staging)
+> - [ ] Staging schema fingerprint = local; zero test residue (users, claims, invitations, OTP rows, audit rows)
 
 Provider decisions from the M3 review are applied: WhatsApp Cloud API is the primary OTP channel and
 Twilio the SMS fallback, both behind one provider interface; Cloudflare Turnstile protects OTP send

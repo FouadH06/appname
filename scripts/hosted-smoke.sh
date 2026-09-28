@@ -41,5 +41,19 @@ check "private schema not exposed (RPC)"     '^(404|406) '               -X POST
 check "private schema not exposed (profile)" '^406 '                     -H "Accept-Profile: private" "$REST/rate_limits?select=*"
 check "audit schema not exposed"             '^406 '                     -H "Accept-Profile: audit" "$REST/entity_changes?select=*"
 
+echo "== M4 identity: logged-out callers =="
+post() { check "$1" "$2" -X POST -H "Content-Type: application/json" -d "$3" "$REST/rpc/$4"; }
+post "claim link with unknown token → TOKEN_INVALID"   '^400 .*TOKEN_INVALID'  '{"p_token":"nope"}' resolve_access_token
+post "invite link with unknown token → INVITE_INVALID" '^400 .*INVITE_INVALID' '{"p_token":"nope"}' get_invitation
+post "anon cannot claim a visit"          '^40[13] ' '{"p_token":"nope"}' claim_booking
+post "anon cannot list claimable visits"  '^40[13] ' '{}'                 get_claimable_visits
+post "anon cannot accept an invitation"   '^40[13] ' '{"p_token":"nope"}' accept_invitation
+post "anon cannot invite members"         '^40[13] ' '{"p_business_id":"00000000-0000-0000-0000-000000000000","p_phone":"70123456","p_role":"staff"}' invite_member
+post "anon cannot read an access summary" '^40[13] ' '{}'                 get_my_access
+post "anon cannot delete an account"      '^40[13] ' '{}'                 delete_my_account
+post "anon cannot route OTPs (hook-only)" '^40[13] ' '{"p_phone":"96170123456"}' otp_route
+post "anon cannot write OTP receipts"     '^40[13] ' '{"p_provider":"twilio","p_message_id":"x","p_status":"delivered"}' otp_status_update
+post "anon cannot read OTP stats"         '^40[13] ' '{}'                 admin_otp_delivery_stats
+
 echo "== Result: $pass passed, $fail failed =="
 [ "$fail" -eq 0 ]
