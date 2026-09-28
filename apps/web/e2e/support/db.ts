@@ -250,3 +250,129 @@ export async function beirutDate(offset: number): Promise<string> {
 export async function closePool(): Promise<void> {
   await pool.end();
 }
+
+// ─── M6 calendar fixtures ─────────────────────────────────────────────────
+export interface CalendarBusiness extends TestBusiness {
+  mayaId: string;
+  beardId: string;
+  linaId: string;
+}
+
+/** Beirut instant for a day offset and wall time ("10:00"). */
+export async function beirutAt(offset: number, hhmm: string): Promise<string> {
+  return (
+    await one<{ t: string }>(
+      `select ((((now() at time zone 'Asia/Beirut')::date + $1::int)::timestamp + $2::time) at time zone 'Asia/Beirut')::text as t`,
+      [offset, hhmm],
+    )
+  ).t;
+}
+
+/**
+ * Two staff working 09:00–19:00 (Karim, Maya), Haircut + Beard trim, and a regular customer
+ * (Lina Khoury, +96171555111) with one completed Haircut with Karim.
+ */
+export async function createCalendarBusiness(label: string): Promise<CalendarBusiness> {
+  const b = await createBusiness(label);
+  await pool.query(
+    `update public.staff_weekly_hours set start_minute = 540, end_minute = 1140 where staff_id = $1`,
+    [b.staffId],
+  );
+  const maya = await one<{ id: string }>(
+    `insert into public.staff_members (business_id, display_name, slug) values ($1, 'Maya Test', 'maya') returning id`,
+    [b.businessId],
+  );
+  await pool.query(
+    `insert into public.staff_locations (staff_id, location_id, business_id) values ($1, $2, $3)`,
+    [maya.id, b.locationId, b.businessId],
+  );
+  await pool.query(
+    `insert into public.staff_weekly_hours (staff_id, location_id, business_id, iso_weekday, start_minute, end_minute, effective_from)
+     select $1, $2, $3, d, 540, 1140, current_date - 1 from generate_series(1, 7) d`,
+    [maya.id, b.locationId, b.businessId],
+  );
+  const beard = await one<{ id: string }>(
+    `insert into public.services (business_id, canonical_service_id, name, price_type, price_min, duration_min)
+     select $1, id, 'Beard trim', 'fixed', 10, 20 from public.canonical_services where slug = 'mens-haircut' returning id`,
+    [b.businessId],
+  );
+  await pool.query(
+    `insert into public.staff_services (staff_id, service_id, business_id)
+     values ($1, $3, $4), ($2, $3, $4), ($2, $5, $4), ($1, $5, $4)
+     on conflict do nothing`,
+    [maya.id, b.staffId, b.serviceId, b.businessId, beard.id],
+  );
+  const lina = await one<{ id: string }>(
+    `insert into public.business_customers (business_id, phone_e164, display_name, acquired_via)
+     values ($1, '+96171555111', 'Lina Khoury', 'manual') returning id`,
+    [b.businessId],
+  );
+  await addBooking(b, b.staffId, b.serviceId, lina.id, await beirutAt(-10, '10:00'), 'completed');
+  await pool.query(`select private.recompute_business_customer_stats($1)`, [lina.id]);
+  return { ...b, mayaId: maya.id, beardId: beard.id, linaId: lina.id };
+}
+
+/** A booking written directly (confirmed by default); returns its id. */
+export async function addBooking(
+  b: TestBusiness,
+  staffId: string,
+  serviceId: string,
+  customerId: string | null,
+  startIso: string,
+  status: 'confirmed' | 'completed' = 'confirmed',
+): Promise<string> {
+  const bk = await one<{ id: string }>(
+    `insert into public.bookings (business_id, location_id, business_customer_id, status, source, starts_at, ends_at,
+                                  created_by_kind, confirmed_at, completed_at, total_price_min, total_price_max)
+     select $1, $2, $3, $4::public.booking_status, case when $3::uuid is null then 'walk_in' else 'manual' end::public.booking_source,
+            $5::timestamptz, $5::timestamptz + make_interval(mins => s.duration_min), 'business', now(),
+            case when $4 = 'completed' then $5::timestamptz + make_interval(mins => s.duration_min) end, s.price_min, s.price_min
+     from public.services s where s.id = $6 returning id`,
+    [b.businessId, b.locationId, customerId, status, startIso, serviceId],
+  );
+  await pool.query(
+    `insert into public.booking_items (booking_id, business_id, location_id, service_id, canonical_service_id, staff_id,
+                                       selection_mode, starts_at, ends_at, occupied, duration_min, price_type, price_min)
+     select bk.id, bk.business_id, bk.location_id, s.id, s.canonical_service_id, $3, 'business', bk.starts_at, bk.ends_at,
+            tstzrange(bk.starts_at, bk.ends_at, '[)'), s.duration_min, s.price_type, s.price_min
+     from public.bookings bk, public.services s where bk.id = $1 and s.id = $2`,
+    [bk.id, serviceId, staffId],
+  );
+  return bk.id;
+}
+
+/** Links a signed-in phone user to a staff profile with the staff role. */
+export async function linkStaffUser(businessId: string, staffId: string, phoneDigits: string) {
+  await pool.query(
+    `insert into public.business_members (business_id, user_id, role)
+     select $1, id, 'staff' from auth.users where phone = $2
+     on conflict (business_id, user_id) do update set role = 'staff', status = 'active'`,
+    [businessId, phoneDigits],
+  );
+  await pool.query(
+    `update public.staff_members set user_id = (select id from auth.users where phone = $2) where id = $1`,
+    [staffId, phoneDigits],
+  );
+}
+
+export async function bookingRow(
+  bookingId: string,
+): Promise<{ status: string; staff_id: string; starts_at: string }> {
+  return one(
+    `select b.status::text as status, bi.staff_id, b.starts_at::text as starts_at
+     from public.bookings b join public.booking_items bi on bi.booking_id = b.id where b.id = $1`,
+    [bookingId],
+  );
+}
+
+/** Gate B timing rows recorded for a business (operational fields only). */
+export async function creationTimings(
+  businessId: string,
+): Promise<{ customer_kind: string; flow: string; actor_role: string; duration_ms: number }[]> {
+  const r = await pool.query(
+    `select customer_kind, flow, actor_role::text as actor_role, duration_ms
+     from private.booking_creation_timings where business_id = $1 order by saved_at`,
+    [businessId],
+  );
+  return r.rows;
+}

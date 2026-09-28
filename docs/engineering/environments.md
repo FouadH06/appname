@@ -6,6 +6,10 @@
 | **staging** | Supabase project `oplwsnpyavnqnhlzyhxr` ("Newapp", eu-central-1) | Preview/staging deploys of web + admin (hosting TBD) | Migrations verified here before each milestone closes; smoke tests; pilot rehearsal |
 | **production** | Supabase project `app-name-prod` (PITR on before launch) | Production deploys | Real users |
 
+Local stack used by CI and e2e (Realtime is needed from M6 for the live calendar):
+`supabase start -x studio,imgproxy,logflare,vector,inbucket,postgres-meta,supavisor`.
+Local test phone numbers `+961 70 000 001`–`70 000 010` accept code `123456` (`supabase/config.toml`).
+
 ### Staging verification routine (run before closing a milestone that adds migrations)
 
 ```bash
@@ -82,7 +86,7 @@ update auth.users set email = 'name@company.example', email_confirmed_at = now()
 ## Manual phone testing
 
 - **Round 1: local network, no provider accounts.** Phones on the same Wi-Fi as the dev machine
-  use fixed test numbers (`70 000 001`–`70 000 006`, code `123456`). Start the stack, create the lab
+  use fixed test numbers (`70 000 001`–`70 000 010`, code `123456`). Start the stack, create the lab
   business (`docker exec -i supabase_db_app-name psql -U postgres -At < scripts/lab-demo-business.sql`),
   and run web with `NEXT_PUBLIC_SUPABASE_URL=http://<LAN-IP>:54321`, `DEV_ORIGINS=<LAN-IP>`,
   `NEXT_PUBLIC_ENABLE_LAB=true`, `pnpm --filter @app/web dev -- -H 0.0.0.0`.

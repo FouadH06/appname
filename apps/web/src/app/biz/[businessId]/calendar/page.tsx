@@ -1,11 +1,13 @@
-import { ComingSoon } from '@/components/biz/ui';
+'use client';
 
+import { Suspense } from 'react';
+import { CalendarScreen } from '@/components/biz/calendar/calendar-screen';
+
+// B3 Calendar (Phase 2 Part 3): Day · Columns, Day · Single, Week, Agenda
 export default function CalendarPage() {
   return (
-    <ComingSoon
-      title="Calendar"
-      milestone="M6"
-      detail="Day, week and list views with drag, walk-ins and the 10-second phone booking."
-    />
+    <Suspense fallback={<p className="p-4 text-sm text-ink-500">Loading…</p>}>
+      <CalendarScreen />
+    </Suspense>
   );
 }

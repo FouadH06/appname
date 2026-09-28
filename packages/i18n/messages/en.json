@@ -68,7 +68,20 @@
     "RATE_LIMITED": "Too many attempts. Try again later.",
     "FORBIDDEN": "You don't have access to this.",
     "UNKNOWN": "Something went wrong. Please try again.",
-    "MFA_SETUP_BLOCKED": "Two-factor setup needs an email address on this admin account. Ask a superadmin to add it."
+    "MFA_SETUP_BLOCKED": "Two-factor setup needs an email address on this admin account. Ask a superadmin to add it.",
+    "STAFF_NOT_FREE": "{staff} is busy at that time.",
+    "SLOT_TAKEN": "No one is free at that time.",
+    "OUTSIDE_HOURS": "That's outside {staff}'s working hours.",
+    "OUTSIDE_WINDOW": "That can't be done at this point in time.",
+    "TRANSITION_NOT_ALLOWED": "This booking can't be changed that way anymore.",
+    "REASON_REQUIRED": "Add a reason — the customer will see it.",
+    "INVALID_RANGE": "Check the start and end times.",
+    "INVALID_SLOT": "Pick a time from today onward.",
+    "NOT_BOOKABLE": "That service or staff member can't be booked.",
+    "NOT_FOUND": "Not found.",
+    "NAME_REQUIRED": "Enter a name.",
+    "INVALID_PHONE": "Check the phone number.",
+    "NOT_SUPPORTED": "That isn't supported yet."
   },
   "roles": {
     "owner": "Owner",

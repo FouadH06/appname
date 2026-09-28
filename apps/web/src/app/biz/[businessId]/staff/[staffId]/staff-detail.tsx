@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import type { Enums, Tables } from '@app/db';
+import { AffectedBookings } from '@/components/biz/affected-bookings';
+import { BookingDrawer } from '@/components/biz/booking-drawer';
 import { HoursGrid } from '@/components/biz/hours-grid';
 import { InviteShare } from '@/components/biz/sections/team';
 import {
@@ -16,6 +18,13 @@ import {
   codeOf,
   input,
 } from '@/components/biz/ui';
+import {
+  STATUS_LABEL,
+  affectedBookings,
+  listBookings,
+  priceText,
+  type BookingCard,
+} from '@/lib/biz/bookings';
 import { canManage, useBiz } from '@/lib/biz/context';
 import {
   beirutToday,
@@ -42,15 +51,16 @@ import { describeError } from '@/lib/copy';
 import { useLoad } from '@/lib/biz/use-load';
 import { supabase } from '@/lib/supabase';
 
-type Tab = 'profile' | 'services' | 'schedule' | 'access';
+type Tab = 'profile' | 'services' | 'schedule' | 'bookings' | 'access';
 const TABS: { key: Tab; label: string }[] = [
   { key: 'profile', label: 'Profile' },
   { key: 'services', label: 'Services' },
   { key: 'schedule', label: 'Schedule' },
+  { key: 'bookings', label: 'Bookings' },
   { key: 'access', label: 'Access' },
 ];
 
-// B9 staff detail: Profile · Services · Schedule · Access (Bookings tab arrives with M6)
+// B9 staff detail: Profile · Services · Schedule · Bookings · Access
 export function StaffDetail({ staffId }: { staffId: string }) {
   const { business, role } = useBiz();
   const { data: staff, reload } = useLoad(async () => {
@@ -110,6 +120,7 @@ export function StaffDetail({ staffId }: { staffId: string }) {
         {tab === 'schedule' ? (
           <ScheduleTab staff={staff} manage={manage} onError={setError} />
         ) : null}
+        {tab === 'bookings' ? <BookingsTab staff={staff} /> : null}
         {tab === 'access' ? (
           <AccessTab staff={staff} manage={manage} onChanged={reload} onError={setError} />
         ) : null}
@@ -144,6 +155,12 @@ function ProfileTab({
   const photo: Media | null = media?.find((x) => x.id === staff.photo_media_id) ?? null;
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [blocking, setBlocking] = useState<BookingCard[] | null>(null);
+
+  const archive = async () => {
+    const { error } = await supabase().rpc('archive_staff', { p_staff_id: staff.id });
+    if (error) throw error;
+  };
 
   const run = async (fn: () => Promise<unknown>) => {
     setBusy(true);
@@ -155,12 +172,13 @@ function ProfileTab({
       setSaved(true);
     } catch (e) {
       const code = codeOf(e);
-      const detail = (e as { details?: string }).details;
-      onError(
-        code === 'STAFF_HAS_FUTURE_BOOKINGS'
-          ? `${staff.display_name} has ${JSON.parse(detail ?? '{}').count ?? 'some'} upcoming bookings. Reassign or cancel them first (calendar, M6).`
-          : describeError(code),
-      );
+      if (code === 'STAFF_HAS_FUTURE_BOOKINGS') {
+        // walk through their upcoming bookings (reassign / cancel), then archive
+        setBlocking(await affectedBookings(staff.id).catch(() => []));
+        onError(
+          `${staff.display_name} still has upcoming bookings. Reassign or cancel them to archive.`,
+        );
+      } else onError(describeError(code));
     } finally {
       setBusy(false);
     }
@@ -184,134 +202,149 @@ function ProfileTab({
     });
 
   return (
-    <Section title="Profile">
-      <div className="flex items-center gap-4">
-        {photo?.path ? (
-          // eslint-disable-next-line @next/next/no-img-element -- public storage URL
-          <img
-            src={publicMediaUrl(photo.path)}
-            alt=""
-            className="size-16 rounded-full object-cover"
-          />
-        ) : (
-          <span className="grid size-16 place-items-center rounded-full bg-surface-100 text-xl font-semibold">
-            {staff.display_name.slice(0, 1)}
-          </span>
-        )}
-        {manage ? (
-          <label className={btn.secondary + ' cursor-pointer'}>
-            {photo ? 'Change photo' : 'Add photo'}
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp,image/heic"
-              className="sr-only"
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) void run(() => uploadMedia(business.id, f, 'staff_photo', staff.id));
-              }}
-            />
-          </label>
-        ) : null}
-      </div>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <Field label="Name">
-          <input
-            className={input}
-            value={name}
-            disabled={!manage}
-            onChange={(e) => setName(e.target.value)}
-          />
-        </Field>
-        <Field label="Role / title">
-          <input
-            className={input}
-            value={title}
-            disabled={!manage}
-            onChange={(e) => setTitle(e.target.value)}
-          />
-        </Field>
-      </div>
-      <Field label="Short bio">
-        <textarea
-          className={input + ' h-20 py-2'}
-          value={bio}
-          maxLength={300}
-          disabled={!manage}
-          onChange={(e) => setBio(e.target.value)}
+    <>
+      {blocking?.length ? (
+        <AffectedBookings
+          title={`${staff.display_name}'s upcoming bookings`}
+          bookings={blocking}
+          reason="Staff member no longer available"
+          onDone={() => {
+            setBlocking(null);
+            void run(archive); // anything kept brings the list back
+          }}
         />
-      </Field>
-      <Toggle
-        label="Publicly bookable"
-        description="On: customers can see and choose this person online. Off: internal only, never shown to customers."
-        checked={isPublic}
-        disabled={!manage}
-        onChange={(v) => {
-          setIsPublic(v);
-          if (!v) setAuto(false);
-        }}
-      />
-      <Toggle
-        label="Accept automatic assignment"
-        description={
-          'Off: bookable only when a customer chooses them (e.g. the owner or a senior colorist).'
-        }
-        checked={auto}
-        disabled={!manage || !isPublic}
-        onChange={setAuto}
-      />
-      <Field
-        label="Assignment priority"
-        hint={'Lower goes first when the rule is "Priority order".'}
-      >
-        <input
-          className={input + ' w-24'}
-          type="number"
-          min={0}
-          max={999}
-          value={priority}
-          disabled={!manage}
-          onChange={(e) => setPriority(Number(e.target.value))}
-        />
-      </Field>
-      {manage ? (
-        <div className="flex flex-wrap items-center gap-2">
-          <button type="button" className={btn.primary} disabled={busy} onClick={() => void save()}>
-            Save
-          </button>
-          {saved ? <span className="text-sm text-success-600">Saved</span> : null}
-          <span className="flex-1" />
-          {staff.status === 'active' ? (
-            <button
-              type="button"
-              className={btn.danger}
-              disabled={busy}
-              onClick={() =>
-                void run(async () => {
-                  const { error } = await supabase().rpc('archive_staff', { p_staff_id: staff.id });
-                  if (error) throw error;
-                })
-              }
-            >
-              Archive
-            </button>
-          ) : (
-            <button
-              type="button"
-              className={btn.secondary}
-              disabled={busy}
-              onClick={() =>
-                void run(async () => {
-                  const { error } = await supabase().rpc('restore_staff', { p_staff_id: staff.id });
-                  if (error) throw error;
-                })
-              }
-            >
-              Restore
-            </button>
-          )}
-        </div>
       ) : null}
-    </Section>
+      <Section title="Profile">
+        <div className="flex items-center gap-4">
+          {photo?.path ? (
+            // eslint-disable-next-line @next/next/no-img-element -- public storage URL
+            <img
+              src={publicMediaUrl(photo.path)}
+              alt=""
+              className="size-16 rounded-full object-cover"
+            />
+          ) : (
+            <span className="grid size-16 place-items-center rounded-full bg-surface-100 text-xl font-semibold">
+              {staff.display_name.slice(0, 1)}
+            </span>
+          )}
+          {manage ? (
+            <label className={btn.secondary + ' cursor-pointer'}>
+              {photo ? 'Change photo' : 'Add photo'}
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/heic"
+                className="sr-only"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) void run(() => uploadMedia(business.id, f, 'staff_photo', staff.id));
+                }}
+              />
+            </label>
+          ) : null}
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field label="Name">
+            <input
+              className={input}
+              value={name}
+              disabled={!manage}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </Field>
+          <Field label="Role / title">
+            <input
+              className={input}
+              value={title}
+              disabled={!manage}
+              onChange={(e) => setTitle(e.target.value)}
+            />
+          </Field>
+        </div>
+        <Field label="Short bio">
+          <textarea
+            className={input + ' h-20 py-2'}
+            value={bio}
+            maxLength={300}
+            disabled={!manage}
+            onChange={(e) => setBio(e.target.value)}
+          />
+        </Field>
+        <Toggle
+          label="Publicly bookable"
+          description="On: customers can see and choose this person online. Off: internal only, never shown to customers."
+          checked={isPublic}
+          disabled={!manage}
+          onChange={(v) => {
+            setIsPublic(v);
+            if (!v) setAuto(false);
+          }}
+        />
+        <Toggle
+          label="Accept automatic assignment"
+          description={
+            'Off: bookable only when a customer chooses them (e.g. the owner or a senior colorist).'
+          }
+          checked={auto}
+          disabled={!manage || !isPublic}
+          onChange={setAuto}
+        />
+        <Field
+          label="Assignment priority"
+          hint={'Lower goes first when the rule is "Priority order".'}
+        >
+          <input
+            className={input + ' w-24'}
+            type="number"
+            min={0}
+            max={999}
+            value={priority}
+            disabled={!manage}
+            onChange={(e) => setPriority(Number(e.target.value))}
+          />
+        </Field>
+        {manage ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              className={btn.primary}
+              disabled={busy}
+              onClick={() => void save()}
+            >
+              Save
+            </button>
+            {saved ? <span className="text-sm text-success-600">Saved</span> : null}
+            <span className="flex-1" />
+            {staff.status === 'active' ? (
+              <button
+                type="button"
+                className={btn.danger}
+                disabled={busy}
+                onClick={() => void run(archive)}
+              >
+                Archive
+              </button>
+            ) : (
+              <button
+                type="button"
+                className={btn.secondary}
+                disabled={busy}
+                onClick={() =>
+                  void run(async () => {
+                    const { error } = await supabase().rpc('restore_staff', {
+                      p_staff_id: staff.id,
+                    });
+                    if (error) throw error;
+                  })
+                }
+              >
+                Restore
+              </button>
+            )}
+          </div>
+        ) : null}
+      </Section>
+    </>
   );
 }
 
@@ -576,6 +609,7 @@ function ScheduleTab({
   } | null>(null);
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState<string | null>(null);
+  const [handling, setHandling] = useState<BookingCard[] | null>(null);
 
   const cancelAll = async (list: StaffBooking[]) => {
     for (const b of list) {
@@ -630,6 +664,23 @@ function ScheduleTab({
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
+              className={btn.primary}
+              disabled={busy}
+              onClick={() => {
+                const c = conflicts;
+                setConflicts(null);
+                void c.proceed().then(async () => {
+                  const ids = new Set(c.list.map((b) => b.booking_id));
+                  const all = await affectedBookings(staff.id).catch(() => []);
+                  const list = all.filter((b) => ids.has(b.booking_id));
+                  if (list.length) setHandling(list);
+                });
+              }}
+            >
+              Save, then reassign or cancel each
+            </button>
+            <button
+              type="button"
               className={btn.secondary}
               disabled={busy}
               onClick={() => {
@@ -659,10 +710,19 @@ function ScheduleTab({
               Back
             </button>
           </div>
-          <p className="text-xs text-ink-500">
-            Reassigning to a colleague arrives with the calendar (M6).
-          </p>
         </Section>
+      ) : null}
+      {handling ? (
+        <AffectedBookings
+          title={`${handling.length} booking(s) outside ${staff.display_name}'s new schedule`}
+          bookings={handling}
+          reason="Staff schedule change"
+          onDone={(msg) => {
+            setHandling(null);
+            setSaved(msg);
+            void reload();
+          }}
+        />
       ) : null}
       {saved ? <Notice tone="success">{saved}</Notice> : null}
 
@@ -1081,6 +1141,72 @@ function Preview({
           );
         })}
       </ul>
+    </Section>
+  );
+}
+
+// ─── Bookings: this staff member's upcoming and past appointments ─────────
+function BookingsTab({ staff }: { staff: Staff }) {
+  const { business, role } = useBiz();
+  const [tab, setTab] = useState<'upcoming' | 'past'>('upcoming');
+  const [open, setOpen] = useState<string | null>(null);
+  const { data, reload } = useLoad(
+    () => listBookings({ businessId: business.id, tab, staffId: staff.id, limit: 100 }),
+    [business.id, staff.id, tab],
+  );
+  const rows = data?.rows ?? [];
+  return (
+    <Section title="Bookings" description={`${staff.display_name}'s appointments (all sources).`}>
+      <div className="flex gap-2">
+        {(['upcoming', 'past'] as const).map((t) => (
+          <button
+            key={t}
+            type="button"
+            aria-pressed={tab === t}
+            className={`rounded-full border px-3 py-1 text-sm ${tab === t ? 'border-accent-600 bg-accent-600 text-white' : 'border-line-200'}`}
+            onClick={() => setTab(t)}
+          >
+            {t === 'upcoming' ? 'Upcoming' : 'Past'}
+          </button>
+        ))}
+      </div>
+      {!data ? <p className="text-sm text-ink-500">Loading…</p> : null}
+      {data && !rows.length ? <p className="text-sm text-ink-500">No {tab} bookings.</p> : null}
+      <ul className="flex flex-col divide-y divide-line-200 text-sm" data-testid="staff-bookings">
+        {rows.map((b) => (
+          <li key={b.item_id}>
+            <button
+              type="button"
+              className="flex w-full items-center justify-between gap-3 py-2 text-start hover:bg-surface-50"
+              onClick={() => setOpen(b.booking_id)}
+            >
+              <span>
+                <span className="font-medium">{fmtBeirut(b.starts_at)}</span> ·{' '}
+                {b.customer?.name ?? 'Walk-in'} · {b.service_name}
+              </span>
+              <span className="shrink-0 text-xs text-ink-500">
+                {priceText(b) ? `${priceText(b)} · ` : ''}
+                {STATUS_LABEL[b.status]}
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
+      {data && data.total > rows.length ? (
+        <p className="text-xs text-ink-500">
+          Showing {rows.length} of {data.total} — see Bookings for more.
+        </p>
+      ) : null}
+      {open ? (
+        <BookingDrawer
+          bookingId={open}
+          businessId={business.id}
+          role={role}
+          staffOptions={[]}
+          onClose={() => setOpen(null)}
+          onChanged={() => void reload()}
+        />
+      ) : null}
     </Section>
   );
 }
