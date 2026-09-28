@@ -551,7 +551,7 @@ create table public.services (
   check (
     (price_type = 'fixed'           and price_min is not null and price_max is null) or
     (price_type = 'from'            and price_min is not null and price_max is null) or
-    (price_type = 'range'           and price_min is not null and price_max > price_min) or
+    (price_type = 'range'           and price_min is not null and price_max is not null and price_max > price_min) or  -- [M2: NULL-safe]
     (price_type = 'on_consultation' and price_min is null and price_max is null and not is_online_bookable)
   )
 );
@@ -647,7 +647,9 @@ create table public.staff_services (
   foreign key (service_id, business_id) references public.services (id, business_id),
   check (price_type_override is null or price_type_override <> 'on_consultation'),
   check ((price_type_override is null) = (price_min_override is null)),
-  check (price_max_override is null or price_max_override > price_min_override)
+  check (price_max_override is null or price_max_override > price_min_override),
+  check (price_type_override is distinct from 'range' or price_max_override is not null),       -- [M2]
+  check (price_max_override is null or price_type_override is not distinct from 'range')        -- [M2: NULL-safe]
 );
 create index on public.staff_services (service_id);
 -- Constraint trigger: at most 3 rows with is_specialty per staff_id.
@@ -674,6 +676,7 @@ create table public.staff_weekly_hours (
   check (end_minute > start_minute),
   check (effective_to is null or effective_to > effective_from),
   foreign key (staff_id, location_id) references public.staff_locations (staff_id, location_id) on delete cascade,
+  foreign key (staff_id, business_id) references public.staff_members (id, business_id),              -- [M2: tenant integrity]
   exclude using gist (
     staff_id with =, iso_weekday with =,
     int4range(start_minute, end_minute) with &&,
@@ -700,8 +703,9 @@ create table public.staff_schedule_overrides (
   created_by    uuid references auth.users(id),
   created_at    timestamptz not null default now(),
   foreign key (staff_id, location_id) references public.staff_locations (staff_id, location_id) on delete cascade,
-  check ((is_working and start_minute is not null and end_minute > start_minute)
+  check ((is_working and start_minute is not null and end_minute is not null and end_minute > start_minute)  -- [M2: NULL-safe]
       or (not is_working and start_minute is null and end_minute is null)),
+  foreign key (staff_id, business_id) references public.staff_members (id, business_id),              -- [M2: tenant integrity]
   exclude using gist (
     staff_id with =, on_date with =,
     int4range(coalesce(start_minute, 0), coalesce(end_minute, 1440)) with &&
