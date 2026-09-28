@@ -189,9 +189,9 @@ returns uuid language plpgsql as $$
 declare v uuid;
 begin
   insert into public.bookings (business_id, location_id, business_customer_id, status, source, starts_at, ends_at,
-                               created_by_kind, confirmed_at, completed_at, no_show_at)
+                               created_by_kind, total_price_min, total_price_max, confirmed_at, completed_at, no_show_at)
   values (tests.id(p_biz), tests.id(p_biz || '_loc'), tests.id(p_record), p_status, 'manual',
-          p_start, p_start + interval '30 minutes', 'business', now(),
+          p_start, p_start + interval '30 minutes', 'business', 20, 20, now(),
           case when p_status = 'completed' then p_start + interval '30 minutes' end,
           case when p_status = 'no_show' then p_start + interval '30 minutes' end)
   returning id into v;
