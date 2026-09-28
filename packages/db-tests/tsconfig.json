@@ -1,0 +1,7 @@
+{
+  "extends": "@app/tsconfig/library.json",
+  "compilerOptions": {
+    "types": ["node"]
+  },
+  "include": ["src", "vitest.config.ts"]
+}

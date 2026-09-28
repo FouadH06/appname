@@ -1,0 +1,20 @@
+{
+  "name": "@app/db-tests",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Concurrency, fuzz and performance tests for the booking engine. Needs a DISPOSABLE local/CI database (commits data).",
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test:db": "vitest run"
+  },
+  "devDependencies": {
+    "@app/eslint-config": "workspace:*",
+    "@app/tsconfig": "workspace:*",
+    "@types/node": "^24.19.0",
+    "@types/pg": "^8.23.1",
+    "pg": "^8.23.0",
+    "vitest": "^5.0.2"
+  }
+}

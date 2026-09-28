@@ -7,6 +7,17 @@ This is the correctness-critical core. Rules:
 
 Requires `pgcrypto` (hold tokens): `create extension if not exists pgcrypto with schema extensions;`
 
+> **Amendments from the M3 implementation (2026-09-29, decision log).** The design below stands; these are the places where the code is more precise:
+> 1. **Status changes:** `private.apply_transition` is split into `private.assert_transition(from, to, actor)` (actor-specific rules, called by every RPC) plus a **`bookings` BEFORE UPDATE trigger** (`private.booking_status_guard`). The trigger rejects any status change not in the table for *any* caller, and it owns every status-derived column (confirmed/completed/cancelled/no-show timestamps, expiry, hold fields). Each RPC then changes status and its other fields in **one UPDATE**, which the row CHECKs require.
+> 2. **Pending expiry bounded by start:** CHECK `status <> 'pending' or expires_at <= starts_at`. Confirm sets `least(now() + request_expiry, starts_at)`; reschedule re-bounds it; accept rejects after expiry or start; the per-minute job cancels at expiry.
+> 3. **Concurrency hardening:** concurrent conflicting inserts under an exclusion constraint can deadlock (each waits for the other's uncommitted row). Every write that claims staff time takes a per-staff advisory lock (`private.lock_staff`) **inside the same sub-transaction** as the write; a failed attempt releases it, so waiting transactions never hold another staff lock. `deadlock_detected` is caught as a backstop. The exclusion constraint remains the final arbiter.
+> 4. **Idempotent confirm under parallel retries:** if the hold was just consumed by a concurrent retry with the same key, `confirm_booking` returns that booking instead of `HOLD_NOT_FOUND`.
+> 5. **Notifications:** RPCs record `notify` in `booking_events.data`. M7 derives the outbox from `booking_events`, in the same transaction, so M3 RPCs don't change when messaging lands.
+> 6. **Deferred to the milestone that needs them:** customer read models (`get_my_bookings`, `get_my_booking`) → M8; `contest_no_show` → M8/M9 (needs `disputes`); waitlist tables → Soon; claim RPCs → M4.
+> 7. **Assignment tie-break:** deterministic (`staff_id`) instead of `random()`, so tests and support investigations are reproducible.
+> 8. New error codes: `OUTSIDE_HOURS`, `REASON_REQUIRED`, `NOT_SUPPORTED` (multi-item not yet), `INVALID_PHONE`, `NOT_FOUND`, `IMMUTABLE_FIELD`.
+> 9. **Availability performance:** the per-staff free-time CTE in `compute_slots` is `MATERIALIZED` (otherwise Postgres inlines it per grid row), and `booking_items` has a second GiST index `(staff_id, occupied) where blocks_time` for busy-time lookups. The exclusion constraint's partial index (`blocks_time and not allow_overlap`) can't serve queries that filter `blocks_time` only.
+
 ---
 
 ## 1. Tables
