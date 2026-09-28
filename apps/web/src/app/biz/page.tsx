@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { getMyAccess, type MyAccess } from '@app/api';
@@ -42,17 +43,18 @@ export default function BusinessHomePage() {
       {access && access.memberships.length > 0 ? (
         <ul className="flex flex-col gap-2" data-testid="memberships">
           {access.memberships.map((m) => (
-            <li
-              key={m.business_id}
-              className="flex items-center justify-between rounded-control border border-line-200 p-3"
-            >
-              <span className="font-medium text-ink-900">{m.business_name}</span>
-              <span className="text-sm text-ink-500">{t.roles[m.role]}</span>
+            <li key={m.business_id}>
+              <Link
+                href={`/biz/${m.business_id}`}
+                className="flex items-center justify-between rounded-control border border-line-200 p-3 hover:bg-surface-50"
+              >
+                <span className="font-medium text-ink-900">{m.business_name}</span>
+                <span className="text-sm text-ink-500">{t.roles[m.role]}</span>
+              </Link>
             </li>
           ))}
         </ul>
       ) : null}
-      {access ? <p className="text-sm text-ink-500">{t.pages.biz.comingSoon}</p> : null}
       <button
         type="button"
         className={secondaryButton}

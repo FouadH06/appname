@@ -16,6 +16,7 @@ Status: **closed (local + CI verified); hosted staging verification DEFERRED** Â
 > - [ ] Real WhatsApp Cloud API / Twilio SMS delivery and timing (external: Meta approval, Twilio account); does not block M5
 > - [ ] Real-phone checks: iPhone Safari, Android Chrome, Instagram and TikTok in-app browsers (Round 1 local, Round 2 staging)
 > - [ ] Staging schema fingerprint = local; zero test residue (users, claims, invitations, OTP rows, audit rows)
+> - [ ] Also apply and verify the M5 migrations (business setup, media bucket + storage policies, CRM, team) on staging
 
 Provider decisions from the M3 review are applied: WhatsApp Cloud API is the primary OTP channel and
 Twilio the SMS fallback, both behind one provider interface; Cloudflare Turnstile protects OTP send
