@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 set local search_path = extensions, public;
 set local role postgres;
 \ir ../helpers/fixtures.psql
-select plan(23);
+select plan(25);
 
 select tests.new_user('owner_a');
 select tests.new_user('owner_b');
@@ -48,6 +48,12 @@ select is(
 select throws_ok($$ insert into public.businesses (slug, name, primary_category_id)
                     select 'Bad Slug!', 'X', id from public.categories where slug = 'barber' $$,
   '23514', null, 'invalid slug format rejected');
+select throws_ok($$ insert into public.businesses (slug, name, primary_category_id)
+                    select 'Fade-District', 'X', id from public.categories where slug = 'barber' $$,
+  '23514', null, 'uppercase business slug rejected (lowercase only, same in every environment)');
+select throws_ok($$ insert into public.staff_members (business_id, display_name, slug)
+                    values (tests.id('biz_a'), 'Karim', 'Karim') $$,
+  '23514', null, 'uppercase staff slug rejected');
 
 update public.businesses set slug = 'fade-district' where id = tests.id('biz_a');
 select ok(exists (select 1 from public.business_slug_history where old_slug = 'biz-a-test' and business_id = tests.id('biz_a')),

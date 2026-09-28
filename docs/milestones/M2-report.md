@@ -1,8 +1,26 @@
 # M2 — Business core schema: report
 
-Status: **implemented, awaiting review** · Branch `m2-business-core`
+Status: **closed** (reviewed + hosted staging verified) · Branch `m2-business-core` → merged to `main`
 
-Hosted staging verification runs at close, after your review. That way unreviewed migrations don't get applied to staging, where they'd become immutable.
+## Review decisions (2026-09-28)
+
+- D1–D7 approved. Access model approved (reception and staff get role-limited RPCs/views in M5/M6, not direct customer-table access).
+- Default booking settings kept (60 min notice, 30-day horizon, 15-min slots, 2 h cancellation window, 4 h request expiry).
+- Reserved slugs extended: `pricing`, `partners`, `services`, `dashboard` added. The brand name stays as the `app-name` placeholder until chosen. Test asserts the full approved list.
+- For M3: a pending request must never outlive the appointment start (expiry bounded by `starts_at`).
+
+## Hosted staging verification (2026-09-28)
+
+| Check | Result |
+|---|---|
+| M2 migrations applied (`db push`, dry run first) | ✅ 6/6 (incl. D8 fix below) |
+| Full pgTAP on hosted | ✅ **201/201** |
+| Logged-out Data API smoke | ✅ 11/11 |
+| Hosted lint (app schemas) | ✅ no issues |
+| Schema fingerprint local vs hosted | ✅ **identical, 11/11 categories** (after D8) |
+| No leftover data | ✅ all zeros |
+
+**What staging revealed (D8):** the first fingerprint showed the two slug CHECKs compiled differently. `slug ~ '...'` on a `citext` column bound to citext's **case-insensitive** regex operator locally (where `extensions` was on the search path during migrations), and to the case-sensitive text operator on hosted. Locally that would have accepted uppercase slugs. The fix is new migration `20260928100500_m2_slug_checks_explicit.sql`, which casts to `text` so every environment compiles the same lowercase-only rule. Two tests added. A convention was added for extension-type operators.
 
 ## What was implemented
 
@@ -30,6 +48,7 @@ TypeScript types regenerated (`packages/db/src/database.types.ts`, 2,220 lines).
 | `20260928100200_m2_staff.sql` | Staff, staff locations/services, schedules, time off, stats, staff helpers, RLS, audit |
 | `20260928100300_m2_crm.sql` | Business customers, possible duplicates, claim dismissals, notes, RLS, audit |
 | `20260928100400_m2_billing_placeholders.sql` | Plans, entitlements, subscriptions, `has_entitlement`, RLS, audit |
+| `20260928100500_m2_slug_checks_explicit.sql` | D8: search-path-independent slug checks |
 
 ## Tests executed
 
@@ -63,6 +82,7 @@ Shared fixtures: `supabase/tests/helpers/fixtures.psql` (users, role switching, 
 | D4 | Part 2 override "day off vs working" constraint trigger | Not created | The exclusion constraint already guarantees it (a day-off row covers 0–1440), and a test proves it |
 | D5 | Part 6 §3.3: plans readable by owner/manager | Any signed-in user can read active plans and entitlements | Not sensitive; avoids a join-heavy policy. Subscriptions stay owner/manager |
 | D6 | Additive constraints | `website_url` must be http(s); location name ≤ 80; time off must have finite bounds; `business_customers` FKs for `merged_into_id` / `preferred_staff_id` / `favorite_service_id` with checks (merged ⇒ archived, claimed ⇒ has user); `catalog_suggestions.service_id` composite FK | Data integrity; nothing the spec allows is blocked |
+| **D8** | Part 2 slug CHECKs on `citext` | Explicit `::text` casts (new migration) | Operator binding depended on the DDL search path, so local and hosted enforced different rules (found by staging fingerprint) |
 | D7 | `business_categories` writes | Owner/manager may add/remove **secondary** categories only; the primary row follows `businesses.primary_category_id` automatically | Keeps one source of truth for the primary category |
 
 **Known limitation (to address in M3):** `audit.entity_changes.row_id` is a single uuid. For composite-key tables (`staff_services`) it records `staff_id`, and an UPDATE diff doesn't include `service_id`. I'll add the full key to the audit payload in M3, where booking tables need it too.
