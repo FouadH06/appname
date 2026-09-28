@@ -233,6 +233,11 @@ create policy business_media_write on storage.objects for insert to authenticate
 
 ## 7. Operational security settings
 
+> **Amendments from the M4 implementation (2026-09-28).**
+> - **OTP routing** (`public.otp_route`, service_role only): WhatsApp first; a resend after 30 s goes by SMS; SMS only for allowed country prefixes (default `+961`, foreign numbers stay on WhatsApp); a WhatsApp error or missing WhatsApp config falls back to SMS in the same request; 5 codes per 15 min and 10 per day per number. Attempts and receipts go in `private.otp_deliveries` (30-day retention).
+> - **Admin TOTP needs an email on the account:** Supabase Auth labels TOTP factors with the account email, and a phone-only account can't enroll. Admin provisioning sets both the role and an email (runbook in `docs/engineering/environments.md`); admins still sign in by phone, then TOTP.
+> - Phone confirmations are on; the hook secret, CAPTCHA secret and provider credentials are configured per environment, never committed.
+
 - Supabase Auth:
   - phone OTP with the WhatsApp-first **Send SMS hook**
   - OTP rate limits
