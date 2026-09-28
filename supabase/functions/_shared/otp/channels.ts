@@ -2,11 +2,11 @@ import type { Fetch, OtpChannel, OtpMessage, SendResult } from './types.ts';
 
 const TIMEOUT_MS = 8000;
 
-async function post(fetchFn: Fetch, url: string, init: RequestInit): Promise<Response> {
+export async function post(fetchFn: Fetch, url: string, init: RequestInit): Promise<Response> {
   return fetchFn(url, { ...init, signal: AbortSignal.timeout(TIMEOUT_MS) });
 }
 
-function errorText(e: unknown): string {
+export function errorText(e: unknown): string {
   return e instanceof Error ? `${e.name}: ${e.message}` : String(e);
 }
 

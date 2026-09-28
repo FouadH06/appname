@@ -81,7 +81,8 @@
     "NOT_FOUND": "Not found.",
     "NAME_REQUIRED": "Enter a name.",
     "INVALID_PHONE": "Check the phone number.",
-    "NOT_SUPPORTED": "That isn't supported yet."
+    "NOT_SUPPORTED": "That isn't supported yet.",
+    "LAST_CHANNEL": "Keep at least one of WhatsApp, SMS or app notifications on — booking messages need a way to reach you."
   },
   "roles": {
     "owner": "Owner",

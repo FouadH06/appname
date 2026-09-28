@@ -161,7 +161,7 @@ export function CalendarScreen() {
     seen.current = new Set(c.items.map((i) => i.item_id));
     return c;
   }, [location?.id, from, to, JSON.stringify(staffIds), showCancelled]);
-  useBookingChanges(business.id, () => void reload());
+  const live = useBookingChanges(business.id, () => void reload());
 
   // "3 appointments from earlier aren't marked" (desk; auto-complete runs at end + 6 h anyway)
   const { data: unmarked, reload: reloadUnmarked } = useLoad(async () => {
@@ -292,7 +292,11 @@ export function CalendarScreen() {
   const agendaItems = (cal?.items ?? []).filter((i) => overlapsDay(frame, i.starts_at, i.ends_at));
 
   return (
-    <div className="flex h-[calc(100dvh-4rem)] flex-col md:h-dvh">
+    <div
+      className="flex h-[calc(100dvh-4rem)] flex-col md:h-dvh"
+      data-live={live ? 'connected' : 'connecting'}
+      data-testid="calendar-screen"
+    >
       {/* toolbar */}
       <div className="flex flex-col gap-2 border-b border-line-200 bg-surface-0 px-3 py-2 md:px-4">
         <div className="flex flex-wrap items-center gap-2">

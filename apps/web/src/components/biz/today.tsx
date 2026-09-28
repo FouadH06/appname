@@ -43,6 +43,15 @@ export function Today() {
     return { sum: sum.data as unknown as TodaySummary, cal };
   }, [business.id, location?.id, today]);
   const { data: staff } = useLoad(() => loadStaff(business.id), [business.id]);
+  // B2 attention: customer messages failing (delivery problem to look into)
+  const { data: health } = useLoad(async () => {
+    if (!desk) return null;
+    const { data: h } = await supabase().rpc('biz_notification_health', {
+      p_business_id: business.id,
+    });
+    return h as { failed_7d: number; sent_7d: number } | null;
+  }, [business.id, desk]);
+  const failing = health?.failed_7d ?? 0;
   useBookingChanges(business.id, () => void reload());
 
   const act = async (fn: () => Promise<unknown>, msg: string) => {
@@ -68,7 +77,7 @@ export function Today() {
 
   return (
     <>
-      {sum.pending_requests || sum.unmarked_past.length || sum.contested_no_shows ? (
+      {sum.pending_requests || sum.unmarked_past.length || sum.contested_no_shows || failing ? (
         <Section title="Needs attention">
           <ul className="flex flex-col gap-2 text-sm" data-testid="attention">
             {sum.pending_requests && desk ? (
@@ -96,6 +105,19 @@ export function Today() {
                 >
                   Mark all completed
                 </button>
+              </li>
+            ) : null}
+            {failing ? (
+              <li className="flex items-center justify-between" data-testid="messages-failing">
+                <span>
+                  {failing} customer message{failing === 1 ? '' : 's'} couldn’t be delivered this
+                  week (WhatsApp and SMS)
+                </span>
+                {role === 'owner' || role === 'manager' ? (
+                  <Link className={btn.link} href={`${base}/settings?section=notifications`}>
+                    Details
+                  </Link>
+                ) : null}
               </li>
             ) : null}
             {sum.contested_no_shows ? (

@@ -7,10 +7,12 @@ if (!['127.0.0.1', 'localhost', '::1'].includes(new URL(url).hostname)) {
   throw new Error('e2e fixtures refuse to run against a non-local database');
 }
 
-const pool = new pg.Pool({ connectionString: url, max: 4 });
+// One pool per worker, recreated if a spec file closed it (spec files share workers)
+let current: pg.Pool | null = null;
+const db = (): pg.Pool => (current ??= new pg.Pool({ connectionString: url, max: 4 }));
 
 async function one<T extends pg.QueryResultRow>(text: string, params: unknown[] = []): Promise<T> {
-  const r = await pool.query<T>(text, params);
+  const r = await db().query<T>(text, params);
   if (!r.rows[0]) throw new Error(`no row: ${text.slice(0, 60)}`);
   return r.rows[0];
 }
@@ -37,11 +39,11 @@ export async function createBusiness(label: string): Promise<TestBusiness> {
      select $1, $2, id, 'live' from public.categories where slug = 'barber' returning id`,
     [`e2e-${tag}`, name],
   );
-  await pool.query(
+  await db().query(
     `insert into public.business_members (business_id, user_id, role) values ($1, $2, 'owner')`,
     [biz.id, owner.id],
   );
-  await pool.query(
+  await db().query(
     `update public.business_settings set min_notice_minutes = 0 where business_id = $1`,
     [biz.id],
   );
@@ -50,7 +52,7 @@ export async function createBusiness(label: string): Promise<TestBusiness> {
      select $1, id, 'Main street', centroid, 'live' from public.areas where slug = 'hazmieh' returning id`,
     [biz.id],
   );
-  await pool.query(
+  await db().query(
     `insert into public.location_hours (location_id, business_id, iso_weekday, start_minute, end_minute)
      select $1, $2, d, 0, 1440 from generate_series(1, 7) d`,
     [loc.id, biz.id],
@@ -64,15 +66,15 @@ export async function createBusiness(label: string): Promise<TestBusiness> {
     `insert into public.staff_members (business_id, display_name, slug) values ($1, 'Karim Test', 'karim') returning id`,
     [biz.id],
   );
-  await pool.query(
+  await db().query(
     `insert into public.staff_locations (staff_id, location_id, business_id) values ($1, $2, $3)`,
     [staff.id, loc.id, biz.id],
   );
-  await pool.query(
+  await db().query(
     `insert into public.staff_services (staff_id, service_id, business_id) values ($1, $2, $3)`,
     [staff.id, svc.id, biz.id],
   );
-  await pool.query(
+  await db().query(
     `insert into public.staff_weekly_hours (staff_id, location_id, business_id, iso_weekday, start_minute, end_minute, effective_from)
      select $1, $2, $3, d, 0, 1440, current_date - 1 from generate_series(1, 7) d`,
     [staff.id, loc.id, biz.id],
@@ -95,7 +97,7 @@ export async function createInvite(
 ) {
   const token = randomBytes(32).toString('base64url');
   const hash = createHash('sha256').update(token).digest('hex');
-  await pool.query(
+  await db().query(
     `insert into private.business_invitations (business_id, phone_e164, role, token_hash, expires_at, created_by)
      values ($1, $2, $3, $4, now() + interval '7 days', $5)`,
     [b.businessId, phoneE164, role, hash, b.ownerId],
@@ -125,7 +127,7 @@ export async function createShadowVisit(
      from s returning id`,
     [b.businessId, b.locationId, daysAgo, rec.id],
   );
-  await pool.query(
+  await db().query(
     `insert into public.booking_items (booking_id, business_id, location_id, service_id, canonical_service_id, staff_id,
                                        selection_mode, starts_at, ends_at, occupied, duration_min, price_type, price_min)
      select b.id, b.business_id, b.location_id, s.id, s.canonical_service_id, $3, 'business', b.starts_at, b.ends_at,
@@ -166,7 +168,7 @@ export async function createDraftBusiness(label: string, ownerPhone: string) {
     [biz.id],
   );
   const token = randomBytes(32).toString('base64url');
-  await pool.query(
+  await db().query(
     `insert into private.business_invitations (business_id, phone_e164, role, token_hash, expires_at, created_by)
      values ($1, $2, 'owner', $3, now() + interval '7 days', $4)`,
     [biz.id, ownerPhone, createHash('sha256').update(token).digest('hex'), ops.id],
@@ -177,9 +179,9 @@ export async function createDraftBusiness(label: string, ownerPhone: string) {
 export async function addMemberByPhone(
   businessId: string,
   phoneDigits: string,
-  role: 'reception' | 'staff',
+  role: 'manager' | 'reception' | 'staff',
 ) {
-  await pool.query(
+  await db().query(
     `insert into public.business_members (business_id, user_id, role)
      select $1, id, $3 from auth.users where phone = $2
      on conflict (business_id, user_id) do update set role = excluded.role, status = 'active'`,
@@ -189,7 +191,7 @@ export async function addMemberByPhone(
 
 /** Blank a user's profile name (reruns start like a brand-new owner). */
 export async function clearProfileName(phoneDigits: string) {
-  await pool.query(
+  await db().query(
     `update public.profiles set first_name = null, last_name = null
      where id = (select id from auth.users where phone = $1)`,
     [phoneDigits],
@@ -202,7 +204,7 @@ export async function publicSlots(
   serviceId: string,
   beirutDate: string,
 ): Promise<string[]> {
-  const client = await pool.connect();
+  const client = await db().connect();
   try {
     await client.query('begin');
     await client.query(`set local role anon`);
@@ -248,7 +250,9 @@ export async function beirutDate(offset: number): Promise<string> {
 }
 
 export async function closePool(): Promise<void> {
-  await pool.end();
+  const p = current;
+  current = null;
+  await p?.end();
 }
 
 // ─── M6 calendar fixtures ─────────────────────────────────────────────────
@@ -274,7 +278,7 @@ export async function beirutAt(offset: number, hhmm: string): Promise<string> {
  */
 export async function createCalendarBusiness(label: string): Promise<CalendarBusiness> {
   const b = await createBusiness(label);
-  await pool.query(
+  await db().query(
     `update public.staff_weekly_hours set start_minute = 540, end_minute = 1140 where staff_id = $1`,
     [b.staffId],
   );
@@ -282,11 +286,11 @@ export async function createCalendarBusiness(label: string): Promise<CalendarBus
     `insert into public.staff_members (business_id, display_name, slug) values ($1, 'Maya Test', 'maya') returning id`,
     [b.businessId],
   );
-  await pool.query(
+  await db().query(
     `insert into public.staff_locations (staff_id, location_id, business_id) values ($1, $2, $3)`,
     [maya.id, b.locationId, b.businessId],
   );
-  await pool.query(
+  await db().query(
     `insert into public.staff_weekly_hours (staff_id, location_id, business_id, iso_weekday, start_minute, end_minute, effective_from)
      select $1, $2, $3, d, 540, 1140, current_date - 1 from generate_series(1, 7) d`,
     [maya.id, b.locationId, b.businessId],
@@ -296,7 +300,7 @@ export async function createCalendarBusiness(label: string): Promise<CalendarBus
      select $1, id, 'Beard trim', 'fixed', 10, 20 from public.canonical_services where slug = 'mens-haircut' returning id`,
     [b.businessId],
   );
-  await pool.query(
+  await db().query(
     `insert into public.staff_services (staff_id, service_id, business_id)
      values ($1, $3, $4), ($2, $3, $4), ($2, $5, $4), ($1, $5, $4)
      on conflict do nothing`,
@@ -308,7 +312,7 @@ export async function createCalendarBusiness(label: string): Promise<CalendarBus
     [b.businessId],
   );
   await addBooking(b, b.staffId, b.serviceId, lina.id, await beirutAt(-10, '10:00'), 'completed');
-  await pool.query(`select private.recompute_business_customer_stats($1)`, [lina.id]);
+  await db().query(`select private.recompute_business_customer_stats($1)`, [lina.id]);
   return { ...b, mayaId: maya.id, beardId: beard.id, linaId: lina.id };
 }
 
@@ -330,7 +334,7 @@ export async function addBooking(
      from public.services s where s.id = $6 returning id`,
     [b.businessId, b.locationId, customerId, status, startIso, serviceId],
   );
-  await pool.query(
+  await db().query(
     `insert into public.booking_items (booking_id, business_id, location_id, service_id, canonical_service_id, staff_id,
                                        selection_mode, starts_at, ends_at, occupied, duration_min, price_type, price_min)
      select bk.id, bk.business_id, bk.location_id, s.id, s.canonical_service_id, $3, 'business', bk.starts_at, bk.ends_at,
@@ -343,13 +347,13 @@ export async function addBooking(
 
 /** Links a signed-in phone user to a staff profile with the staff role. */
 export async function linkStaffUser(businessId: string, staffId: string, phoneDigits: string) {
-  await pool.query(
+  await db().query(
     `insert into public.business_members (business_id, user_id, role)
      select $1, id, 'staff' from auth.users where phone = $2
      on conflict (business_id, user_id) do update set role = 'staff', status = 'active'`,
     [businessId, phoneDigits],
   );
-  await pool.query(
+  await db().query(
     `update public.staff_members set user_id = (select id from auth.users where phone = $2) where id = $1`,
     [staffId, phoneDigits],
   );
@@ -369,10 +373,49 @@ export async function bookingRow(
 export async function creationTimings(
   businessId: string,
 ): Promise<{ customer_kind: string; flow: string; actor_role: string; duration_ms: number }[]> {
-  const r = await pool.query(
+  const r = await db().query(
     `select customer_kind, flow, actor_role::text as actor_role, duration_ms
      from private.booking_creation_timings where business_id = $1 order by saved_at`,
     [businessId],
   );
   return r.rows;
+}
+
+// ─── M7 notification fixtures ─────────────────────────────────────────────
+export async function latestBooking(businessId: string): Promise<string> {
+  return (
+    await one<{ id: string }>(
+      `select id from public.bookings where business_id = $1 order by created_at desc limit 1`,
+      [businessId],
+    )
+  ).id;
+}
+
+export async function notificationsFor(
+  bookingId: string,
+): Promise<{ type: string; status: string; phone: string; provider: string | null }[]> {
+  const r = await db().query(
+    `select n.type::text as type, n.status::text as status, n.recipient_phone as phone,
+            (select d.provider from public.notification_deliveries d where d.notification_id = n.id
+             order by d.created_at desc limit 1) as provider
+     from public.notifications n where n.booking_id = $1 order by n.created_at, n.type`,
+    [bookingId],
+  );
+  return r.rows;
+}
+
+export async function confirmedAt(bookingId: string): Promise<string | null> {
+  return (
+    await one<{ t: string | null }>(
+      `select customer_confirmed_at::text as t from public.bookings where id = $1`,
+      [bookingId],
+    )
+  ).t;
+}
+
+export async function failCustomerMessages(bookingId: string) {
+  await db().query(
+    `update public.notifications set status = 'failed', last_error = 'e2e' where booking_id = $1 and recipient_business_id is null`,
+    [bookingId],
+  );
 }
