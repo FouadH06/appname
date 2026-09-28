@@ -263,7 +263,8 @@ otp_expiry = 3600
 # M4: customers sign up with their phone (OTP delivered by the Send SMS hook below).
 enable_signup = true
 # If enabled, users need to confirm their phone number before signing in.
-enable_confirmations = false
+# M4: on. A phone is only trusted after its OTP (never auto-confirmed).
+enable_confirmations = true
 # Template for sending OTP to users
 template = "Your code is {{ .Code }}"
 # Controls the minimum amount of time that must pass before sending another sms otp.
@@ -303,12 +304,14 @@ secrets = "v1,whsec_BFhLwuMpEUK6MvLr2ZS5MB3kl1bw3uPO4iB1Ri8fW5M="
 # uri = "pg-functions://<database>/<schema>/<hook_name>"
 
 # Configure one of the supported SMS providers: `twilio`, `twilio_verify`, `messagebird`, `textlocal`, `vonage`.
+# M4: enabled with PLACEHOLDERS only so the local stack turns phone auth on. The Send SMS hook
+# above takes precedence, so this provider never sends anything. Real Twilio credentials live in
+# the Edge Function secrets (TWILIO_*), never here.
 [auth.sms.twilio]
-enabled = false
-account_sid = ""
-message_service_sid = ""
-# DO NOT commit your Twilio auth token to git. Use environment variable substitution instead:
-auth_token = "env(SUPABASE_AUTH_SMS_TWILIO_AUTH_TOKEN)"
+enabled = true
+account_sid = "local-placeholder"
+message_service_sid = "local-placeholder"
+auth_token = "local-placeholder"
 
 # Multi-factor-authentication is available to Supabase Pro plan.
 [auth.mfa]

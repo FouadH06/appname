@@ -44,6 +44,24 @@ describe('Send SMS hook handler', () => {
     expect(deliver).toHaveBeenCalledWith({ phone: '96170123456', otp: '123456', locale: 'ar' });
   });
 
+  it('sends phone-change codes to the new number (anonymous visitor linking a phone)', async () => {
+    const deliver = vi.fn(() =>
+      Promise.resolve({
+        ok: true as const,
+        channel: 'whatsapp' as const,
+        provider: 'log',
+        fellBack: false,
+      }),
+    );
+    const body = JSON.stringify({
+      user: { phone: '', new_phone: '96176543210' },
+      sms: { otp: '654321', phone: '96176543210' },
+    });
+    const res = await handleSendSmsHook(hookRequest(body), { hookSecrets, deliver });
+    expect(res.status).toBe(200);
+    expect(deliver).toHaveBeenCalledWith({ phone: '96176543210', otp: '654321', locale: 'en' });
+  });
+
   it('rejects unsigned or tampered requests without sending anything', async () => {
     const deliver = vi.fn();
     const res = await handleSendSmsHook(hookRequest(payload, { badSig: true }), {

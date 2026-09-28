@@ -86,7 +86,6 @@ language sql volatile security definer set search_path = '' as $$
   update private.otp_deliveries set
     status = p_status,
     provider = coalesce(p_provider, provider),
-    channel = case when p_provider = 'log' then 'log' else channel end,
     provider_message_id = coalesce(p_message_id, provider_message_id),
     error_code = left(p_error, 200),
     sent_at = case when p_status = 'sent' then now() else sent_at end

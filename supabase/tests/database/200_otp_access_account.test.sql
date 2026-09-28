@@ -5,7 +5,7 @@ create extension if not exists pgtap with schema extensions;
 set local search_path = extensions, public;
 set local role postgres;
 \ir ../helpers/fixtures.psql
-select plan(33);
+select plan(34);
 
 create function tests.as_service() returns void language plpgsql as $$
 begin
@@ -36,7 +36,11 @@ select results_eq($$ select v ->> 'channel', (v ->> 'allowed')::boolean, v ->> '
 select is((public.otp_route('12')) ->> 'reason', 'INVALID_PHONE', 'garbage number rejected');
 select lives_ok($$ select public.otp_mark((select (v ->> 'delivery_id')::uuid from r where k = 'first'), 'sent', 'whatsapp', 'wamid.1') $$,
   'hook records the provider result');
+insert into r values ('logged', public.otp_route('96170123999'));
+select public.otp_mark((select (v ->> 'delivery_id')::uuid from r where k = 'logged'), 'sent', 'log');
 select tests.as_postgres();
+select results_eq($$ select channel, provider from private.otp_deliveries where phone_e164 = '+96170123999' $$,
+                  $$ values ('whatsapp', 'log') $$, 'the routed channel is kept whatever provider sent it (local log mode)');
 update private.otp_deliveries set created_at = now() - interval '35 seconds' where phone_e164 = '+96170123123';
 select tests.as_service();
 select is((public.otp_route('96170123123')) ->> 'channel', 'sms',

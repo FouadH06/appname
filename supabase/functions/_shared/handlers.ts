@@ -30,13 +30,18 @@ export async function handleSendSmsHook(
   });
   if (!valid) return hookError(401, 'invalid signature');
 
-  let payload: { user?: { phone?: string }; sms?: { otp?: string } };
+  let payload: {
+    user?: { phone?: string; new_phone?: string };
+    sms?: { otp?: string; phone?: string };
+  };
   try {
     payload = JSON.parse(body) as typeof payload;
   } catch {
     return hookError(400, 'invalid payload');
   }
-  const phone = payload.user?.phone ?? '';
+  // sms.phone is the destination. For a phone change (anonymous visitor linking a number) it is
+  // the NEW number, also in user.new_phone, while user.phone is still empty.
+  const phone = payload.sms?.phone || payload.user?.new_phone || payload.user?.phone || '';
   const otp = payload.sms?.otp ?? '';
   if (!phone || !/^\d{4,10}$/.test(otp)) return hookError(400, 'invalid payload');
 
