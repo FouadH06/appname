@@ -13,9 +13,13 @@ pnpm exec supabase db push --linked --dry-run      # review
 pnpm exec supabase db push --linked                # apply
 pnpm exec supabase test db --linked                # full pgTAP on hosted
 SUPABASE_URL=https://<ref>.supabase.co SUPABASE_ANON_KEY=<publishable> bash scripts/hosted-smoke.sh
+SUPABASE_URL=https://<ref>.supabase.co SUPABASE_ANON_KEY=<publishable> python scripts/hosted-booking-smoke.py   # races, non-leak, latency, residue (M3+)
+# after an interrupted run: same env + --cleanup-orphans
 pnpm exec supabase test db --linked supabase/diagnostics/schema-fingerprint.sql   # compare with local run
 pnpm exec supabase test db --linked supabase/diagnostics/data-residue.sql         # must be all zeros
 ```
+
+Run linked CLI commands **one at a time**: each call rotates the temporary login role's password, so parallel calls fail authentication and can trip the pooler's circuit breaker for a few minutes. The booking smoke gets parallel sessions from one-shot `pg_cron` jobs instead.
 
 The CLI connects as a temporary login role (`supabase login` once per machine), so no DB password is needed. `db dump --linked` doesn't work with that role through the pooler; use the fingerprint script.
 

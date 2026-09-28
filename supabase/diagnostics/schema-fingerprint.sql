@@ -30,7 +30,7 @@ begin
     select 'functions', count(*), md5(string_agg(x, '|' order by x)) from (
       select p.oid::regprocedure::text || ':' || md5(pg_get_functiondef(p.oid)) || ':' || p.prosecdef
              || ':' || coalesce(array_to_string(p.proconfig, ','), '') || ':' || pg_get_userbyid(p.proowner)
-             || ':' || coalesce((select string_agg(a.grantee::regrole::text || '=' || a.privilege_type, ',' order by 1)
+             || ':' || coalesce((select string_agg(a.grantee::regrole::text || '=' || a.privilege_type, ',' order by a.grantee::regrole::text, a.privilege_type)
                                  from aclexplode(p.proacl) a where a.grantee <> 0), '') x
       from pg_proc p join pg_namespace n on n.oid = p.pronamespace
       where n.nspname = any (schemas)

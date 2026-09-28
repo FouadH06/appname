@@ -52,6 +52,21 @@ jobs:
       - name: Schema lint
         # Only our schemas; extension code (e.g. PostGIS) is not ours to lint.
         run: bash scripts/ci-annotate.sh "db lint" supabase db lint --schema public,private,audit --level warning --fail-on error
+      # Booking-engine races, fuzzing and latency against the same disposable database.
+      # CI runs reduced sizes; full Gate A sizes (100 runs, 10k ops × 5 seeds) run locally per milestone.
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Concurrency · fuzz · performance
+        env:
+          CONCURRENCY_RUNS: 25
+          FUZZ_OPS: 2000
+          FUZZ_SEEDS: 1,2
+          PERF_SAMPLES: 30
+        run: bash scripts/ci-annotate.sh "db-tests" pnpm --filter @app/db-tests test:db
 
   build:
     name: Build web + admin

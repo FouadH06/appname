@@ -100,4 +100,72 @@ begin
   return v;
 end $$;
 
+-- ─── M3 booking fixtures ───────────────────────────────────────────────────
+-- Instant in Beirut local time: tests.at(date, '10:30')
+create function tests.at(p_day date, p_hhmi text) returns timestamptz language sql stable as
+  $$ select (p_day::timestamp + p_hhmi::time) at time zone 'Asia/Beirut' $$;
+
+-- Local date n days from today in Beirut
+create function tests.day(p_offset int) returns date language sql stable as
+  $$ select (now() at time zone 'Asia/Beirut')::date + p_offset $$;
+
+-- Opening hours every day (default 09:00–19:00)
+create function tests.open_every_day(p_biz text, p_from int default 540, p_to int default 1140) returns void
+language sql as $$
+  insert into public.location_hours (location_id, business_id, iso_weekday, start_minute, end_minute)
+  select tests.id(p_biz || '_loc'), tests.id(p_biz), d, p_from, p_to from generate_series(1, 7) d
+$$;
+
+-- Weekly hours for a staff member every day; optional break
+create function tests.staff_every_day(p_biz text, p_staff text, p_from int, p_to int,
+                                      p_break_from int default null, p_break_to int default null)
+returns void language plpgsql as $$
+begin
+  if p_break_from is null then
+    insert into public.staff_weekly_hours (staff_id, location_id, business_id, iso_weekday, start_minute, end_minute, effective_from)
+    select tests.id(p_staff), tests.id(p_biz || '_loc'), tests.id(p_biz), d, p_from, p_to, current_date - 1
+    from generate_series(1, 7) d;
+  else
+    insert into public.staff_weekly_hours (staff_id, location_id, business_id, iso_weekday, start_minute, end_minute, effective_from)
+    select tests.id(p_staff), tests.id(p_biz || '_loc'), tests.id(p_biz), d, x.s, x.e, current_date - 1
+    from generate_series(1, 7) d cross join (values (p_from, p_break_from), (p_break_to, p_to)) as x(s, e);
+  end if;
+end $$;
+
+create function tests.link(p_biz text, p_staff text, p_service text) returns void language sql as $$
+  insert into public.staff_services (staff_id, service_id, business_id)
+  values (tests.id(p_staff), tests.id(p_service), tests.id(p_biz))
+$$;
+
+-- A booking written directly (bypassing RPCs) for schema/availability tests
+create function tests.raw_booking(p_biz text, p_staff text, p_service text, p_start timestamptz,
+                                  p_minutes int default 30, p_status public.booking_status default 'confirmed',
+                                  p_buffer_after int default 0)
+returns uuid language plpgsql as $$
+declare v_bid uuid; v_cust uuid;
+begin
+  insert into public.business_customers (business_id, display_name, acquired_via)
+  values (tests.id(p_biz), 'Raw customer', 'manual') returning id into v_cust;
+  insert into public.bookings (business_id, location_id, business_customer_id, status, source, starts_at, ends_at,
+                               created_by_kind, confirmed_at, completed_at, hold_token_hash, expires_at)
+  values (tests.id(p_biz), tests.id(p_biz || '_loc'), v_cust, p_status,
+          case when p_status = 'held' then 'business_link' else 'manual' end::public.booking_source,
+          p_start, p_start + make_interval(mins => p_minutes),
+          case when p_status = 'held' then 'customer' else 'business' end::public.actor_kind,
+          case when p_status = 'confirmed' then now() end,
+          case when p_status = 'completed' then now() end,
+          case when p_status = 'held' then '\x00'::bytea end,
+          case when p_status in ('held', 'pending') then least(now() + interval '5 minutes', p_start) end)
+  returning id into v_bid;
+  insert into public.booking_items (booking_id, business_id, location_id, service_id, canonical_service_id, staff_id,
+                                    selection_mode, starts_at, ends_at, buffer_after_min, occupied, duration_min,
+                                    price_type, price_min)
+  select v_bid, tests.id(p_biz), tests.id(p_biz || '_loc'), s.id, s.canonical_service_id, tests.id(p_staff),
+         'business', p_start, p_start + make_interval(mins => p_minutes), p_buffer_after,
+         tstzrange(p_start, p_start + make_interval(mins => p_minutes + p_buffer_after), '[)'), p_minutes,
+         'fixed', 10
+  from public.services s where s.id = tests.id(p_service);
+  return v_bid;
+end $$;
+
 grant execute on all functions in schema tests to anon, authenticated;
