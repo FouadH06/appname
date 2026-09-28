@@ -238,6 +238,11 @@ create policy business_media_write on storage.objects for insert to authenticate
 > - **Admin TOTP needs an email on the account:** Supabase Auth labels TOTP factors with the account email, and a phone-only account can't enroll. Admin provisioning sets both the role and an email (runbook in `docs/engineering/environments.md`); admins still sign in by phone, then TOTP.
 > - Phone confirmations are on; the hook secret, CAPTCHA secret and provider credentials are configured per environment, never committed.
 
+> **Amendments from the M5 implementation (2026-10-01).**
+> - Status RPCs: `publish_business` checks the go-live list (`get_go_live_checklist`); `pause_online_booking` toggles `allow_online_booking` (the business stays live, B12). Assisted onboarding: `admin_create_business` makes ops a temporary manager, revoked automatically when the owner joins.
+> - `business-media` bucket and policies exist from M5 (folder = business id; owner/manager/reception write and delete, members read); media tables per Part 4 §2 were brought forward from M10.
+> - `list_members` projects teammates (name + last initial, masked phone, role) because profiles stay private.
+
 - Supabase Auth:
   - phone OTP with the WhatsApp-first **Send SMS hook**
   - OTP rate limits

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import type { Enums, Tables } from '@app/db';
 import { HoursGrid } from '@/components/biz/hours-grid';
+import { InviteShare } from '@/components/biz/sections/team';
 import {
   Body,
   Field,
@@ -1187,52 +1188,11 @@ function AccessTab({
               Create invite
             </button>
           </div>
-          {link ? <InviteLink url={link.url} phone={link.phone} business={business.name} /> : null}
+          {link ? <InviteShare url={link.url} phone={link.phone} business={business.name} /> : null}
         </>
       ) : (
         <p className="text-sm text-ink-500">No login yet.</p>
       )}
     </Section>
-  );
-}
-
-export function InviteLink({
-  url,
-  phone,
-  business,
-}: {
-  url: string;
-  phone: string;
-  business: string;
-}) {
-  const [copied, setCopied] = useState(false);
-  const text = `You're invited to ${business} on APP_NAME. Sign in with this number: ${url}`;
-  return (
-    <div
-      className="flex flex-col gap-2 rounded-control bg-surface-50 p-3 text-sm"
-      data-testid="invite-link"
-    >
-      <code className="break-all">{url}</code>
-      <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          className={btn.secondary}
-          onClick={() => void navigator.clipboard.writeText(url).then(() => setCopied(true))}
-        >
-          {copied ? 'Copied' : 'Copy link'}
-        </button>
-        <a
-          className={btn.primary}
-          href={`https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(text)}`}
-          target="_blank"
-          rel="noreferrer"
-        >
-          Send on WhatsApp
-        </a>
-      </div>
-      <span className="text-xs text-ink-500">
-        Automatic WhatsApp sending arrives with notifications (M7).
-      </span>
-    </div>
   );
 }

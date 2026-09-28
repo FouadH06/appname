@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { getMyAccess, type MyAccess } from '@app/api';
@@ -31,6 +32,15 @@ export default function AdminHome() {
       <p className="mt-1 text-ink-700" data-testid="admin-home">
         Signed in as {access.admin_role} (MFA verified).
       </p>
+      {access.admin_role === 'ops' || access.admin_role === 'superadmin' ? (
+        <Link
+          href="/businesses/new"
+          className="mt-6 inline-block text-accent-600"
+          data-testid="create-business-link"
+        >
+          + Create business
+        </Link>
+      ) : null}
       <button
         type="button"
         className="mt-6 h-10 rounded-control border border-line-200 px-4"

@@ -143,6 +143,101 @@ export async function issueClaimToken(bookingId: string): Promise<string> {
   return r.t;
 }
 
+/**
+ * M5: a draft business as ops creates it (draft business + draft location, no hours/services yet)
+ * with a pending owner invitation. Returns the business ids and the raw invite token.
+ */
+export async function createDraftBusiness(label: string, ownerPhone: string) {
+  const tag = randomUUID().slice(0, 8);
+  const name = `${label} ${tag}`;
+  const slug = `e2e-draft-${tag}`;
+  const ops = await one<{ id: string }>(
+    `insert into auth.users (id, aud, role, created_at, updated_at)
+     values (gen_random_uuid(), 'authenticated', 'authenticated', now(), now()) returning id`,
+  );
+  const biz = await one<{ id: string }>(
+    `insert into public.businesses (slug, name, primary_category_id, status, created_by)
+     select $1, $2, id, 'draft', $3 from public.categories where slug = 'barber' returning id`,
+    [slug, name, ops.id],
+  );
+  const loc = await one<{ id: string }>(
+    `insert into public.business_locations (business_id, area_id, address_line, geo, status)
+     select $1, id, 'Main street', centroid, 'draft' from public.areas where slug = 'hazmieh' returning id`,
+    [biz.id],
+  );
+  const token = randomBytes(32).toString('base64url');
+  await pool.query(
+    `insert into private.business_invitations (business_id, phone_e164, role, token_hash, expires_at, created_by)
+     values ($1, $2, 'owner', $3, now() + interval '7 days', $4)`,
+    [biz.id, ownerPhone, createHash('sha256').update(token).digest('hex'), ops.id],
+  );
+  return { businessId: biz.id, locationId: loc.id, name, slug, token };
+}
+
+export async function addMemberByPhone(
+  businessId: string,
+  phoneDigits: string,
+  role: 'reception' | 'staff',
+) {
+  await pool.query(
+    `insert into public.business_members (business_id, user_id, role)
+     select $1, id, $3 from auth.users where phone = $2
+     on conflict (business_id, user_id) do update set role = excluded.role, status = 'active'`,
+    [businessId, phoneDigits, role],
+  );
+}
+
+/** Public availability (as a logged-out visitor) for a Beirut date, as local "HH:MM" strings. */
+export async function publicSlots(
+  locationId: string,
+  serviceId: string,
+  beirutDate: string,
+): Promise<string[]> {
+  const client = await pool.connect();
+  try {
+    await client.query('begin');
+    await client.query(`set local role anon`);
+    const r = await client.query<{ t: string }>(
+      `select to_char(slot_start at time zone 'Asia/Beirut', 'HH24:MI') as t
+       from public.get_available_slots($1, $2, null, $3::date, $3::date) order by slot_start`,
+      [locationId, serviceId, beirutDate],
+    );
+    await client.query('commit');
+    return r.rows.map((x) => x.t);
+  } finally {
+    client.release();
+  }
+}
+
+export async function firstService(businessId: string): Promise<string> {
+  return (
+    await one<{ id: string }>(
+      `select id from public.services where business_id = $1 order by created_at limit 1`,
+      [businessId],
+    )
+  ).id;
+}
+
+export async function businessStatus(
+  businessId: string,
+): Promise<{ status: string; location: string }> {
+  return one(
+    `select b.status::text as status, l.status::text as location
+     from public.businesses b join public.business_locations l on l.business_id = b.id where b.id = $1`,
+    [businessId],
+  );
+}
+
+/** Beirut date n days from now (YYYY-MM-DD). */
+export async function beirutDate(offset: number): Promise<string> {
+  return (
+    await one<{ d: string }>(
+      `select ((now() at time zone 'Asia/Beirut')::date + $1::int)::text as d`,
+      [offset],
+    )
+  ).d;
+}
+
 export async function closePool(): Promise<void> {
   await pool.end();
 }

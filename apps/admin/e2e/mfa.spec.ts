@@ -93,6 +93,31 @@ test('admin must enroll TOTP and reach aal2 before anything works', async ({ pag
     await expect(page.getByText("That authenticator code isn't right.")).toBeVisible();
     await page.getByLabel('Authenticator code').fill(totp(secret));
     await expect(page.getByTestId('admin-home')).toBeVisible();
+
+    // ── M5 assisted onboarding (A4): ops creates a draft business and gets the owner invite ──
+    const slug = `e2e-ops-${Date.now().toString(36)}`;
+    await page.getByTestId('create-business-link').click();
+    await page.getByLabel('Business name').fill('Ops Assisted Salon');
+    await page.getByLabel('Booking link (platform.com/…)').fill(slug);
+    await page.getByLabel('Category').selectOption('barber');
+    await page.getByLabel('Area').selectOption({ label: 'Hazmieh' });
+    await page.getByLabel('Street / building').fill('Main street');
+    await page
+      .getByLabel('Map pin (coordinates or Google Maps link)')
+      .fill('https://www.google.com/maps/place/x/@33.8547,35.5323,17z');
+    await page.getByLabel('Owner phone (sends the owner invite)').fill('71 234 567');
+    await page.getByRole('button', { name: 'Create business' }).click();
+    await expect(page.getByTestId('business-created')).toBeVisible();
+    await expect(page.getByTestId('owner-invite')).toContainText('/invite/');
+    const row = await db.query<{ status: string; role: string; invites: number }>(
+      `select b.status::text as status, m.role::text as role,
+              (select count(*)::int from private.business_invitations i where i.business_id = b.id and i.role = 'owner') as invites
+       from public.businesses b
+       join public.business_members m on m.business_id = b.id and m.user_id = (select id from auth.users where phone = $2)
+       where b.slug = $1`,
+      [slug, PHONE.slice(1)],
+    );
+    expect(row.rows[0]).toEqual({ status: 'draft', role: 'manager', invites: 1 });
   } finally {
     await db.end();
   }

@@ -30,3 +30,4 @@ Specs are the source of truth. Code follows them; deviations need a decision-log
 | M2 Business core schema | [milestones/M2-report.md](milestones/M2-report.md) |
 | M3 Booking engine | [milestones/M3-report.md](milestones/M3-report.md) |
 | M4 Auth, identity & claim model | [milestones/M4-report.md](milestones/M4-report.md) |
+| M5 Business dashboard I | [milestones/M5-report.md](milestones/M5-report.md) |
