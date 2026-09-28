@@ -372,13 +372,11 @@ function ServicesTab({
                   onChange={(e) =>
                     void run(async () =>
                       e.target.checked
-                        ? await supabase()
-                            .from('staff_services')
-                            .insert({
-                              staff_id: staff.id,
-                              service_id: s.id,
-                              business_id: business.id,
-                            })
+                        ? await supabase().from('staff_services').insert({
+                            staff_id: staff.id,
+                            service_id: s.id,
+                            business_id: business.id,
+                          })
                         : await supabase()
                             .from('staff_services')
                             .delete()

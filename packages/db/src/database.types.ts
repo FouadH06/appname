@@ -582,6 +582,8 @@ export type Database = {
           timezone: string;
           updated_at: string;
           whatsapp_e164: string | null;
+          lat: number | null;
+          lng: number | null;
         };
         Insert: {
           address_line?: string | null;
@@ -2747,6 +2749,10 @@ export type Database = {
         };
         Returns: Json;
       };
+      lat: {
+        Args: { l: Database['public']['Tables']['business_locations']['Row'] };
+        Returns: number;
+      };
       list_invitations: {
         Args: { p_business_id: string };
         Returns: {
@@ -2757,6 +2763,23 @@ export type Database = {
           role: Database['public']['Enums']['business_role'];
           staff_id: string;
         }[];
+      };
+      list_members: {
+        Args: { p_business_id: string };
+        Returns: {
+          display_name: string;
+          is_me: boolean;
+          joined_at: string;
+          phone_hint: string;
+          role: Database['public']['Enums']['business_role'];
+          staff_id: string;
+          staff_name: string;
+          user_id: string;
+        }[];
+      };
+      lng: {
+        Args: { l: Database['public']['Tables']['business_locations']['Row'] };
+        Returns: number;
       };
       mark_completed: {
         Args: { p_booking_id: string };
