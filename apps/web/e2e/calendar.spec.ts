@@ -201,6 +201,8 @@ test('reception runs the day from the calendar', async ({ page, context }) => {
     await tabB.goto(`/biz/${b.businessId}/calendar?date=${day}`);
     const karimB = tabB.getByTestId(`col-${b.staffId}`);
     await expect(karimB).toBeVisible();
+    // Realtime subscription established in tab B before tab A acts
+    await expect(tabB.getByTestId('calendar-screen')).toHaveAttribute('data-live', 'connected');
     const before = await karimB.getByTestId('appt').count();
     await page.goto(`/biz/${b.businessId}/calendar?date=${day}`);
     await karim.click({ position: await at(karim, 960) });

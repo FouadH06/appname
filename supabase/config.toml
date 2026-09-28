@@ -284,6 +284,7 @@ max_frequency = "30s"
 96170000008 = "123456"
 96170000009 = "123456"
 96170000010 = "123456"
+96170000011 = "123456"
 
 # Configure logged in session timeouts.
 # [auth.sessions]
@@ -415,6 +416,10 @@ deno_version = 2
 OTP_PROVIDER_MODE = "log"
 SMS_ALLOWED_PREFIXES = "+961"
 SEND_SMS_HOOK_SECRETS = "v1,whsec_BFhLwuMpEUK6MvLr2ZS5MB3kl1bw3uPO4iB1Ri8fW5M="
+NOTIFY_DISPATCH_SECRET = "local-notify-dispatch-secret"
+# local-only values so the webhook can be exercised with signed test requests
+WHATSAPP_APP_SECRET = "local-meta-app-secret"
+WHATSAPP_WEBHOOK_VERIFY_TOKEN = "local-verify-token"
 
 # Auth calls these with their own signatures, not a user JWT.
 [functions.auth-send-sms]
@@ -424,6 +429,9 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.whatsapp-webhook]
+verify_jwt = false
+
+[functions.notify-dispatch]
 verify_jwt = false
 
 [analytics]

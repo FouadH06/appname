@@ -7,6 +7,7 @@ import { BasicsSection } from '@/components/biz/sections/basics';
 import { DangerSection } from '@/components/biz/sections/danger';
 import { ClosuresSection, HoursSection } from '@/components/biz/sections/hours';
 import { LocationSection } from '@/components/biz/sections/location';
+import { NotificationsSection } from '@/components/biz/sections/notifications';
 import { PhotosSection } from '@/components/biz/sections/photos';
 import { RulesSection } from '@/components/biz/sections/rules';
 import { ShareSection } from '@/components/biz/sections/share';
@@ -76,12 +77,7 @@ function Settings() {
           {section === 'rules' ? <RulesSection /> : null}
           {section === 'team' ? <TeamSection /> : null}
           {section === 'share' ? <ShareSection /> : null}
-          {section === 'notifications' ? (
-            <Notice>
-              Choosing who gets WhatsApp/push alerts for new bookings, cancellations and reviews
-              arrives with notifications (M7).
-            </Notice>
-          ) : null}
+          {section === 'notifications' ? <NotificationsSection /> : null}
           {section === 'danger' ? <DangerSection /> : null}
         </div>
       </div>

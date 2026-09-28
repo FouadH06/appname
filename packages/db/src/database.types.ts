@@ -750,6 +750,35 @@ export type Database = {
           },
         ];
       };
+      business_notification_settings: {
+        Row: {
+          business_id: string;
+          channels: Database['public']['Enums']['notification_channel'][];
+          type: Database['public']['Enums']['notification_type'];
+          user_id: string;
+        };
+        Insert: {
+          business_id: string;
+          channels?: Database['public']['Enums']['notification_channel'][];
+          type: Database['public']['Enums']['notification_type'];
+          user_id: string;
+        };
+        Update: {
+          business_id?: string;
+          channels?: Database['public']['Enums']['notification_channel'][];
+          type?: Database['public']['Enums']['notification_type'];
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'business_notification_settings_business_id_fkey';
+            columns: ['business_id'];
+            isOneToOne: false;
+            referencedRelation: 'businesses';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       business_settings: {
         Row: {
           allow_online_booking: boolean;
@@ -1455,6 +1484,191 @@ export type Database = {
           },
         ];
       };
+      notification_deliveries: {
+        Row: {
+          channel: Database['public']['Enums']['notification_channel'];
+          cost_micros: number | null;
+          created_at: string;
+          error_code: string | null;
+          id: string;
+          notification_id: string;
+          provider: string;
+          provider_message_id: string | null;
+          status: Database['public']['Enums']['delivery_status'];
+          updated_at: string;
+        };
+        Insert: {
+          channel: Database['public']['Enums']['notification_channel'];
+          cost_micros?: number | null;
+          created_at?: string;
+          error_code?: string | null;
+          id?: string;
+          notification_id: string;
+          provider: string;
+          provider_message_id?: string | null;
+          status?: Database['public']['Enums']['delivery_status'];
+          updated_at?: string;
+        };
+        Update: {
+          channel?: Database['public']['Enums']['notification_channel'];
+          cost_micros?: number | null;
+          created_at?: string;
+          error_code?: string | null;
+          id?: string;
+          notification_id?: string;
+          provider?: string;
+          provider_message_id?: string | null;
+          status?: Database['public']['Enums']['delivery_status'];
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'notification_deliveries_notification_id_fkey';
+            columns: ['notification_id'];
+            isOneToOne: false;
+            referencedRelation: 'notifications';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      notification_preferences: {
+        Row: {
+          channel: Database['public']['Enums']['notification_channel'];
+          enabled: boolean;
+          user_id: string;
+        };
+        Insert: {
+          channel: Database['public']['Enums']['notification_channel'];
+          enabled?: boolean;
+          user_id: string;
+        };
+        Update: {
+          channel?: Database['public']['Enums']['notification_channel'];
+          enabled?: boolean;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      notification_templates: {
+        Row: {
+          body: string;
+          buttons: string[];
+          channel: Database['public']['Enums']['notification_channel'];
+          created_at: string;
+          is_active: boolean;
+          locale: Database['public']['Enums']['app_locale'];
+          provider_template_name: string | null;
+          status: string;
+          type: Database['public']['Enums']['notification_type'];
+          variables: string[];
+          version: number;
+        };
+        Insert: {
+          body: string;
+          buttons?: string[];
+          channel: Database['public']['Enums']['notification_channel'];
+          created_at?: string;
+          is_active?: boolean;
+          locale: Database['public']['Enums']['app_locale'];
+          provider_template_name?: string | null;
+          status?: string;
+          type: Database['public']['Enums']['notification_type'];
+          variables?: string[];
+          version?: number;
+        };
+        Update: {
+          body?: string;
+          buttons?: string[];
+          channel?: Database['public']['Enums']['notification_channel'];
+          created_at?: string;
+          is_active?: boolean;
+          locale?: Database['public']['Enums']['app_locale'];
+          provider_template_name?: string | null;
+          status?: string;
+          type?: Database['public']['Enums']['notification_type'];
+          variables?: string[];
+          version?: number;
+        };
+        Relationships: [];
+      };
+      notifications: {
+        Row: {
+          attempts: number;
+          booking_id: string | null;
+          channel_override: Database['public']['Enums']['notification_channel'] | null;
+          created_at: string;
+          dedupe_key: string | null;
+          id: string;
+          last_error: string | null;
+          locale: Database['public']['Enums']['app_locale'];
+          payload: NonNullable<Json>;
+          read_at: string | null;
+          recipient_business_id: string | null;
+          recipient_phone: string | null;
+          recipient_user_id: string | null;
+          review_id: string | null;
+          scheduled_for: string;
+          sent_at: string | null;
+          status: Database['public']['Enums']['notification_status'];
+          type: Database['public']['Enums']['notification_type'];
+        };
+        Insert: {
+          attempts?: number;
+          booking_id?: string | null;
+          channel_override?: Database['public']['Enums']['notification_channel'] | null;
+          created_at?: string;
+          dedupe_key?: string | null;
+          id?: string;
+          last_error?: string | null;
+          locale?: Database['public']['Enums']['app_locale'];
+          payload?: NonNullable<Json>;
+          read_at?: string | null;
+          recipient_business_id?: string | null;
+          recipient_phone?: string | null;
+          recipient_user_id?: string | null;
+          review_id?: string | null;
+          scheduled_for?: string;
+          sent_at?: string | null;
+          status?: Database['public']['Enums']['notification_status'];
+          type: Database['public']['Enums']['notification_type'];
+        };
+        Update: {
+          attempts?: number;
+          booking_id?: string | null;
+          channel_override?: Database['public']['Enums']['notification_channel'] | null;
+          created_at?: string;
+          dedupe_key?: string | null;
+          id?: string;
+          last_error?: string | null;
+          locale?: Database['public']['Enums']['app_locale'];
+          payload?: NonNullable<Json>;
+          read_at?: string | null;
+          recipient_business_id?: string | null;
+          recipient_phone?: string | null;
+          recipient_user_id?: string | null;
+          review_id?: string | null;
+          scheduled_for?: string;
+          sent_at?: string | null;
+          status?: Database['public']['Enums']['notification_status'];
+          type?: Database['public']['Enums']['notification_type'];
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'notifications_booking_id_fkey';
+            columns: ['booking_id'];
+            isOneToOne: false;
+            referencedRelation: 'bookings';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'notifications_recipient_business_id_fkey';
+            columns: ['recipient_business_id'];
+            isOneToOne: false;
+            referencedRelation: 'businesses';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       plan_entitlements: {
         Row: {
           key: string;
@@ -1569,6 +1783,33 @@ export type Database = {
             referencedColumns: ['id'];
           },
         ];
+      };
+      push_tokens: {
+        Row: {
+          disabled_at: string | null;
+          expo_token: string;
+          id: string;
+          last_seen_at: string;
+          platform: string;
+          user_id: string;
+        };
+        Insert: {
+          disabled_at?: string | null;
+          expo_token: string;
+          id?: string;
+          last_seen_at?: string;
+          platform: string;
+          user_id: string;
+        };
+        Update: {
+          disabled_at?: string | null;
+          expo_token?: string;
+          id?: string;
+          last_seen_at?: string;
+          platform?: string;
+          user_id?: string;
+        };
+        Relationships: [];
       };
       rating_dimensions: {
         Row: {
@@ -2267,6 +2508,19 @@ export type Database = {
         };
         Returns: Json;
       };
+      admin_notification_stats: {
+        Args: { p_days?: number };
+        Returns: {
+          confirmed_by_button: number;
+          delivered: number;
+          failed: number;
+          sent: number;
+          success_rate: number;
+          total: number;
+          type: Database['public']['Enums']['notification_type'];
+          via_sms_fallback: number;
+        }[];
+      };
       admin_otp_delivery_stats: {
         Args: { p_days?: number };
         Returns: {
@@ -2388,6 +2642,7 @@ export type Database = {
         Returns: Json;
       };
       biz_get_customer: { Args: { p_business_id: string; p_customer_id: string }; Returns: Json };
+      biz_get_notification_settings: { Args: { p_business_id: string }; Returns: Json };
       biz_list_bookings: {
         Args: {
           p_business_id: string;
@@ -2413,6 +2668,7 @@ export type Database = {
         };
         Returns: undefined;
       };
+      biz_notification_health: { Args: { p_business_id: string }; Returns: Json };
       biz_reassign_options: {
         Args: { p_item_id: string };
         Returns: {
@@ -2507,6 +2763,15 @@ export type Database = {
           bookings: number;
           service_id: string;
         }[];
+      };
+      biz_set_notification_setting: {
+        Args: {
+          p_business_id: string;
+          p_type: Database['public']['Enums']['notification_type'];
+          p_user_id: string;
+          p_whatsapp: boolean;
+        };
+        Returns: undefined;
       };
       biz_today: { Args: { p_business_id: string }; Returns: Json };
       biz_undo_manual_booking: { Args: { p_booking_id: string }; Returns: undefined };
@@ -2834,6 +3099,24 @@ export type Database = {
       get_go_live_checklist: { Args: { p_business_id: string }; Returns: Json };
       get_invitation: { Args: { p_token: string }; Returns: Json };
       get_my_access: { Args: Record<PropertyKey, never>; Returns: Json };
+      get_my_notification_preferences: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          channel: Database['public']['Enums']['notification_channel'];
+          enabled: boolean;
+        }[];
+      };
+      get_my_notifications: {
+        Args: { p_before?: string; p_limit?: number };
+        Returns: {
+          booking_id: string;
+          created_at: string;
+          id: string;
+          payload: Json;
+          read_at: string;
+          type: Database['public']['Enums']['notification_type'];
+        }[];
+      };
       get_next_available: {
         Args: { p_location_id: string; p_service_id: string; p_staff_id?: string };
         Returns: string;
@@ -2980,6 +3263,33 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      mark_notifications_read: { Args: { p_ids: string[] }; Returns: number };
+      notify_claim: { Args: { p_limit?: number }; Returns: Json };
+      notify_finish: {
+        Args: { p_error?: string; p_notification_id: string; p_outcome: string };
+        Returns: undefined;
+      };
+      notify_record_attempt: {
+        Args: {
+          p_channel: Database['public']['Enums']['notification_channel'];
+          p_error: string;
+          p_message_id: string;
+          p_notification_id: string;
+          p_ok: boolean;
+          p_provider: string;
+        };
+        Returns: undefined;
+      };
+      notify_status_update: {
+        Args: {
+          p_at?: string;
+          p_error?: string;
+          p_message_id: string;
+          p_provider: string;
+          p_status: string;
+        };
+        Returns: undefined;
+      };
       otp_mark: {
         Args: {
           p_delivery_id: string;
@@ -3119,6 +3429,13 @@ export type Database = {
       restore_staff: { Args: { p_staff_id: string }; Returns: undefined };
       revoke_invitation: { Args: { p_invitation_id: string }; Returns: undefined };
       revoke_member: { Args: { p_business_id: string; p_user_id: string }; Returns: undefined };
+      set_notification_preference: {
+        Args: {
+          p_channel: Database['public']['Enums']['notification_channel'];
+          p_enabled: boolean;
+        };
+        Returns: undefined;
+      };
       transfer_ownership: {
         Args: { p_business_id: string; p_new_owner_user_id: string };
         Returns: undefined;
@@ -3222,6 +3539,10 @@ export type Database = {
           isOneToOne: true;
           isSetofReturn: false;
         };
+      };
+      whatsapp_button: {
+        Args: { p_from_phone: string; p_message_id: string; p_payload: string };
+        Returns: Json;
       };
     };
     Enums: {

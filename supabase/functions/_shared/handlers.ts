@@ -98,7 +98,7 @@ export async function handleTwilioStatus(
   return new Response(null, { status: 204 });
 }
 
-// ─── WhatsApp webhook (M4: message statuses; M7 adds button replies) ───────
+// ─── WhatsApp webhook (M4: message statuses; M7: Confirm / Cancel buttons) ─
 interface WaStatus {
   id?: string;
   status?: string;
@@ -106,9 +106,30 @@ interface WaStatus {
   errors?: { code?: number; title?: string }[];
 }
 
+interface WaMessage {
+  id?: string;
+  from?: string;
+  type?: string;
+  button?: { payload?: string; text?: string };
+  interactive?: { button_reply?: { id?: string } };
+}
+
+/** A tapped button: returns the text to send back in the open session, or null. */
+export type ButtonHandler = (
+  messageId: string,
+  from: string,
+  payload: string,
+) => Promise<string | null>;
+
 export async function handleWhatsAppWebhook(
   req: Request,
-  deps: { appSecret: string; verifyToken: string; update: StatusUpdate },
+  deps: {
+    appSecret: string;
+    verifyToken: string;
+    update: StatusUpdate;
+    onButton?: ButtonHandler;
+    reply?: (to: string, text: string) => Promise<void>;
+  },
 ): Promise<Response> {
   if (req.method === 'GET') {
     // Meta's subscription handshake
@@ -129,8 +150,18 @@ export async function handleWhatsAppWebhook(
   if (!ok) return new Response(null, { status: 403 });
 
   const payload = JSON.parse(body) as {
-    entry?: { changes?: { value?: { statuses?: WaStatus[] } }[] }[];
+    entry?: { changes?: { value?: { statuses?: WaStatus[]; messages?: WaMessage[] } }[] }[];
   };
+  const messages = (payload.entry ?? []).flatMap((e) =>
+    (e.changes ?? []).flatMap((c) => c.value?.messages ?? []),
+  );
+  for (const m of messages) {
+    // template quick replies arrive as type "button"; interactive replies as button_reply
+    const tapped = m.type === 'button' ? m.button?.payload : m.interactive?.button_reply?.id;
+    if (!deps.onButton || !m.id || !m.from || !tapped) continue;
+    const text = await deps.onButton(m.id, m.from, tapped);
+    if (text && deps.reply) await deps.reply(m.from, text);
+  }
   const statuses = (payload.entry ?? []).flatMap((e) =>
     (e.changes ?? []).flatMap((c) => c.value?.statuses ?? []),
   );

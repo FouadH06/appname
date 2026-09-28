@@ -9,8 +9,9 @@ import { supabase } from '@/lib/supabase';
  * own items). Payloads are ignored; screens refetch through the role-projected RPCs. A slow
  * refresh and a refresh on tab focus cover dropped connections.
  */
-export function useBookingChanges(businessId: string, onChange: () => void) {
+export function useBookingChanges(businessId: string, onChange: () => void): boolean {
   const ref = useRef(onChange);
+  const [live, setLive] = useState(false);
   useEffect(() => {
     ref.current = onChange;
   });
@@ -34,7 +35,7 @@ export function useBookingChanges(businessId: string, onChange: () => void) {
         { event: 'UPDATE', schema: 'public', table: 'bookings', filter },
         fire,
       )
-      .subscribe();
+      .subscribe((status) => setLive(status === 'SUBSCRIBED'));
     const poll = window.setInterval(fire, 60_000);
     const onVisible = () => {
       if (document.visibilityState === 'visible') fire();
@@ -47,6 +48,7 @@ export function useBookingChanges(businessId: string, onChange: () => void) {
       void client.removeChannel(channel);
     };
   }, [businessId]);
+  return live;
 }
 
 /** Browser online/offline state for the "Offline — read only" banner. */
