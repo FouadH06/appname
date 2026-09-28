@@ -24,7 +24,7 @@ async function signInWithPhone(page: Page, localNumber: string) {
   const flow = page.getByTestId('phone-otp-flow');
   await flow.getByLabel('Phone number').fill(localNumber);
   const send = flow.getByRole('button', { name: 'Send code' });
-  await expect(send).toBeEnabled({ timeout: 20_000 }); // Turnstile test widget issues a token
+  await expect(flow).toHaveAttribute('data-captcha', 'ready', { timeout: 45_000 }); // Turnstile token
   await send.click();
   await expect(page.getByTestId('otp-sent')).toContainText('WhatsApp');
   await flow.getByLabel('6-digit code').fill(TEST_CODE); // auto-submits at 6 digits
@@ -37,7 +37,7 @@ test('business login: phone code signs in; a new number has no business yet', as
   // invalid inputs are caught before anything is sent
   const flow = page.getByTestId('phone-otp-flow');
   await flow.getByLabel('Phone number').fill('01 234 567');
-  await expect(flow.getByRole('button', { name: 'Send code' })).toBeEnabled({ timeout: 20_000 });
+  await expect(flow).toHaveAttribute('data-captcha', 'ready', { timeout: 45_000 });
   await flow.getByRole('button', { name: 'Send code' }).click();
   await expect(page.getByText('Use a mobile number')).toBeVisible();
 

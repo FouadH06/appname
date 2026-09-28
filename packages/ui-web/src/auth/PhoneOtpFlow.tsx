@@ -165,7 +165,12 @@ export function PhoneOtpFlow({
   const display = displayPhone(state.phone);
 
   return (
-    <div className="flex flex-col gap-4" data-testid="phone-otp-flow" data-step={state.step}>
+    <div
+      className="flex flex-col gap-4"
+      data-testid="phone-otp-flow"
+      data-captcha={captcha ? 'ready' : 'pending'}
+      data-step={state.step}
+    >
       {state.step === 'phone' ? (
         <>
           <PhoneInput
@@ -182,7 +187,7 @@ export function PhoneOtpFlow({
           <button
             type="button"
             className={primary}
-            disabled={state.busy || !captcha}
+            disabled={state.busy}
             onClick={() => void send()}
           >
             {labels.sendCode}
@@ -230,7 +235,7 @@ export function PhoneOtpFlow({
               <button
                 type="button"
                 className={link}
-                disabled={state.busy || !captcha}
+                disabled={state.busy}
                 onClick={() => void resend()}
               >
                 {state.phone?.startsWith('+961') && state.channel === 'whatsapp'

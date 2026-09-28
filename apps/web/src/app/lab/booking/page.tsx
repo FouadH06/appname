@@ -1,5 +1,4 @@
 import { notFound } from 'next/navigation';
-import { getPublicEnv } from '@/env';
 import { LabBooking } from './lab-booking';
 
 // M4 manual-test page: anonymous hold → phone code → confirm, in real browsers and in-app browsers.
@@ -9,8 +8,7 @@ export default async function LabBookingPage({
 }: {
   searchParams: Promise<{ loc?: string; svc?: string }>;
 }) {
-  if (getPublicEnv().NEXT_PUBLIC_ENABLE_LAB !== 'true') notFound();
-  const { loc, svc } = await searchParams;
-  if (!loc || !svc) notFound();
+  const { loc, svc } = await searchParams; // request-time page (never prerendered)
+  if (process.env.NEXT_PUBLIC_ENABLE_LAB !== 'true' || !loc || !svc) notFound();
   return <LabBooking locationId={loc} serviceId={svc} />;
 }

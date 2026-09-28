@@ -37,7 +37,7 @@ async function phoneSignIn(page: Page) {
   const flow = page.getByTestId('phone-otp-flow');
   await flow.getByLabel('Phone number').fill('70 000 006');
   const send = flow.getByRole('button', { name: 'Send code' });
-  await expect(send).toBeEnabled({ timeout: 20_000 });
+  await expect(flow).toHaveAttribute('data-captcha', 'ready', { timeout: 45_000 }); // Turnstile token
   await send.click();
   await flow.getByLabel('6-digit code').fill('123456');
 }
