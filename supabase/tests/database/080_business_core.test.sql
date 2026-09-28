@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 set local search_path = extensions, public;
 set local role postgres;
 \ir ../helpers/fixtures.psql
-select plan(22);
+select plan(23);
 
 select tests.new_user('owner_a');
 select tests.new_user('owner_b');
@@ -39,6 +39,12 @@ select throws_ok($$ insert into public.businesses (slug, name, primary_category_
 select throws_ok($$ insert into public.businesses (slug, name, primary_category_id)
                     select 'hamra', 'X', id from public.categories where slug = 'barber' $$,
   'P0001', 'SLUG_UNAVAILABLE', 'area slug rejected (SEO paths)');
+select is(
+  (select count(*)::int from public.reserved_slugs where slug = any (array[
+     'app-name', 'pricing', 'partners', 'admin', 'api', 'app', 'login', 'signup', 'search', 'book', 'booking',
+     'bookings', 'biz', 'business', 'staff', 'services', 'reviews', 'settings', 'account', 'dashboard',
+     'support', 'help', 'terms', 'privacy', 'about', 'contact']::extensions.citext[])),
+  26, 'every slug on the approved reserved list is reserved');
 select throws_ok($$ insert into public.businesses (slug, name, primary_category_id)
                     select 'Bad Slug!', 'X', id from public.categories where slug = 'barber' $$,
   '23514', null, 'invalid slug format rejected');

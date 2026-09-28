@@ -64,10 +64,12 @@ create trigger businesses_slug before insert or update of slug on public.busines
 insert into public.reserved_slugs (slug)
 select s from unnest(array[
   'about', 'account', 'admin', 'api', 'app', 'auth', 'biz', 'blog', 'book', 'booking', 'bookings',
-  'business', 'businesses', 'careers', 'categories', 'contact', 'explore', 'favorites', 'help',
-  'home', 'legal', 'login', 'logout', 'm', 'me', 'notifications', 'privacy', 'profile', 'r',
-  'register', 'results', 'review', 'reviews', 'search', 'settings', 'signin', 'signup', 'staff',
-  'static', 'support', 'terms', 'www', 'app-name'
+  'business', 'businesses', 'careers', 'categories', 'contact', 'dashboard', 'explore', 'favorites',
+  'help', 'home', 'legal', 'login', 'logout', 'm', 'me', 'notifications', 'partners', 'pricing',
+  'privacy', 'profile', 'r', 'register', 'results', 'review', 'reviews', 'search', 'services',
+  'settings', 'signin', 'signup', 'staff', 'static', 'support', 'terms', 'www',
+  -- Platform brand: placeholder until the brand is chosen; the rename migration adds the real name.
+  'app-name'
 ]) as s
 union select slug from public.areas
 union select slug from public.categories
