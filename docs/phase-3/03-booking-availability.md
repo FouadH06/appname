@@ -16,7 +16,7 @@ Requires `pgcrypto` (hold tokens): `create extension if not exists pgcrypto with
 > 6. **Deferred to the milestone that needs them:** customer read models (`get_my_bookings`, `get_my_booking`) → M8; `contest_no_show` → M8/M9 (needs `disputes`); waitlist tables → Soon; claim RPCs → M4.
 > 7. **Assignment tie-break:** deterministic (`staff_id`) instead of `random()`, so tests and support investigations are reproducible.
 > 8. New error codes: `OUTSIDE_HOURS`, `REASON_REQUIRED`, `NOT_SUPPORTED` (multi-item not yet), `INVALID_PHONE`, `NOT_FOUND`, `IMMUTABLE_FIELD`.
-> 9. **Availability performance:** the per-staff free-time CTE in `compute_slots` is `MATERIALIZED` (otherwise Postgres inlines it per grid row), and `booking_items` has a second GiST index `(staff_id, occupied) where blocks_time` for busy-time lookups. The exclusion constraint's partial index (`blocks_time and not allow_overlap`) can't serve queries that filter `blocks_time` only.
+> 9. **Availability performance:** the per-staff free-time CTE in `compute_slots` is `MATERIALIZED` (otherwise Postgres inlines it per grid row), the local-time slot grid is built once per request and shared by all staff (same DST-safe expression as `local_instant`, inlined), and `booking_items` has a second GiST index `(staff_id, occupied) where blocks_time` for busy-time lookups. The exclusion constraint's partial index (`blocks_time and not allow_overlap`) can't serve queries that filter `blocks_time` only.
 
 ---
 

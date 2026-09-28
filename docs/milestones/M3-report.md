@@ -1,8 +1,8 @@
 # M3 — Booking engine (headless): report
 
-Status: **implemented, awaiting review** · Branch `m3-booking-engine` · Gate A: see below
+Status: **closed** (approved 2026-09-28; staging verified) · Branch `m3-booking-engine` → `main` · Gate A: **passed on staging**
 
-Hosted staging verification (including the Gate A latency check on staging) runs after your review, as for M1/M2.
+Review decisions: D1–D9 approved; D10 recorded at staging verification. Product decisions kept: 3 recent no-shows → requests, 5 → blocked pending admin review; auto-complete 6 h after end; default assignment least booked that day; manual bookings bypass online notice/horizon/grid; late-cancel penalty only for confirmed bookings; undoing a no-show adds a correcting event.
 
 ## What was implemented
 
@@ -31,6 +31,8 @@ Hosted staging verification (including the Gate A latency check on staging) runs
 | `20260929100300_m3_availability.sql` | Availability engine, public/business wrappers, assignment ranking |
 | `20260929100400_m3_booking_rpcs.sql` | All booking RPCs, concurrency helpers, CRM stats |
 | `20260929100500_m3_jobs.sql` | Scheduled jobs + pg_cron schedules |
+| `20260929100600_m3_slots_grid.sql` | Availability grid built once per request (H6, found on staging) |
+| `20260929100700_m3_service_role_execute.sql` | Explicit `service_role` EXECUTE on public RPCs so local = hosted (D10) |
 
 ## Tests executed
 
@@ -55,7 +57,7 @@ Hosted staging verification (including the Gate A latency check on staging) runs
 | #24 two parallel reschedules into one slot | ✅ **100/100**: one wins |
 | #26 5 parallel confirm retries, same idempotency key | ✅ all return the same booking |
 | #25 **fuzz**, 10,000 random RPC operations × 5 seeds, 4 parallel workers | ✅ **0 overlaps** (checked every 250 ops), **0 unexpected errors**, 0 null staff; ~1,500–1,800 items per seed |
-| Spike S4: 8 staff, 1,920 bookings in the business, ~10k–20k items in the DB, 100 samples | ✅ database time: `get_available_slots` 14 days Any **p95 117.9 ms**; `create_hold` **p95 7.5 ms** (round trip on an idle DB: 122.9 / 13.2 ms) |
+| Spike S4: 8 staff, 1,920 bookings in the business, ~10k items in the DB, 100 samples | ✅ database time: `get_available_slots` 14 days Any **p95 16.0 ms** (117.9 ms before H6); `create_hold` **p95 7.6 ms** |
 
 CI runs the harness at reduced sizes (25 runs, 2k ops × 2 seeds, 30 perf samples) on every push.
 
@@ -65,8 +67,8 @@ CI runs the harness at reduced sizes (25 runs, 2k ops × 2 seeds, 30 perf sample
 
 - [x] Fuzz: 0 overlaps and 0 null staff across 10k random operations, 5 seeds
 - [x] Concurrency tests pass 100/100 runs
-- [x] p95 `get_available_slots` (14 days, 8 staff) < 150 ms: **117.9 ms locally** (database time); staging confirmation at close
-- [x] p95 `create_hold` < 100 ms: **7.5 ms locally** (database time); staging confirmation at close
+- [x] p95 `get_available_slots` (14 days, 8 staff) < 150 ms: **25.1 ms on staging** (database time; 16.0 ms locally)
+- [x] p95 `create_hold` < 100 ms: **12.6 ms on staging** (database time; 7.6 ms locally)
 - [x] No public RPC returns internal-only staff (non-leak tests)
 
 ## What the harness caught (and the fixes)
@@ -78,6 +80,7 @@ CI runs the harness at reduced sizes (25 runs, 2k ops × 2 seeds, 30 perf sample
 | H3 | Fuzz: parallel manual bookings for the **same new phone** raced to create the shadow customer (`23505`) | Atomic `INSERT … ON CONFLICT DO NOTHING` + re-read, for shadows and for the user's own record in `confirm_booking` |
 | H4 | Perf: `get_available_slots` p95 **7.3 s**. Postgres inlined a single-use CTE and recomputed per-staff free time for every grid row | `WITH … AS MATERIALIZED` → **118 ms** (62×) |
 | H5 | Perf on a loaded DB (after fuzzing): busy-time, hold-cleanup and minimize-gaps lookups filter `blocks_time` only, so the exclusion constraint's **partial** index (`blocks_time and not allow_overlap`) can't serve them and Postgres scanned each staff member's whole booking history. Fast when empty, degrades linearly with volume | Index `booking_items_busy_gist (staff_id, occupied) where blocks_time`, plus an index-usable overlap predicate in the gap query. Verified with `EXPLAIN`: index-only scans |
+| H6 | **Staging Gate A** (smaller shared ARM compute): `get_available_slots` p95 **195.5 ms**, over the 150 ms target. `compute_slots` built the local-time grid per staff member through `private.local_instant()`, which can't be inlined (its `SET search_path` clause), so 8 staff × 14 days × 96 slots paid ~10.7k function calls with a configuration change each | Grid built once per request with the same (DST-safe) expression, then checked per staff member. Identical results (hash-compared); **p95 25.1 ms on staging** (7.8×), 16.0 ms locally |
 
 ## Deviations from the Phase 3 specification
 
@@ -92,8 +95,35 @@ CI runs the harness at reduced sizes (25 runs, 2k ops × 2 seeds, 30 perf sample
 | D7 | Part 3 §4.5 late cancel | Late-cancel penalty applies to **confirmed** bookings only (withdrawing a pending request is never "late") | Fairness; the request wasn't accepted yet |
 | D8 | Part 3 §4.4 undo | `undo_no_show` adds an exact compensating `forgiven` event (same timestamp) rather than deleting history | Auditable reliability history |
 | D9 | Error codes | Added `OUTSIDE_HOURS`, `REASON_REQUIRED`, `NOT_SUPPORTED`, `INVALID_PHONE`, `NOT_FOUND`, `IMMUTABLE_FIELD` | Distinct UI messages |
+| D10 | Part 1 §6.1 grants | `service_role` gets EXECUTE on public RPCs explicitly (grant + default privileges) | Hosted Supabase grants it by default and local didn't (found by the staging fingerprint). Same rule as the approved M1 table-grant fix: local = hosted. Booking RPCs still need a user, so a bare service_role call gets `AUTH_REQUIRED` |
 
 All are recorded in the Phase 3 Part 3 amendments box and the decision log.
+
+## Staging verification (hosted project `oplwsnpyavnqnhlzyhxr`)
+
+| Check | Result |
+|---|---|
+| Migrations applied (6 M3 + 2 found at verification) | ✅ `db push`, dry run reviewed first |
+| Full hosted pgTAP | ✅ **315/315** (includes non-leak, DST, RLS suites) |
+| Hosted races (`scripts/hosted-booking-smoke.py`), 10 rounds each, real parallel backends | ✅ #21 20 holds → 1 winner **10/10** · #22 Any, 3 free, 8 holds → 3 distinct staff **10/10** · #23 manual vs online **10/10** · #24 parallel reschedules **10/10** · #26 confirm retries **10/10** · 0 overlaps, 0 null staff |
+| Internal-only staff non-leak (logged-out Data API) | ✅ Any-mode slots carry no staff ids; internal-only id → no slots, next-available null, never in staff listing; business RPC denied |
+| Logged-out/API security smoke | ✅ `hosted-smoke.sh` 11/11 + 10 booking checks (no reads of bookings/items/events, anon `create_hold` denied, private helpers not exposed) |
+| Schema fingerprint hosted = local | ✅ identical, 11 sections (after D10; the fingerprint's grant list is now sorted, it was hashed in grant order) |
+| Test residue | ✅ every table count equals the pre-run snapshot; `data-residue.sql` all zero; no cron jobs, run logs or scratch schema left |
+
+**Hosted latency** (8 staff, 1,920 bookings, 30 samples each):
+
+| Function | Database time p50 / p95 | Real round trip from the dev machine (Data API) p50 / p95 |
+|---|---|---|
+| `get_available_slots` 14 days, Any | 24.1 / **25.1 ms** | 143.5 / 455.6 ms (logged out, measured directly) |
+| `create_hold` | 9.5 / **12.6 ms** | ≈ 110–175 ms (derived, see below) |
+| `confirm_booking` | 3.7 / **8.2 ms** | ≈ 105–170 ms (derived, see below) |
+| Baseline: tiny table read | n/a | 99.5 / 161.3 ms |
+| Baseline: RPC rejected by grants | n/a | 96.4 / 109.8 ms |
+
+The round trip is dominated by network and API overhead (~100 ms from this machine to eu-central-1, even for a request that does no work). `create_hold` and `confirm_booking` need a signed-in user; staging has anonymous sign-ins disabled and the verification doesn't create Auth accounts, so their round trip is **derived** (measured API baseline + measured database time). It will be measured directly once a real client signs in (M5/M8). The 455 ms p95 on `get_available_slots` is network variance; the baseline read's tail moved the same way in that run.
+
+How the hosted harness works: fixture data is created as `postgres` through the CLI (no DB password, no service-role key). Customers are simulated with JWT claims inside the transaction, as pgTAP does. Contenders run as one-shot `pg_cron` jobs, so each gets its own backend: parallel CLI logins rotate the temporary login role and trip the pooler's auth circuit breaker, which happened once and cleared on its own. Perf work is rolled back. Everything else is deleted afterwards (append-only leaf rows via `session_replication_role = replica`) and checked against a pre-run snapshot. A power cut interrupted one run after fixture setup; `--cleanup-orphans` removed its data and staging was confirmed back at the exact baseline before the final run.
 
 ## Suggested manual checks
 
