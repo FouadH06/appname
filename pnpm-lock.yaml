@@ -242,6 +242,21 @@ importers:
         specifier: ^5.0.2
         version: 5.0.2(@types/node@24.19.0)(vite@8.3.1(@types/node@24.19.0)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
+  packages/edge-tests:
+    devDependencies:
+      '@app/eslint-config':
+        specifier: workspace:*
+        version: link:../eslint-config
+      '@app/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
+      '@types/node':
+        specifier: ^24.19.0
+        version: 24.19.0
+      vitest:
+        specifier: ^5.0.2
+        version: 5.0.2(@types/node@24.19.0)(vite@8.3.1(@types/node@24.19.0)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+
   packages/eslint-config:
     dependencies:
       '@eslint/js':

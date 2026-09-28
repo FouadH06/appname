@@ -5,5 +5,68 @@
   "errors": {
     "generic": "Something went wrong. Please try again.",
     "offline": "You're offline"
+  },
+  "auth": {
+    "phone": {
+      "label": "Phone number",
+      "placeholder": "70 123 456",
+      "help": "We'll send you a code on WhatsApp.",
+      "empty": "Enter your phone number.",
+      "invalid": "Check the number and try again.",
+      "lbInvalid": "That isn't a valid Lebanese number.",
+      "landline": "Use a mobile number. We send the code by WhatsApp or SMS."
+    },
+    "sendCode": "Send code",
+    "otp": {
+      "label": "6-digit code",
+      "sentWhatsapp": "We sent a code on WhatsApp to {phone}.",
+      "sentSms": "We sent a code by SMS to {phone}.",
+      "resendIn": "Resend in {seconds}s",
+      "resend": "Resend code",
+      "useSms": "Send by SMS instead",
+      "changeNumber": "Change number",
+      "verify": "Verify"
+    },
+    "name": {
+      "title": "What's your name?",
+      "first": "First name",
+      "last": "Last name (optional)",
+      "save": "Continue"
+    },
+    "mfa": {
+      "enrollTitle": "Set up your authenticator",
+      "enrollHelp": "Scan this QR code with Google Authenticator, 1Password or a similar app, then enter the 6-digit code.",
+      "secret": "Can't scan? Enter this key: {secret}",
+      "challengeTitle": "Enter your authenticator code",
+      "verify": "Verify"
+    },
+    "signOut": "Sign out"
+  },
+  "codes": {
+    "CAPTCHA_FAILED": "Please complete the check and try again.",
+    "OTP_TOO_MANY": "Too many codes requested. Try again in a few minutes.",
+    "OTP_INVALID": "That code isn't right.",
+    "OTP_EXPIRED": "That code expired. Send a new one.",
+    "OTP_DELIVERY_FAILED": "We couldn't send the code. Try again or use SMS.",
+    "PHONE_INVALID": "We can't send a code to this number.",
+    "RESEND_TOO_SOON": "Please wait a moment before asking for a new code.",
+    "MFA_INVALID": "That authenticator code isn't right.",
+    "TOKEN_INVALID": "This link isn't valid.",
+    "TOKEN_EXPIRED": "This link has expired.",
+    "TOKEN_USED": "This link was already used.",
+    "CLAIM_PHONE_MISMATCH": "This visit was booked with a different number ({hint}). Sign in with that number.",
+    "CLAIM_TOO_OLD": "Visits older than 12 months can't be added.",
+    "CLAIM_CONFLICT": "This visit is linked to another account. Contact support.",
+    "INVITE_INVALID": "This invitation isn't valid anymore.",
+    "INVITE_EXPIRED": "This invitation expired. Ask for a new one.",
+    "INVITE_PHONE_MISMATCH": "This invitation was sent to {hint}. Sign in with that number.",
+    "OWNER_EXISTS": "This business already has an owner.",
+    "STAFF_ALREADY_LINKED": "Your account is already linked to another staff profile here.",
+    "AUTH_REQUIRED": "Please sign in.",
+    "PHONE_NOT_VERIFIED": "Verify your phone number first.",
+    "ACCOUNT_RESTRICTED": "This account can't do that right now. Contact support.",
+    "RATE_LIMITED": "Too many attempts. Try again later.",
+    "FORBIDDEN": "You don't have access to this.",
+    "UNKNOWN": "Something went wrong. Please try again."
   }
 }
