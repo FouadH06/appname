@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 set local search_path = extensions, public;
 set local role postgres;
 \ir ../helpers/fixtures.psql
-select plan(36);
+select plan(37);
 
 select tests.new_user('ops', '96170600600');
 select tests.new_user('owner', '96170100100');
@@ -61,6 +61,8 @@ select is((select jsonb_agg(e ->> 'key' order by e ->> 'key') from jsonb_array_e
            where not (e ->> 'ok')::boolean),
           '["cover", "service", "staff_hours"]'::jsonb, 'checklist: still missing staff for the service, staff hours, cover');
 select throws_ok($$ select public.publish_business(tests.id('biz')) $$, 'P0001', 'GO_LIVE_BLOCKED', 'publishing is blocked until the checklist is complete');
+select throws_ok($$ select public.create_my_staff_profile(tests.id('biz'), '   ') $$, 'P0001', 'NAME_REQUIRED',
+  '"I also take appointments" needs a real name (no "Me" placeholder)');
 insert into tests.v values ('staff', to_jsonb(public.create_my_staff_profile(tests.id('biz'), 'Ops Helper')));
 select is(public.create_my_staff_profile(tests.id('biz'), 'Ops Helper'), (select (j #>> '{}')::uuid from tests.v where k = 'staff'),
   '"I also take appointments" is idempotent');

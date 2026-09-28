@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useState } from 'react';
+import { AddMyself } from '@/components/biz/add-myself';
 import { AddStaff } from '@/components/biz/add-staff';
 import { BasicsSection } from '@/components/biz/sections/basics';
 import { HoursSection } from '@/components/biz/sections/hours';
@@ -16,9 +17,7 @@ import { CHECKLIST_COPY, type ChecklistItem } from '@/lib/biz/checklist';
 import { canManage, useBiz } from '@/lib/biz/context';
 import {
   addTemplateServices,
-  linkStaff,
   loadCatalog,
-  loadLocationHours,
   loadServices,
   loadStaff,
   priceLabel,
@@ -192,38 +191,10 @@ function TeamStep() {
     [business.id],
   );
   const [adding, setAdding] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   if (!data || !location) return <p className="text-sm text-ink-500">Loading…</p>;
   const [staff, services] = data;
   const active = staff.filter((s) => s.status === 'active');
   const activeServices = services.filter((s) => s.status === 'active');
-
-  const addMyself = async () => {
-    setBusy(true);
-    setError(null);
-    try {
-      const { data: me } = await supabase().rpc('get_my_access');
-      const name = ((me as { first_name?: string } | null)?.first_name ?? '').trim() || 'Me';
-      const { data: id, error: err } = await supabase().rpc('create_my_staff_profile', {
-        p_business_id: business.id,
-        p_display_name: name,
-      });
-      if (err || !id) throw err;
-      await linkStaff(
-        business.id,
-        location.id,
-        id,
-        activeServices.map((s) => s.id),
-        await loadLocationHours(location.id),
-      );
-      await reload();
-    } catch (e) {
-      setError(describeError(codeOf(e)));
-    } finally {
-      setBusy(false);
-    }
-  };
 
   return (
     <>
@@ -246,16 +217,14 @@ function TeamStep() {
           <button type="button" className={btn.secondary} onClick={() => setAdding(true)}>
             + Add team member
           </button>
-          <button
-            type="button"
-            className={btn.secondary}
-            disabled={busy}
-            onClick={() => void addMyself()}
-          >
-            I also take appointments
-          </button>
+          <AddMyself
+            businessId={business.id}
+            locationId={location.id}
+            serviceIds={activeServices.map((s) => s.id)}
+            label="I also take appointments"
+            onDone={reload}
+          />
         </div>
-        {error ? <Notice tone="danger">{error}</Notice> : null}
       </Section>
       {adding ? (
         <AddStaff

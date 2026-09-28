@@ -3,6 +3,7 @@ import {
   addMemberByPhone,
   beirutDate,
   businessStatus,
+  clearProfileName,
   closePool,
   createDraftBusiness,
   firstService,
@@ -47,6 +48,7 @@ test('owner claims, goes live through the wizard, and the schedule drives availa
   await page.goto(`/invite/${biz.token}`);
   await signIn(page, '70 000 007');
   await expect(page.getByTestId('invite-accepted')).toBeVisible();
+  await clearProfileName('96170000007');
   await page.goto(`/biz/${biz.businessId}`);
   await expect(page.getByTestId('overview-checklist')).toBeVisible();
   await page.goto(`/biz/${biz.businessId}/setup`);
@@ -66,7 +68,7 @@ test('owner claims, goes live through the wizard, and the schedule drives availa
   await expect(page.getByText('Saved', { exact: true })).toBeVisible();
   await page.getByTestId('wizard-continue').click();
 
-  // hours: open Monday 9:00–13:00 and copy to every day
+  // hours: open Monday (default 9:00–19:00) and copy to every day
   await page.getByTestId('hours-grid').getByRole('button', { name: 'Open' }).first().click();
   await page.getByRole('button', { name: 'Copy to all' }).click();
   await page.getByRole('button', { name: 'Save hours' }).click();
@@ -84,9 +86,14 @@ test('owner claims, goes live through the wizard, and the schedule drives availa
   await expect(page.getByTestId('wizard-services').getByRole('listitem')).toHaveCount(2);
   await page.getByTestId('wizard-continue').click();
 
-  // team: "I also take appointments"
+  // team: "I also take appointments" — the owner has no name yet, so the wizard asks for it
   await page.getByRole('button', { name: 'I also take appointments' }).click();
+  const ask = page.getByTestId('ask-my-name');
+  await ask.getByLabel('First name').fill('Fadi');
+  await ask.getByLabel('Last name (optional)').fill('Khoury');
+  await ask.getByRole('button', { name: 'Add me to the team' }).click();
   await expect(page.getByTestId('wizard-team').getByRole('listitem')).toHaveCount(1);
+  await expect(page.getByTestId('wizard-team')).toContainText('Fadi Khoury');
   await page.getByTestId('wizard-continue').click();
 
   // photos: cover
@@ -109,12 +116,12 @@ test('owner claims, goes live through the wizard, and the schedule drives availa
   await expect(page.getByTestId('share-link')).toContainText(biz.slug);
 
   expect(await businessStatus(biz.businessId)).toEqual({ status: 'live', location: 'live' });
-  // DoD spot-check: public availability matches the hours on 3 days (9:00–13:00, 30-min service)
+  // DoD spot-check: public availability matches the hours on 3 days (9:00–19:00, 30-min service)
   const svc = await firstService(biz.businessId);
   for (const offset of [1, 2, 3]) {
     const slots = await publicSlots(biz.locationId, svc, await beirutDate(offset));
     expect(slots[0]).toBe('09:00');
-    expect(slots.at(-1)).toBe('12:30');
+    expect(slots.at(-1)).toBe('18:30');
   }
 
   // ── the schedule editor produces the expected availability (same session) ──

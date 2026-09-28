@@ -187,6 +187,15 @@ export async function addMemberByPhone(
   );
 }
 
+/** Blank a user's profile name (reruns start like a brand-new owner). */
+export async function clearProfileName(phoneDigits: string) {
+  await pool.query(
+    `update public.profiles set first_name = null, last_name = null
+     where id = (select id from auth.users where phone = $1)`,
+    [phoneDigits],
+  );
+}
+
 /** Public availability (as a logged-out visitor) for a Beirut date, as local "HH:MM" strings. */
 export async function publicSlots(
   locationId: string,

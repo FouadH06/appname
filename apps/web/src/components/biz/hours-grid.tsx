@@ -94,7 +94,9 @@ export function HoursGrid({
                 disabled={disabled}
                 onClick={() => {
                   const last = list[list.length - 1];
-                  const start = last ? Math.min(last.end + 60, 1380) : 540;
+                  // "Open" = a full salon day 9:00–19:00; "+ Shift" adds 4 h after the last shift
+                  if (!last) return setDay(d.iso, [{ start: 540, end: 1140 }]);
+                  const start = Math.min(last.end + 60, 1380);
                   setDay(d.iso, [...list, { start, end: Math.min(start + 240, 1440) }]);
                 }}
               >

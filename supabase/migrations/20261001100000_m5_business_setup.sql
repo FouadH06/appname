@@ -209,7 +209,9 @@ begin
   if not private.has_business_role(p_business_id, '{owner,manager}') then perform private.raise_code('FORBIDDEN'); end if;
   select id into v_id from public.staff_members where business_id = p_business_id and user_id = v_uid;
   if v_id is not null then return v_id; end if;
-  v_base := coalesce(nullif(trim(both '-' from regexp_replace(lower(coalesce(p_display_name, '')), '[^a-z0-9]+', '-', 'g')), ''), 'me');
+  -- the profile carries the person's real name (the wizard asks for it when the profile has none)
+  if coalesce(btrim(p_display_name), '') = '' then perform private.raise_code('NAME_REQUIRED'); end if;
+  v_base := coalesce(nullif(trim(both '-' from regexp_replace(lower(coalesce(p_display_name, '')), '[^a-z0-9]+', '-', 'g')), ''), 'staff');
   v_slug := v_base;
   while exists (select 1 from public.staff_members where business_id = p_business_id and slug = v_slug) loop
     i := i + 1; v_slug := v_base || '-' || i;

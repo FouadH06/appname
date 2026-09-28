@@ -1,6 +1,6 @@
 # M5 — Business dashboard I: onboarding & setup: report
 
-Status: **implemented, awaiting review** · Branch `m5-business-setup`
+Status: **closed** (approved 2026-09-28, D1–D10) · merged to `main`
 
 Hosted staging verification is deferred together with M4's (staging still runs the M3 schema; see
 the M4 report checklist). It must be completed before any real users or launch.
@@ -31,7 +31,7 @@ the M4 report checklist). It must be completed before any real users or launch.
 
 | Layer | Result | What it proves |
 |---|---|---|
-| pgTAP | **497/497** (68 new) | `210_business_setup` (36): ops-only + MFA create, pin in Lebanon, reserved/taken slugs, wizard writes under RLS, checklist → blocked publish → go live → public availability, owner claim ends the ops helper membership, slug check/change + redirects, reception can't edit services, pause (profile stays live), archive blocked by future bookings. `220_business_media` (14): folder rules, one cover, 10-photo cap, reorder, staff photo, removal, isolation. `230_crm` (18): search forms, role projection (reception spend setting, staff only own upcoming customers), duplicates, notes, isolation |
+| pgTAP | **498/498** (69 new) | `210_business_setup` (37): ops-only + MFA create, pin in Lebanon, reserved/taken slugs, wizard writes under RLS, checklist → blocked publish → go live → public availability, owner claim ends the ops helper membership, slug check/change + redirects, reception can't edit services, pause (profile stays live), archive blocked by future bookings. `220_business_media` (14): folder rules, one cover, 10-photo cap, reorder, staff photo, removal, isolation. `230_crm` (18): search forms, role projection (reception spend setting, staff only own upcoming customers), duplicates, notes, isolation |
 | E2E web (local stack) | **11 passed** (5 M4 auth + 2 M5 + 4 foundation) | **Owner mode end to end**: claim invite → basics → location (map) → hours → services from templates → "I also take appointments" → cover upload → rules → go live → share kit; **public availability matches on 3 spot-checked days**; the **schedule editor** changes availability to exactly 10:00–11:30. **Roles**: reception has Customers/Staff, no Services/Settings, and the services page refuses edits |
 | E2E admin | **1 passed** | MFA flow + **assisted mode**: ops creates a draft business, gets the owner invite, and is its temporary manager |
 | Unit | web 7 (Beirut time/DST conversions, conflict detection, hours validation), admin 5 (pin parsing), + earlier packages | |
@@ -57,7 +57,6 @@ Manual check in the browser: desktop shell, settings with the live map, mobile l
 
 ## Known gaps / notes
 
-- "I also take appointments" names the owner's staff profile "Me" when their name isn't set yet; rename it in Staff › Profile (the wizard could ask for a name — small follow-up).
 - DoD "ops can onboard a real salon in ≤ 20 minutes on a phone" needs a real run with a salon; the automated walk-through takes ~10 s.
 - Hosted staging verification of M4 + M5 is deferred (see the M4 checklist).
 
@@ -66,3 +65,15 @@ Manual check in the browser: desktop shell, settings with the live map, mobile l
 1. Run the wizard on your phone for a test business (local Round 1 setup): does each step feel fast enough to hit 20 minutes with a real salon?
 2. Are the go-live requirements right (cover photo mandatory, at least one priced online service)?
 3. Default hours when you tap "Open": 9:00–13:00; do you prefer a full-day default (e.g. 9:00–19:00)?
+
+## Approval adjustments (applied before merge)
+
+- "Open" on a day now defaults to **9:00–19:00** (still editable); "+ Shift" unchanged.
+- "I also take appointments" / "I work alone — add myself" never creates a "Me" profile: if the
+  person's profile has no name, it asks for first/last name, saves it to their profile, and uses it
+  for the staff profile. `create_my_staff_profile` rejects blank names (`NAME_REQUIRED`, pgTAP).
+- Kept as decided: cover photo and a priced, online-bookable service with a performer are required
+  to go live; assisted onboarding's temporary ops manager access ends when the owner accepts;
+  pausing online booking keeps the profile visible; OpenStreetMap tiles for now (production tile
+  provider is a pre-launch decision); dashboard English-first but RTL/i18n-ready.
+- Hosted M4 + M5 staging verification remains a mandatory pre-real-user / pre-launch gate.

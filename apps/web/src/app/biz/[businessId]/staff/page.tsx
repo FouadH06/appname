@@ -2,20 +2,12 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import { AddMyself } from '@/components/biz/add-myself';
 import { AddStaff } from '@/components/biz/add-staff';
-import { Body, Notice, PageHeader, Section, btn, codeOf } from '@/components/biz/ui';
+import { Body, PageHeader, Section, btn } from '@/components/biz/ui';
 import { canManage, useBiz } from '@/lib/biz/context';
-import {
-  linkStaff,
-  loadLocationHours,
-  loadServices,
-  loadStaff,
-  type Service,
-  type Staff,
-} from '@/lib/biz/data';
+import { loadServices, loadStaff, type Service, type Staff } from '@/lib/biz/data';
 import { useLoad } from '@/lib/biz/use-load';
-import { describeError } from '@/lib/copy';
-import { supabase } from '@/lib/supabase';
 
 // B9 Staff — list and "+ Add team member"
 export default function StaffPage() {
@@ -27,35 +19,6 @@ export default function StaffPage() {
   const staff: Staff[] | null = data?.[0] ?? null;
   const services: Service[] = (data?.[1] ?? []).filter((s) => s.status === 'active');
   const [adding, setAdding] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-
-  const addMyself = async () => {
-    if (!location) return;
-    setBusy(true);
-    setError(null);
-    try {
-      const { data: me } = await supabase().rpc('get_my_access');
-      const name = ((me as { first_name?: string } | null)?.first_name ?? '').trim() || 'Me';
-      const { data: id, error: err } = await supabase().rpc('create_my_staff_profile', {
-        p_business_id: business.id,
-        p_display_name: name,
-      });
-      if (err || !id) throw err;
-      await linkStaff(
-        business.id,
-        location.id,
-        id,
-        services.map((s) => s.id),
-        await loadLocationHours(location.id),
-      );
-      await reload();
-    } catch (e) {
-      setError(describeError(codeOf(e)));
-    } finally {
-      setBusy(false);
-    }
-  };
 
   const manage = canManage(role);
   const active = (staff ?? []).filter((s) => s.status === 'active');
@@ -75,7 +38,6 @@ export default function StaffPage() {
         }
       />
       <Body>
-        {error ? <Notice tone="danger">{error}</Notice> : null}
         {adding && location ? (
           <AddStaff
             businessId={business.id}
@@ -96,14 +58,15 @@ export default function StaffPage() {
                 <button type="button" className={btn.primary} onClick={() => setAdding(true)}>
                   + Add team member
                 </button>
-                <button
-                  type="button"
-                  className={btn.secondary}
-                  disabled={busy}
-                  onClick={() => void addMyself()}
-                >
-                  I work alone — add myself
-                </button>
+                {location ? (
+                  <AddMyself
+                    businessId={business.id}
+                    locationId={location.id}
+                    serviceIds={services.map((s) => s.id)}
+                    label="I work alone — add myself"
+                    onDone={reload}
+                  />
+                ) : null}
               </div>
             ) : null}
           </Section>
