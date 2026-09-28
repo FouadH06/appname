@@ -36,7 +36,7 @@ async function pickFirstSlot(page: Page) {
   return label;
 }
 
-test('Instagram link → booked in under a minute; manage and cancel; request mode; old slug', async ({
+test('Instagram link → booked in under a minute; reschedule (Any available) and cancel; request mode; old slug', async ({
   page,
 }) => {
   test.setTimeout(240_000);
@@ -82,6 +82,19 @@ test('Instagram link → booked in under a minute; manage and cancel; request mo
     const card = page.getByTestId('my-booking').filter({ hasText: b.name }).first();
     await expect(card).toContainText('Haircut');
     await card.click();
+
+    // reschedule with "Any available": the assigned person is shown before confirming
+    await setStaffPublic(b.mayaId, true);
+    await page.getByRole('button', { name: 'Reschedule' }).click();
+    await page.getByRole('radio', { name: 'Any available' }).click();
+    await page.getByTestId('reschedule-slots').getByRole('button').first().click();
+    const confirmPanel = page.getByTestId('reschedule-confirm');
+    await expect(confirmPanel.getByTestId('reschedule-with')).toHaveText(/Karim|Maya/);
+    const who = (await confirmPanel.getByTestId('reschedule-with').textContent())!.trim();
+    await confirmPanel.getByRole('button', { name: 'Confirm new time' }).click();
+    await expect(page.getByRole('status').filter({ hasText: `with ${who}` })).toBeVisible();
+    await expect(page.getByTestId('booking-detail')).toContainText(`with ${who}`);
+
     await page.getByTestId('cancel-booking').click();
     await page.getByTestId('confirm-cancel').click();
     await expect(page.getByTestId('booking-status')).toHaveText('Cancelled');
@@ -91,7 +104,6 @@ test('Instagram link → booked in under a minute; manage and cancel; request mo
   });
 
   await test.step('request mode: Any available (default) → "Send request" → "Request sent"', async () => {
-    await setStaffPublic(b.mayaId, true);
     await setBookingMode(b.businessId, 'request');
     await page.goto(`/${slug}/book?service=${b.serviceId}`);
     const staff = page.getByTestId('step-staff');

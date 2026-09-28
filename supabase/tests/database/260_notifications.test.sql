@@ -33,7 +33,8 @@ create function tests.manual(p_key text, p_phone text, p_start timestamptz, p_no
 declare v uuid;
 begin
   v := (public.create_manual_booking(tests.id('biz_loc'), jsonb_build_object('phone', p_phone, 'name', 'Lina'),
-                                     tests.id('Cut'), tests.id('Karim'), p_start, p_notify => p_notify)).id;
+                                     tests.id('Cut'), tests.id('Karim'), p_start, p_notify => p_notify,
+                                     p_allow_outside_hours => true)).id;  -- now-relative times may cross midnight
   insert into tests.v values (p_key, to_jsonb(v));
   return v;
 end $$;
@@ -173,7 +174,7 @@ select is((select status::text from public.notifications where id = tests.bk('ni
 select tests.as_postgres();
 select tests.act_as('recep');
 insert into tests.v values ('m', to_jsonb((public.create_manual_booking(tests.id('biz_loc'), jsonb_build_object('business_customer_id', tests.id('moe_rec')),
-  tests.id('Cut'), tests.id('Karim'), now() + interval '2 days')).id));
+  tests.id('Cut'), tests.id('Karim'), tests.at(tests.day(2), '12:00'))).id));
 set local role service_role;
 select is(public.whatsapp_button('wamid.btn1', '96170999999', 'confirm:' || tests.bk('m')) ->> 'reply', 'not_yours',
   'Confirm from another number is refused');

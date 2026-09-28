@@ -283,6 +283,12 @@ export function BookingDetail({
             Reschedule
           </button>
         ) : null}
+        {b.status === 'confirmed' && b.can_reschedule && !b.staff_id ? (
+          <p className="text-sm text-ink-700">
+            To change the time, contact {b.business.name}
+            {wa ? ' on WhatsApp' : ''}.
+          </p>
+        ) : null}
         {b.status === 'completed' ? (
           <>
             {b.staff_id ? (
@@ -484,9 +490,18 @@ function RescheduleSheet({
   onError: (e: string | null) => void;
 }) {
   const today = beirutToday();
-  const [days, setDays] = useState<string[] | null>(null);
+  // Same staff member (default) or Any available (assigned by the business rule before confirming)
+  const [who, setWho] = useState<'same' | 'any'>('same');
+  const staffParam = who === 'same' ? (b.staff_id ?? undefined) : undefined;
+  const [days, setDays] = useState<{ who: string; list: string[] } | null>(null);
   const [date, setDate] = useState<string | null>(null);
-  const [slots, setSlots] = useState<{ date: string; list: string[] } | null>(null);
+  const [slots, setSlots] = useState<{ key: string; list: string[] } | null>(null);
+  const [pick, setPick] = useState<{
+    start: string;
+    staffId: string | null;
+    name: string;
+    price: string;
+  } | null>(null);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -495,18 +510,19 @@ function RescheduleSheet({
       .rpc('get_available_days', {
         p_location_id: b.location.id,
         p_service_id: b.service_id,
-        p_staff_id: b.staff_id ?? undefined,
+        p_staff_id: staffParam,
       })
       .then(({ data }) => {
         if (!alive) return;
         const list = ((data ?? []) as string[]).sort();
-        setDays(list);
-        setDate(list[0] ?? null);
+        setDays({ who, list });
+        setDate((d) => (d && list.includes(d) ? d : (list[0] ?? null)));
       });
     return () => {
       alive = false;
     };
-  }, [b.location.id, b.service_id, b.staff_id]);
+  }, [b.location.id, b.service_id, staffParam, who]);
+  const slotKey = `${who}|${date}`;
   useEffect(() => {
     if (!date) return;
     let alive = true;
@@ -514,7 +530,7 @@ function RescheduleSheet({
       .rpc('get_available_slots', {
         p_location_id: b.location.id,
         p_service_id: b.service_id,
-        p_staff_id: b.staff_id ?? undefined,
+        p_staff_id: staffParam,
         p_date_from: date,
         p_date_to: date,
       })
@@ -522,61 +538,141 @@ function RescheduleSheet({
         ({ data }) =>
           alive &&
           setSlots({
-            date,
+            key: slotKey,
             list: (data ?? []).map((r) => r.slot_start).filter((s) => s !== b.starts_at),
           }),
       );
     return () => {
       alive = false;
     };
-  }, [date, b.location.id, b.service_id, b.staff_id, b.starts_at]);
+  }, [date, b.location.id, b.service_id, staffParam, b.starts_at, slotKey]);
 
+  const choose = async (start: string) => {
+    onError(null);
+    if (who === 'same') {
+      return setPick({ start, staffId: null, name: b.staff_first_name, price: priceText(b) });
+    }
+    setBusy(true);
+    const { data, error } = await supabase().rpc('preview_reschedule_any', {
+      p_booking_id: b.id,
+      p_new_start: start,
+    });
+    setBusy(false);
+    const row = data?.[0];
+    if (error || !row) return onError(describeError(error?.message ?? 'SLOT_TAKEN'));
+    setPick({
+      start,
+      staffId: row.staff_id,
+      name: row.staff_first_name,
+      price: priceText({ ...row, currency: b.currency }),
+    });
+  };
+
+  const confirm = async () => {
+    if (!pick) return;
+    setBusy(true);
+    onError(null);
+    const { error } = pick.staffId
+      ? await supabase().rpc('reschedule_my_booking_any', {
+          p_booking_id: b.id,
+          p_new_start: pick.start,
+          p_staff_id: pick.staffId,
+        })
+      : await supabase().rpc('reschedule_my_booking', {
+          p_booking_id: b.id,
+          p_new_start: pick.start,
+        });
+    setBusy(false);
+    if (error) {
+      if (error.message === 'STAFF_NOT_FREE' && pick.staffId) {
+        // the person we showed was just taken: assign again and show the new name
+        onError(`${pick.name} was just booked at ${timeText(pick.start)}.`);
+        return void choose(pick.start);
+      }
+      return onError(describeError(error.message, { staff: pick.name }));
+    }
+    await onDone(`Moved to ${dateTimeText(pick.start)} with ${pick.name}.`);
+  };
+
+  const dayList = days?.who === who ? days.list : null;
   return (
-    <Sheet title={`Reschedule with ${b.staff_first_name}`} onClose={onClose}>
-      {days && !days.length ? (
-        <p className="text-sm">
-          {b.staff_first_name} has no free times in the next two weeks. Contact {b.business.name} on
-          WhatsApp.
-        </p>
-      ) : null}
-      <div className="flex gap-2 overflow-x-auto pb-2">
-        {(days ?? []).map((d) => (
+    <Sheet title="Reschedule" onClose={onClose}>
+      <div
+        className="mb-3 flex rounded-control border border-line-200 p-1"
+        role="radiogroup"
+        aria-label="Who"
+      >
+        {(['same', 'any'] as const).map((w) => (
           <button
-            key={d}
+            key={w}
             type="button"
-            className={`whitespace-nowrap rounded-full border px-3 py-1.5 text-sm ${d === date ? 'border-accent-600 bg-accent-600 text-white' : 'border-line-200'}`}
-            onClick={() => setDate(d)}
+            role="radio"
+            aria-checked={who === w}
+            className={`h-9 flex-1 rounded-control text-sm font-medium ${who === w ? 'bg-accent-600 text-white' : ''}`}
+            onClick={() => {
+              setWho(w);
+              setPick(null);
+            }}
           >
-            {relativeDay(d, today)}
+            {w === 'same' ? `With ${b.staff_first_name}` : 'Any available'}
           </button>
         ))}
       </div>
-      <div className="grid grid-cols-4 gap-2" data-testid="reschedule-slots">
-        {slots?.date === date
-          ? slots.list.map((s) => (
+      {pick ? (
+        <div className="flex flex-col gap-3" data-testid="reschedule-confirm">
+          <p>
+            Move to <span className="font-semibold">{dateTimeText(pick.start)}</span> with{' '}
+            <span className="font-semibold" data-testid="reschedule-with">
+              {pick.name}
+            </span>
+            ?
+          </p>
+          <p className="text-sm text-ink-700">{pick.price}</p>
+          <button type="button" className={primary} disabled={busy} onClick={() => void confirm()}>
+            Confirm new time
+          </button>
+          <button type="button" className={btn} onClick={() => setPick(null)}>
+            Pick another time
+          </button>
+        </div>
+      ) : (
+        <>
+          {dayList && !dayList.length ? (
+            <p className="text-sm">
+              {who === 'same' ? `${b.staff_first_name} has` : 'There are'} no free times in the next
+              two weeks.
+              {who === 'same' ? ' Try Any available.' : ` Contact ${b.business.name} on WhatsApp.`}
+            </p>
+          ) : null}
+          <div className="flex gap-2 overflow-x-auto pb-2">
+            {(dayList ?? []).map((d) => (
               <button
-                key={s}
+                key={d}
                 type="button"
-                disabled={busy}
-                className="h-11 rounded-control border border-line-200 text-sm"
-                onClick={() => {
-                  setBusy(true);
-                  onError(null);
-                  void supabase()
-                    .rpc('reschedule_my_booking', { p_booking_id: b.id, p_new_start: s })
-                    .then(async ({ error }) => {
-                      setBusy(false);
-                      if (error)
-                        return onError(describeError(error.message, { staff: b.staff_first_name }));
-                      await onDone(`Moved to ${dateTimeText(s)}.`);
-                    });
-                }}
+                className={`whitespace-nowrap rounded-full border px-3 py-1.5 text-sm ${d === date ? 'border-accent-600 bg-accent-600 text-white' : 'border-line-200'}`}
+                onClick={() => setDate(d)}
               >
-                {timeText(s)}
+                {relativeDay(d, today)}
               </button>
-            ))
-          : null}
-      </div>
+            ))}
+          </div>
+          <div className="grid grid-cols-4 gap-2" data-testid="reschedule-slots">
+            {slots?.key === slotKey
+              ? slots.list.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    disabled={busy}
+                    className="h-11 rounded-control border border-line-200 text-sm"
+                    onClick={() => void choose(s)}
+                  >
+                    {timeText(s)}
+                  </button>
+                ))
+              : null}
+          </div>
+        </>
+      )}
       <button type="button" className={`${btn} mt-4 w-full`} onClick={onClose}>
         Close
       </button>

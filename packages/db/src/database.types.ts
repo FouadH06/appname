@@ -3455,6 +3455,17 @@ export type Database = {
         Args: { p_business_id: string; p_paused: boolean };
         Returns: undefined;
       };
+      preview_reschedule_any: {
+        Args: { p_booking_id: string; p_new_start: string };
+        Returns: {
+          duration_min: number;
+          price_max: number;
+          price_min: number;
+          price_type: Database['public']['Enums']['price_type'];
+          staff_first_name: string;
+          staff_id: string;
+        }[];
+      };
       publish_business: { Args: { p_business_id: string }; Returns: Json };
       reassign_booking_item: {
         Args: { p_item_id: string; p_new_staff_id: string; p_notify?: boolean };
@@ -3514,6 +3525,56 @@ export type Database = {
       };
       reschedule_my_booking: {
         Args: { p_booking_id: string; p_new_start: string; p_staff_id?: string };
+        Returns: {
+          attribution: NonNullable<Json>;
+          business_customer_id: string | null;
+          business_id: string;
+          cancel_reason: string | null;
+          cancelled_at: string | null;
+          cancelled_by_kind: Database['public']['Enums']['actor_kind'] | null;
+          completed_at: string | null;
+          completed_by_kind: Database['public']['Enums']['actor_kind'] | null;
+          confirmed_at: string | null;
+          created_at: string;
+          created_by_kind: Database['public']['Enums']['actor_kind'];
+          created_by_user_id: string | null;
+          currency: string;
+          customer_confirmed_at: string | null;
+          customer_note: string | null;
+          customer_user_id: string | null;
+          ends_at: string;
+          expires_at: string | null;
+          hold_owner_user_id: string | null;
+          hold_token_hash: string | null;
+          id: string;
+          idempotency_key: string | null;
+          internal_note: string | null;
+          is_late_cancel: boolean;
+          is_request: boolean;
+          location_id: string;
+          no_show_at: string | null;
+          no_show_disputed: boolean;
+          payment_status: Database['public']['Enums']['payment_status'];
+          policy_snapshot: NonNullable<Json>;
+          ref: string;
+          rescheduled_count: number;
+          review_eligible_until: string | null;
+          source: Database['public']['Enums']['booking_source'];
+          starts_at: string;
+          status: Database['public']['Enums']['booking_status'];
+          total_price_max: number | null;
+          total_price_min: number | null;
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'bookings';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      reschedule_my_booking_any: {
+        Args: { p_booking_id: string; p_new_start: string; p_staff_id: string };
         Returns: {
           attribution: NonNullable<Json>;
           business_customer_id: string | null;
