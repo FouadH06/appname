@@ -1,6 +1,6 @@
 # M7 — Notifications & WhatsApp: report
 
-Status: **implemented, awaiting review** · Branch `m7-notifications`
+Status: **approved technically (D1–D9); final copy review pending** · Branch `m7-notifications`
 
 Hosted staging verification is deferred together with M4–M6 (see the M4 report checklist, now
 including M7). Real WhatsApp / SMS delivery needs the external accounts (Meta business number and
@@ -35,7 +35,7 @@ approved templates, Twilio) and is a launch dependency, not a milestone blocker.
 
 | Layer | Result | What it proves |
 |---|---|---|
-| pgTAP | **603/603** (42 new in `260_notifications`) | Confirmation + link queued only with "Send confirmation"; reminder times; no reminders when booked < 2 h ahead; only the 2 h one when < 24 h; reschedule cancels and re-creates reminders and tells the customer the old time; business cancellation with reason; **Undo sends nothing**; customer cancellation alerts owners (not reception) by default; alert settings (reception only their own; staff refused); dispatcher RPCs **service_role only**; claim returns only due rows with WhatsApp → SMS order and the template; **a second claim returns nothing**; failed WhatsApp receipt → one SMS retry (SMS only); receipts never go backwards; backoff then failure after 4 attempts; **Confirm from another number refused**, from the customer's number confirms, duplicate webhook handled once, Cancel never cancels; Arabic → approved English template; preferences (last channel kept); inbox only your own; ops-only report |
+| pgTAP | **608/608** (47 new in `260_notifications`) | Confirmation + link queued only with "Send confirmation"; reminder times; no reminders when booked < 2 h ahead; only the 2 h one when < 24 h; reschedule cancels and re-creates reminders and tells the customer the old time; business cancellation with reason; **Undo sends nothing**; customer cancellation alerts owners (not reception) by default; alert settings (reception only their own; staff refused); dispatcher RPCs **service_role only**; claim returns only due rows with WhatsApp → SMS order and the template; **a second claim returns nothing**; failed WhatsApp receipt → one SMS retry (SMS only); receipts never go backwards; backoff then failure after 4 attempts; **Confirm from another number refused**, from the customer's number confirms, duplicate webhook handled once, Cancel never cancels; Arabic → approved English template; preferences (last channel kept); inbox only your own; ops-only report |
 | Edge unit (Vitest) | **45** (13 new) | Beirut-time rendering per locale, tidy text with missing values, non-empty WhatsApp parameters, Confirm/Cancel payloads; dispatcher: WhatsApp send, **SMS fallback**, unapproved template → SMS in live / sent in log mode, retry vs fail, no channel, **double run sends once**; Meta template + quick-reply request body; Twilio mapping; config; signed webhook button → database + session reply; unsigned ignored |
 | E2E web (local stack) | **14 passed** (1 new) | Reception books a regular customer with "Send confirmation" → confirmation + 24 h + 2 h reminders queued; **the real `notify-dispatch` function** sends the due confirmation (log provider) and refuses calls without the secret; a **signed WhatsApp Confirm webhook** from the customer's number confirms attendance and the timeline shows it; manager changes team alerts (persisted); overview flags failing customer messages |
 | Also verified locally | ✅ | pg_cron → Vault → pg_net → `notify-dispatch` sends a queued message within a minute |
@@ -72,3 +72,22 @@ approved templates, Twilio) and is a launch dependency, not a milestone blocker.
 1. Read the EN / AR message copy in the templates migration — tone and length OK for WhatsApp?
 2. Should reception get new-booking alerts by default, or only owners and managers (current)?
 3. Do you want quiet hours (e.g. no messages 22:00–08:00, reminders moved earlier)?
+
+## Approval follow-ups (before merge)
+
+- **Reception gets the operational alerts by default** (new online booking, new request, customer
+  cancellation), with owners and managers; staff don't. Changeable in Settings › Notifications.
+- **Quiet hours** (business setting, default 22:00–08:00, location time zone; Settings ›
+  Notifications): confirmations, request outcomes, cancellations, reschedules, staff changes and
+  no-shows send immediately; a 24 h reminder that falls inside quiet hours moves to their end (if
+  still ≥ 2 h before the visit); a **2 h reminder inside quiet hours is skipped** (8:00 visit → no
+  6:00 message, the 24 h one remains). Team alerts wait for the end of quiet hours unless the
+  appointment starts, or a request expires, within 2 h after that.
+- **Copy for review**: `docs/notifications/templates.md` (every EN + AR WhatsApp and SMS message
+  rendered with sample values, buttons and links as the customer sees them). To meet Meta's rules
+  the WhatsApp bodies no longer start/end with a variable and carry no links: links are URL
+  buttons (**View booking** → `/m/{token}`, **Book another time** → `/{slug}`, **Open bookings**
+  for the team); SMS keeps the link written out. Copy source: `scripts/notification-templates.py`.
+- Tests: pgTAP +5 (8:00 visit keeps only the 24 h reminder; 23:30 visit's 24 h reminder moves to
+  08:00; team alert at 23:00 waits; a request expiring early is surfaced now; daytime immediate;
+  reception default), edge unit tests for URL buttons and the reason sentence.

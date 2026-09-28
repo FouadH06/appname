@@ -1,4 +1,4 @@
-import type { Locale, Template } from './types.ts';
+import type { Locale, Template, TemplateButton } from './types.ts';
 
 // Rendering: dates and times are formatted per locale in the business's time zone (Asia/Beirut),
 // never the server's. Missing optional values (e.g. no decline reason) leave no gaps.
@@ -43,8 +43,14 @@ export function formatVars(
     time: now.time,
     old_date: old.date,
     old_time: old.time,
-    reason: reason ? (/[.!؟?]$/.test(reason) ? reason : `${reason}.`) : '',
+    // a sentence either way: WhatsApp parameters can't be empty
+    reason: reason
+      ? `${locale === 'ar' ? 'السبب' : 'Reason'}: ${/[.!؟?]$/.test(reason) ? reason : `${reason}.`}`
+      : locale === 'ar'
+        ? 'نعتذر عن الإزعاج.'
+        : "We're sorry for the inconvenience.",
     link: str(payload.link),
+    business_url: str(payload.business_url),
     dashboard_link: str(payload.dashboard_link),
     business_phone: str(payload.business_phone),
   };
@@ -65,8 +71,23 @@ export function whatsappParams(t: Template, vars: Record<string, string>): strin
   return t.variables.map((v) => (vars[v] ?? '').trim() || '—');
 }
 
-export function buttonPayloads(t: Template, bookingId: unknown): string[] {
-  return typeof bookingId === 'string' ? t.buttons.map((b) => `${b}:${bookingId}`) : [];
+/**
+ * Button parameters in template order: Confirm / Cancel quick replies carry `action:booking_id`
+ * back to the webhook; URL buttons get their dynamic suffix (booking token, business slug,
+ * dashboard path).
+ */
+export function templateButtons(t: Template, payload: Record<string, unknown>): TemplateButton[] {
+  const id = str(payload.booking_id);
+  return t.buttons.map((b): TemplateButton => {
+    if (b === 'confirm' || b === 'cancel') return { kind: 'quick_reply', payload: `${b}:${id}` };
+    const suffix =
+      b === 'view'
+        ? str(payload.link_token)
+        : b === 'book'
+          ? str(payload.business_slug)
+          : str(payload.dashboard_path);
+    return { kind: 'url', text: suffix || '-' };
+  });
 }
 
 // ─── Replies to WhatsApp button taps (inside the customer's open session) ──

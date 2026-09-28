@@ -14,7 +14,8 @@ create table public.notification_templates (
   provider_template_name  text,                      -- WhatsApp approved template name
   body                    text not null,             -- rendering source for sms / in_app (and the WhatsApp copy submitted to Meta)
   variables               text[] not null default '{}',  -- WhatsApp body parameter order
-  buttons                 text[] not null default '{}',  -- WhatsApp quick replies, in order: 'confirm' | 'cancel'
+  buttons                 text[] not null default '{}',  -- in order: quick replies 'confirm' | 'cancel'; URL buttons 'view' (/m/{token}), 'book' (/{slug}), 'dashboard' (/biz/{id}/bookings)
+  button_labels           text[] not null default '{}',  -- what the recipient sees on each button (submitted to Meta)
   status                  text not null default 'draft' check (status in ('draft', 'pending_approval', 'approved', 'rejected')),
   is_active               boolean not null default false,
   created_at              timestamptz not null default now(),
@@ -145,6 +146,49 @@ create policy preferences_own on public.notification_preferences for select to a
 create policy push_tokens_own on public.push_tokens for select to authenticated
   using (user_id = (select private.uid()));
 
+-- ─── Quiet hours (customer reminders; normal business alerts) ─────────────
+-- Local wall-clock window in the location's time zone, default 22:00–08:00 (may wrap midnight).
+alter table public.business_settings
+  add column quiet_hours_start_minute int not null default 1320 check (quiet_hours_start_minute between 0 and 1439),
+  add column quiet_hours_end_minute   int not null default 480  check (quiet_hours_end_minute between 0 and 1439);
+grant update (quiet_hours_start_minute, quiet_hours_end_minute) on public.business_settings to authenticated;  -- owner/manager via the M2 policy
+
+create function private.in_quiet_hours(p_business_id uuid, p_at timestamptz) returns boolean
+language sql stable security definer set search_path = '' as $$
+  select case when s.quiet_hours_start_minute = s.quiet_hours_end_minute then false
+              when s.quiet_hours_start_minute > s.quiet_hours_end_minute
+                then x.m >= s.quiet_hours_start_minute or x.m < s.quiet_hours_end_minute
+              else x.m >= s.quiet_hours_start_minute and x.m < s.quiet_hours_end_minute end
+  from public.business_settings s,
+       lateral (select (extract(hour from p_at at time zone private.biz_tz(p_business_id)) * 60
+                        + extract(minute from p_at at time zone private.biz_tz(p_business_id)))::int as m) x
+  where s.business_id = p_business_id
+$$;
+
+-- The first end of quiet hours after p_at (local end time that day, else the next day)
+create function private.quiet_hours_end_after(p_business_id uuid, p_at timestamptz) returns timestamptz
+language sql stable security definer set search_path = '' as $$
+  select case when private.local_instant(dd.d, s.quiet_hours_end_minute, z.tz) > p_at
+              then private.local_instant(dd.d, s.quiet_hours_end_minute, z.tz)
+              else private.local_instant(dd.d + 1, s.quiet_hours_end_minute, z.tz) end
+  from public.business_settings s,
+       lateral (select private.biz_tz(p_business_id) as tz) z,
+       lateral (select (p_at at time zone z.tz)::date as d) dd
+  where s.business_id = p_business_id
+$$;
+
+-- When a business alert goes out: now, or at the end of quiet hours — unless it's time-sensitive
+-- (the appointment starts, or a request expires, within 2 h after quiet hours end).
+create function private.business_alert_at(p_business_id uuid, p_starts_at timestamptz, p_expires_at timestamptz,
+                                          p_now timestamptz default now())
+returns timestamptz
+language sql stable security definer set search_path = '' as $$
+  select case when not coalesce(private.in_quiet_hours(p_business_id, p_now), false) then p_now
+              when least(p_starts_at, coalesce(p_expires_at, p_starts_at))
+                   < private.quiet_hours_end_after(p_business_id, p_now) + interval '2 hours' then p_now
+              else private.quiet_hours_end_after(p_business_id, p_now) end
+$$;
+
 -- ─── Enqueue ───────────────────────────────────────────────────────────────
 create function private.enqueue_notification(
   p_type public.notification_type, p_booking_id uuid, p_user_id uuid, p_phone text, p_business_id uuid,
@@ -179,6 +223,9 @@ begin
     'service_name', sv.name, 'staff_name', split_part(s.display_name, ' ', 1),
     'customer_name', split_part(coalesce(bc.display_name, ''), ' ', 1),
     'link', case when v_token is not null then v_base || '/m/' || v_token end,
+    'link_token', v_token,                                      -- WhatsApp "View booking" button suffix
+    'business_slug', biz.slug, 'business_url', v_base || '/' || biz.slug,
+    'dashboard_path', b.business_id || '/bookings',
     'dashboard_link', v_base || '/biz/' || b.business_id || '/bookings')
   into v
   from public.bookings bb
@@ -218,15 +265,17 @@ begin
                                        c.locale, p_dedupe, p_at);
 end $$;
 
--- Business alerts: members chosen in B12 settings; by default owners and managers, on WhatsApp
+-- Business alerts: members chosen in B12 settings; by default owners, managers and reception,
+-- on WhatsApp. Outside time-sensitive cases they wait for the end of quiet hours.
 create function private.notify_business(p_type public.notification_type, p_booking_id uuid) returns void
 language plpgsql volatile security definer set search_path = '' as $$
-declare b public.bookings; r record; v_payload jsonb; v_custom boolean;
+declare b public.bookings; r record; v_payload jsonb; v_custom boolean; v_at timestamptz;
 begin
   select * into b from public.bookings where id = p_booking_id;
   select exists (select 1 from public.business_notification_settings where business_id = b.business_id and type = p_type)
     into v_custom;
-  v_payload := private.booking_payload(p_booking_id) - 'link';
+  v_payload := private.booking_payload(p_booking_id) - 'link' - 'link_token';
+  v_at := private.business_alert_at(b.business_id, b.starts_at, b.expires_at);
   for r in
     select m.user_id, p.phone_e164, p.locale
     from public.business_members m join public.profiles p on p.id = m.user_id
@@ -235,31 +284,36 @@ begin
                then exists (select 1 from public.business_notification_settings s
                             where s.business_id = b.business_id and s.user_id = m.user_id and s.type = p_type
                               and 'whatsapp' = any(s.channels))
-               else m.role in ('owner', 'manager') end
+               else m.role in ('owner', 'manager', 'reception') end
   loop
     perform private.enqueue_notification(p_type, p_booking_id, r.user_id, r.phone_e164, b.business_id, v_payload, r.locale,
-                                         p_type || ':' || p_booking_id || ':' || r.user_id);
+                                         p_type || ':' || p_booking_id || ':' || r.user_id, v_at);
   end loop;
 end $$;
 
 -- Reminders 24 h and 2 h before; skipped when the booking is made closer than that. The start
--- time is part of the dedupe key, so a reschedule creates fresh ones.
+-- time is part of the dedupe key, so a reschedule creates fresh ones. Quiet hours: a 24 h reminder
+-- that falls inside them moves to their end (if still at least 2 h before the visit); a 2 h reminder
+-- that falls inside them is skipped (8:00 visit: no 6:00 message; the 24 h one remains).
 create function private.schedule_reminders(p_booking_id uuid) returns void
 language plpgsql volatile security definer set search_path = '' as $$
-declare b public.bookings; v_epoch text;
+declare b public.bookings; v_epoch text; v_24 timestamptz; v_2 timestamptz;
 begin
   select * into b from public.bookings where id = p_booking_id;
   update public.notifications set status = 'cancelled'
    where booking_id = p_booking_id and status = 'queued' and type in ('booking_reminder_24h', 'booking_reminder_2h');
   if b.status <> 'confirmed' then return; end if;
   v_epoch := extract(epoch from b.starts_at)::bigint::text;
-  if b.starts_at - interval '24 hours' > now() then
-    perform private.notify_customer('booking_reminder_24h', b.id, '{}',
-      'reminder_24h:' || b.id || ':' || v_epoch, b.starts_at - interval '24 hours');
+  v_24 := b.starts_at - interval '24 hours';
+  if coalesce(private.in_quiet_hours(b.business_id, v_24), false) then
+    v_24 := private.quiet_hours_end_after(b.business_id, v_24);
   end if;
-  if b.starts_at - interval '2 hours' > now() then
-    perform private.notify_customer('booking_reminder_2h', b.id, '{}',
-      'reminder_2h:' || b.id || ':' || v_epoch, b.starts_at - interval '2 hours');
+  if v_24 > now() and v_24 <= b.starts_at - interval '2 hours' then
+    perform private.notify_customer('booking_reminder_24h', b.id, '{}', 'reminder_24h:' || b.id || ':' || v_epoch, v_24);
+  end if;
+  v_2 := b.starts_at - interval '2 hours';
+  if v_2 > now() and not coalesce(private.in_quiet_hours(b.business_id, v_2), false) then
+    perform private.notify_customer('booking_reminder_2h', b.id, '{}', 'reminder_2h:' || b.id || ':' || v_epoch, v_2);
   end if;
 end $$;
 
@@ -507,7 +561,7 @@ end $$;
 create function public.get_my_notifications(p_before timestamptz default null, p_limit int default 30)
 returns table (id uuid, type public.notification_type, booking_id uuid, payload jsonb, created_at timestamptz, read_at timestamptz)
 language sql stable security definer set search_path = '' as $$
-  select n.id, n.type, n.booking_id, n.payload - 'dashboard_link', n.created_at, n.read_at
+  select n.id, n.type, n.booking_id, n.payload - 'dashboard_link' - 'dashboard_path', n.created_at, n.read_at
   from public.notifications n
   where n.recipient_user_id = private.uid() and n.status <> 'cancelled' and n.scheduled_for <= now()
     and (p_before is null or n.created_at < p_before)
@@ -526,7 +580,7 @@ begin
 end $$;
 
 -- ─── B12 business notification settings ─────────────────────────────────
--- Who gets which alert on WhatsApp. Without rows for a type: owners and managers.
+-- Who gets which alert on WhatsApp. Without rows for a type: owners, managers and reception.
 create function public.biz_get_notification_settings(p_business_id uuid) returns jsonb
 language plpgsql stable security definer set search_path = '' as $$
 declare v_role public.business_role := private.my_role(p_business_id);
@@ -542,7 +596,7 @@ begin
                           then exists (select 1 from public.business_notification_settings s
                                        where s.business_id = p_business_id and s.user_id = m.user_id
                                          and s.type = t::public.notification_type and 'whatsapp' = any(s.channels))
-                          else m.role in ('owner', 'manager') end)
+                          else m.role in ('owner', 'manager', 'reception') end)
                         from unnest(array['biz_new_booking', 'biz_new_request', 'biz_booking_cancelled']) t))
            order by array_position(array['owner', 'manager', 'reception', 'staff']::public.business_role[], m.role), p.first_name)
     from public.business_members m join public.profiles p on p.id = m.user_id
@@ -568,7 +622,7 @@ begin
   if not exists (select 1 from public.business_notification_settings where business_id = p_business_id and type = p_type) then
     insert into public.business_notification_settings (business_id, user_id, type, channels)
     select p_business_id, m.user_id, p_type, '{whatsapp}'
-    from public.business_members m where m.business_id = p_business_id and m.status = 'active' and m.role in ('owner', 'manager');
+    from public.business_members m where m.business_id = p_business_id and m.status = 'active' and m.role in ('owner', 'manager', 'reception');
   end if;
   insert into public.business_notification_settings (business_id, user_id, type, channels)
   values (p_business_id, p_user_id, p_type, case when p_whatsapp then '{whatsapp}' else '{}' end::public.notification_channel[])

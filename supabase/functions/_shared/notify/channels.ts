@@ -1,6 +1,6 @@
 import { errorText, post } from '../otp/channels.ts';
 import type { Fetch } from '../otp/types.ts';
-import type { SendResult, SmsSender, WhatsAppSender } from './types.ts';
+import type { SendResult, SmsSender, TemplateButton, WhatsAppSender } from './types.ts';
 
 // Providers for booking messages. Same accounts as the OTP channels (M4), different message kinds:
 // utility templates with quick-reply buttons, session text replies, and plain SMS.
@@ -53,19 +53,28 @@ export class WhatsAppCloudSender implements WhatsAppSender {
     template: string,
     language: string,
     params: string[],
-    buttonPayloads: string[],
+    buttons: TemplateButton[],
   ) {
     const components: unknown[] = [];
     if (params.length) {
       components.push({ type: 'body', parameters: params.map((text) => ({ type: 'text', text })) });
     }
-    buttonPayloads.forEach((payload, i) =>
-      components.push({
-        type: 'button',
-        sub_type: 'quick_reply',
-        index: String(i),
-        parameters: [{ type: 'payload', payload }],
-      }),
+    buttons.forEach((b, i) =>
+      components.push(
+        b.kind === 'quick_reply'
+          ? {
+              type: 'button',
+              sub_type: 'quick_reply',
+              index: String(i),
+              parameters: [{ type: 'payload', payload: b.payload }],
+            }
+          : {
+              type: 'button',
+              sub_type: 'url',
+              index: String(i),
+              parameters: [{ type: 'text', text: b.text }],
+            },
+      ),
     );
     return metaSend(this.fetchFn, this.cfg, {
       messaging_product: 'whatsapp',
@@ -149,10 +158,10 @@ export class LogWhatsApp implements WhatsAppSender {
     template: string,
     language: string,
     params: string[],
-    buttons: string[],
+    buttons: TemplateButton[],
   ) {
     this.logFn(
-      `[notify:whatsapp] ${to} ${template}/${language} ${JSON.stringify(params)} ${buttons.join(' ')}`,
+      `[notify:whatsapp] ${to} ${template}/${language} ${JSON.stringify(params)} ${JSON.stringify(buttons)}`,
     );
     return Promise.resolve<SendResult>({ ok: true, messageId: logId('wa') });
   }

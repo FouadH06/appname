@@ -5,7 +5,8 @@ import { useBiz } from '@/lib/biz/context';
 import { useLoad } from '@/lib/biz/use-load';
 import { describeError } from '@/lib/copy';
 import { supabase } from '@/lib/supabase';
-import { Notice, Section, codeOf } from '../ui';
+import { fromHHMM, toHHMM } from '@/lib/biz/time';
+import { Field, Notice, Section, btn, codeOf, input } from '../ui';
 
 type AlertType = 'biz_new_booking' | 'biz_new_request' | 'biz_booking_cancelled';
 
@@ -137,6 +138,60 @@ export function NotificationsSection() {
           </p>
         ) : null}
       </Section>
+      <QuietHours />
     </>
+  );
+}
+
+/** Reminder quiet hours (local time): reminders never go out inside them. */
+function QuietHours() {
+  const { business, settings, refresh } = useBiz();
+  const [start, setStart] = useState(toHHMM(settings?.quiet_hours_start_minute ?? 1320));
+  const [end, setEnd] = useState(toHHMM(settings?.quiet_hours_end_minute ?? 480));
+  const [msg, setMsg] = useState<{ tone: 'success' | 'danger'; text: string } | null>(null);
+
+  const save = async () => {
+    const a = fromHHMM(start);
+    const b = fromHHMM(end);
+    if (a === null || b === null || a >= 1440 || b >= 1440) {
+      return setMsg({ tone: 'danger', text: 'Use times like 22:00 and 08:00.' });
+    }
+    const { error } = await supabase()
+      .from('business_settings')
+      .update({ quiet_hours_start_minute: a, quiet_hours_end_minute: b })
+      .eq('business_id', business.id);
+    if (error) return setMsg({ tone: 'danger', text: describeError(codeOf(error)) });
+    await refresh();
+    setMsg({ tone: 'success', text: 'Saved. Applies to reminders scheduled from now on.' });
+  };
+
+  return (
+    <Section
+      title="Quiet hours"
+      description="Reminders never go out in this window: a 24-hour reminder moves to its end, a 2-hour reminder is skipped. Confirmations and changes still send right away; team alerts wait unless something is about to start or expire."
+    >
+      <div className="grid max-w-sm grid-cols-2 gap-3">
+        <Field label="From">
+          <input
+            type="time"
+            className={input}
+            value={start}
+            onChange={(e) => setStart(e.target.value)}
+          />
+        </Field>
+        <Field label="To">
+          <input
+            type="time"
+            className={input}
+            value={end}
+            onChange={(e) => setEnd(e.target.value)}
+          />
+        </Field>
+      </div>
+      {msg ? <Notice tone={msg.tone}>{msg.text}</Notice> : null}
+      <button type="button" className={btn.primary + ' self-start'} onClick={() => void save()}>
+        Save quiet hours
+      </button>
+    </Section>
   );
 }

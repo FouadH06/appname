@@ -15,6 +15,7 @@ export interface Template {
   body: string;
   variables: string[];
   buttons: string[];
+  button_labels: string[];
   status: 'draft' | 'pending_approval' | 'approved' | 'rejected';
 }
 
@@ -46,15 +47,19 @@ export interface NotifyStore {
   finish(id: string, outcome: Outcome, error: string | null): Promise<void>;
 }
 
+/** A WhatsApp template button: quick reply (payload comes back to our webhook) or URL suffix. */
+export type TemplateButton =
+  { kind: 'quick_reply'; payload: string } | { kind: 'url'; text: string };
+
 export interface WhatsAppSender {
   readonly provider: string;
-  /** Approved template with body parameters and quick-reply button payloads. */
+  /** Approved template with body parameters and button parameters, in template order. */
   sendTemplate(
     to: string,
     template: string,
     language: string,
     params: string[],
-    buttonPayloads: string[],
+    buttons: TemplateButton[],
   ): Promise<SendResult>;
   /** Free-form text, only inside an open 24 h customer session (button replies). */
   sendText(to: string, text: string): Promise<SendResult>;

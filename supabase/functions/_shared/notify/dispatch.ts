@@ -1,6 +1,6 @@
 import { rpc } from '../otp/store.ts';
 import type { Fetch } from '../otp/types.ts';
-import { buttonPayloads, fill, formatVars, whatsappParams } from './render.ts';
+import { fill, formatVars, templateButtons, whatsappParams } from './render.ts';
 import type { Claimed, NotifyStore, Outcome, SmsSender, WhatsAppSender } from './types.ts';
 
 export interface DispatchDeps {
@@ -73,7 +73,7 @@ async function deliver(
         t.provider_template_name ?? t.type,
         t.locale,
         whatsappParams(t, vars),
-        buttonPayloads(t, n.payload.booking_id),
+        templateButtons(t, n.payload),
       );
       await deps.store.recordAttempt(
         n.id,

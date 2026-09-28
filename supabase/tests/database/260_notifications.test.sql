@@ -6,7 +6,7 @@ create extension if not exists pgtap with schema extensions;
 set local search_path = extensions, public;
 set local role postgres;
 \ir ../helpers/fixtures.psql
-select plan(42);
+select plan(47);
 
 create table tests.v (k text primary key, j jsonb);
 grant select, insert on tests.v to authenticated;
@@ -43,7 +43,7 @@ grant select, insert on tests.v, tests.ids to service_role;
 
 -- ═══ enqueue from booking events ═══
 select tests.act_as('recep');
-select tests.manual('a', '71 000 111', now() + interval '3 days', true);
+select tests.manual('a', '71 000 111', tests.at(tests.day(3), '14:00'), true);
 select tests.manual('quiet', '71 000 112', now() + interval '3 days 2 hours', false);
 select tests.manual('soon', '71 000 113', now() + interval '90 minutes', true);
 select tests.manual('today', '71 000 114', now() + interval '5 hours', true);
@@ -59,7 +59,9 @@ select is((select count(*)::int from public.notifications where booking_id = tes
 select is((select count(*)::int from public.notifications where booking_id = tests.bk('soon') and type::text like 'booking_reminder%'), 0,
   'booked < 2 h ahead: no reminders');
 select is((select array_agg(type::text) from public.notifications where booking_id = tests.bk('today') and type::text like 'booking_reminder%'),
-  array['booking_reminder_2h'], 'booked 5 h ahead: only the 2 h reminder');
+  case when private.in_quiet_hours(tests.id('biz'), (select starts_at - interval '2 hours' from public.bookings where id = tests.bk('today')))
+       then null else array['booking_reminder_2h'] end,
+  'booked 5 h ahead: only the 2 h reminder (none if it would fall in quiet hours)');
 select is((select payload ->> 'business_name' from tests.n(tests.bk('a'), 'booking_confirmed')), 'Business biz', 'payload carries what the message shows');
 
 -- reschedule: old reminders cancelled, new ones scheduled, the customer told
@@ -84,18 +86,38 @@ select is((select count(*)::int from public.notifications where booking_id = tes
   'its reminders are cancelled');
 select is((select count(*)::int from tests.n(tests.bk('soon'), 'booking_cancelled_by_business')), 0, 'Undo sends no cancellation');
 
+-- ═══ quiet hours (22:00–08:00 Beirut) ═══
+select tests.act_as('recep');
+select tests.manual('early', '71 000 115', tests.at(tests.day(3), '08:00'), true);
+select tests.manual('late', '71 000 116', tests.at(tests.day(3), '23:30'), true);
+select tests.as_postgres();
+select results_eq($$ select type::text, scheduled_for from public.notifications where booking_id = tests.bk('early') and type::text like 'booking_reminder%' $$,
+                  $$ values ('booking_reminder_24h', tests.at(tests.day(2), '08:00')) $$,
+  '8:00 visit: no 6:00 reminder; the 24 h one remains');
+select results_eq($$ select type::text, scheduled_for from public.notifications where booking_id = tests.bk('late') and type = 'booking_reminder_24h' $$,
+                  $$ values ('booking_reminder_24h', tests.at(tests.day(3), '08:00')) $$,
+  '23:30 visit: the 24 h reminder moves to the end of quiet hours');
+select is(private.business_alert_at(tests.id('biz'), tests.at(tests.day(3), '12:00'), null, tests.at(tests.day(1), '23:00')),
+  tests.at(tests.day(2), '08:00'), 'a normal business alert at 23:00 waits until 08:00');
+select is(private.business_alert_at(tests.id('biz'), tests.at(tests.day(3), '12:00'), tests.at(tests.day(2), '07:00'), tests.at(tests.day(1), '23:00')),
+  tests.at(tests.day(1), '23:00'), 'a request expiring early in the morning is surfaced right away');
+select is(private.business_alert_at(tests.id('biz'), tests.at(tests.day(3), '12:00'), null, tests.at(tests.day(1), '15:00')),
+  tests.at(tests.day(1), '15:00'), 'outside quiet hours: immediately');
+
 -- ═══ business alerts ═══
 insert into public.booking_events (booking_id, business_id, event, actor_kind, from_status, to_status)
 values (tests.bk('quiet'), tests.id('biz'), 'cancelled', 'customer', 'confirmed', 'cancelled');
-select results_eq($$ select recipient_user_id, recipient_phone from tests.n(tests.bk('quiet'), 'biz_booking_cancelled') $$,
-                  $$ values (tests.id('owner'), '+96170111001') $$, 'customer cancellation alerts the owner by default (not reception)');
+select results_eq($$ select recipient_user_id, recipient_phone from public.notifications
+                     where booking_id = tests.bk('quiet') and type = 'biz_booking_cancelled' order by recipient_phone $$,
+                  $$ values (tests.id('owner'), '+96170111001'), (tests.id('recep'), '+96170111002') $$,
+  'customer cancellation alerts owner and reception by default (not staff)');
 select tests.act_as('recep');
 select throws_ok($$ select public.biz_set_notification_setting(tests.id('biz'), tests.id('owner'), 'biz_new_booking', false) $$,
   'P0001', 'FORBIDDEN', 'reception changes only their own alerts');
-select lives_ok($$ select public.biz_set_notification_setting(tests.id('biz'), tests.id('recep'), 'biz_new_booking', true) $$, 'reception opts in');
+select lives_ok($$ select public.biz_set_notification_setting(tests.id('biz'), tests.id('recep'), 'biz_new_booking', false) $$, 'reception opts out');
 select results_eq($$ select (e -> 'alerts' ->> 'biz_new_booking')::boolean from jsonb_array_elements(public.biz_get_notification_settings(tests.id('biz'))) e
                      where (e ->> 'role') in ('owner', 'reception') order by e ->> 'role' $$,
-                  $$ values (true), (true) $$, 'owner kept by default, reception added');
+                  $$ values (true), (false) $$, 'owner keeps the default, reception off');
 select tests.act_as('staff_user');
 select throws_ok($$ select public.biz_get_notification_settings(tests.id('biz')) $$, 'P0001', 'FORBIDDEN', 'staff do not manage alerts');
 

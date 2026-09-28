@@ -13,7 +13,7 @@ import {
 } from '../../../supabase/functions/_shared/notify/config.ts';
 import { runDispatch } from '../../../supabase/functions/_shared/notify/dispatch.ts';
 import {
-  buttonPayloads,
+  templateButtons,
   fill,
   formatVars,
   replyText,
@@ -36,6 +36,10 @@ const payload = {
   starts_at: '2026-10-12T13:30:00Z', // 16:30 in Beirut (UTC+3)
   timezone: 'Asia/Beirut',
   link: 'https://platform.com/m/tok',
+  link_token: 'tok',
+  business_slug: 'fade-district',
+  business_url: 'https://platform.com/fade-district',
+  dashboard_path: 'biz-1/bookings',
 };
 
 const tpl = (over: Partial<Template> = {}): Template => ({
@@ -45,7 +49,8 @@ const tpl = (over: Partial<Template> = {}): Template => ({
   provider_template_name: 'booking_reminder_24h_v1',
   body: 'Reminder: {service_name} at {business_name} tomorrow at {time} with {staff_name}.',
   variables: ['service_name', 'business_name', 'time', 'staff_name'],
-  buttons: ['confirm', 'cancel'],
+  buttons: ['confirm', 'cancel', 'view'],
+  button_labels: ['Confirm', 'Cancel', 'View booking'],
   status: 'approved',
   ...over,
 });
@@ -63,14 +68,25 @@ describe('render', () => {
   it('leaves no gaps for missing values and gives WhatsApp non-empty parameters', () => {
     const vars = formatVars({ ...payload, reason: '' }, 'en');
     expect(
-      fill("{business_name} can't take your request. {reason} Book another time: {link}", vars),
-    ).toBe("Fade District can't take your request. Book another time: https://platform.com/m/tok");
-    expect(formatVars({ ...payload, reason: 'Closed for a wedding' }, 'en').reason).toBe(
-      'Closed for a wedding.',
+      fill("Sorry, {business_name} can't take it. {reason} Book again: {business_url}", vars),
+    ).toBe(
+      "Sorry, Fade District can't take it. We're sorry for the inconvenience. Book again: https://platform.com/fade-district",
     );
-    const t = tpl({ variables: ['service_name', 'reason'] });
+    expect(formatVars({ ...payload, reason: 'Closed for a wedding' }, 'en').reason).toBe(
+      'Reason: Closed for a wedding.',
+    );
+    expect(formatVars({ ...payload, reason: 'مغلق' }, 'ar').reason).toBe('السبب: مغلق.');
+    const t = tpl({ variables: ['service_name', 'old_date'] });
     expect(whatsappParams(t, vars)).toEqual(['Haircut', '—']);
-    expect(buttonPayloads(tpl(), 'b-1')).toEqual(['confirm:b-1', 'cancel:b-1']);
+    expect(templateButtons(tpl(), payload)).toEqual([
+      { kind: 'quick_reply', payload: 'confirm:b-1' },
+      { kind: 'quick_reply', payload: 'cancel:b-1' },
+      { kind: 'url', text: 'tok' },
+    ]);
+    expect(templateButtons(tpl({ buttons: ['book', 'dashboard'] }), payload)).toEqual([
+      { kind: 'url', text: 'fade-district' },
+      { kind: 'url', text: 'biz-1/bookings' },
+    ]);
   });
 
   it('replies to button taps in the customer language', () => {
@@ -159,7 +175,11 @@ describe('runDispatch', () => {
       'booking_reminder_24h_v1',
       'en',
       ['Haircut', 'Fade District', '4:30 PM', 'Karim'],
-      ['confirm:b-1', 'cancel:b-1'],
+      [
+        { kind: 'quick_reply', payload: 'confirm:b-1' },
+        { kind: 'quick_reply', payload: 'cancel:b-1' },
+        { kind: 'url', text: 'tok' },
+      ],
     );
     expect(s.sendText).not.toHaveBeenCalled();
     expect(store.finished).toEqual([{ id: 'n-1', outcome: 'sent', error: null }]);
@@ -245,7 +265,7 @@ describe('runDispatch', () => {
 });
 
 describe('providers', () => {
-  it('WhatsApp template request carries body parameters and quick-reply payloads', async () => {
+  it('WhatsApp template request carries body parameters, quick replies and URL suffixes', async () => {
     const fetchFn = vi.fn<typeof fetch>(() =>
       Promise.resolve(
         new Response(JSON.stringify({ messages: [{ id: 'wamid.7' }] }), { status: 200 }),
@@ -254,7 +274,16 @@ describe('providers', () => {
     const r = await new WhatsAppCloudSender(
       { accessToken: 't', phoneNumberId: '123', graphVersion: 'v21.0' },
       fetchFn,
-    ).sendTemplate('+96170123456', 'booking_reminder_24h_v1', 'ar', ['Haircut'], ['confirm:b-1']);
+    ).sendTemplate(
+      '+96170123456',
+      'booking_reminder_24h_v1',
+      'ar',
+      ['Haircut'],
+      [
+        { kind: 'quick_reply', payload: 'confirm:b-1' },
+        { kind: 'url', text: 'tok' },
+      ],
+    );
     expect(r).toEqual({ ok: true, messageId: 'wamid.7' });
     const body = JSON.parse(String(fetchFn.mock.calls[0]![1]!.body)) as {
       to: string;
@@ -270,6 +299,7 @@ describe('providers', () => {
         index: '0',
         parameters: [{ type: 'payload', payload: 'confirm:b-1' }],
       },
+      { type: 'button', sub_type: 'url', index: '1', parameters: [{ type: 'text', text: 'tok' }] },
     ]);
   });
 

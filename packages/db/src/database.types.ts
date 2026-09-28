@@ -792,6 +792,8 @@ export type Database = {
           max_advance_days: number;
           min_notice_minutes: number;
           notify_customer_on_any_reassign: boolean;
+          quiet_hours_end_minute: number;
+          quiet_hours_start_minute: number;
           reception_sees_revenue: boolean;
           request_expiry_minutes: number;
           show_staff_appointment_counts: boolean;
@@ -813,6 +815,8 @@ export type Database = {
           max_advance_days?: number;
           min_notice_minutes?: number;
           notify_customer_on_any_reassign?: boolean;
+          quiet_hours_end_minute?: number;
+          quiet_hours_start_minute?: number;
           reception_sees_revenue?: boolean;
           request_expiry_minutes?: number;
           show_staff_appointment_counts?: boolean;
@@ -834,6 +838,8 @@ export type Database = {
           max_advance_days?: number;
           min_notice_minutes?: number;
           notify_customer_on_any_reassign?: boolean;
+          quiet_hours_end_minute?: number;
+          quiet_hours_start_minute?: number;
           reception_sees_revenue?: boolean;
           request_expiry_minutes?: number;
           show_staff_appointment_counts?: boolean;
@@ -1552,6 +1558,7 @@ export type Database = {
       notification_templates: {
         Row: {
           body: string;
+          button_labels: string[];
           buttons: string[];
           channel: Database['public']['Enums']['notification_channel'];
           created_at: string;
@@ -1565,6 +1572,7 @@ export type Database = {
         };
         Insert: {
           body: string;
+          button_labels?: string[];
           buttons?: string[];
           channel: Database['public']['Enums']['notification_channel'];
           created_at?: string;
@@ -1578,6 +1586,7 @@ export type Database = {
         };
         Update: {
           body?: string;
+          button_labels?: string[];
           buttons?: string[];
           channel?: Database['public']['Enums']['notification_channel'];
           created_at?: string;
