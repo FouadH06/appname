@@ -39,24 +39,33 @@ export type HeifDecoder = (heic: Buffer) => Promise<Buffer>;
  * libheif's `heif-dec` (Debian/Ubuntu package libheif-examples + libheif-plugin-libde265) decodes
  * iPhone HEIC to lossless PNG, applying the container's rotation/mirroring. Returns null when the
  * binary isn't installed — HEIC is then rejected as UNSUPPORTED_FORMAT and the client converts it.
+ * PNG compression dominates the decode time (12 MP: ~4.8 s at the default level, ~1.9 s at level 1,
+ * still lossless), so level 1 is used where the tool supports it (libheif ≥ 1.16).
  */
 export async function heifDecoderFromEnv(
   candidates = process.env.HEIF_DEC ? [process.env.HEIF_DEC] : ['heif-dec', 'heif-convert'],
 ): Promise<HeifDecoder | null> {
   const run = promisify(execFile);
   let bin: string | null = null;
+  let help = '';
   for (const c of candidates) {
     try {
-      await run(c, ['--version'], { timeout: 5000 });
+      const out = await run(c, ['--help'], { timeout: 5000 });
+      help = out.stdout + out.stderr;
       bin = c;
     } catch (e) {
-      // only a missing binary counts as "no decoder" (some libheif tools exit non-zero on --version)
-      if ((e as NodeJS.ErrnoException).code !== 'ENOENT') bin = c;
+      // only a missing binary counts as "no decoder" (some libheif tools exit non-zero on --help)
+      const err = e as NodeJS.ErrnoException & { stdout?: string; stderr?: string };
+      if (err.code !== 'ENOENT') {
+        bin = c;
+        help = `${err.stdout ?? ''}${err.stderr ?? ''}`;
+      }
     }
     if (bin) break;
   }
   if (!bin) return null;
   const decoder = bin;
+  const fast = help.includes('--png-compression-level') ? ['--png-compression-level', '1'] : [];
   return async (heic) => {
     const id = randomUUID();
     const src = join(tmpdir(), `${id}.heic`);
@@ -64,7 +73,7 @@ export async function heifDecoderFromEnv(
     try {
       await writeFile(src, heic);
       try {
-        await run(decoder, [src, dst], { timeout: 60_000 });
+        await run(decoder, [...fast, src, dst], { timeout: 60_000 });
       } catch (e) {
         const err = e as { stderr?: string; message?: string };
         throw new Error(`${decoder}: ${(err.stderr || err.message || String(e)).trim()}`, {

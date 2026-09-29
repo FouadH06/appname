@@ -1,6 +1,6 @@
 // ExternalImageProcessor entrypoint: polls the transform queue and serves /health for the host.
 // Env: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY (server-side only), PORT (8790), POLL_MS (3000),
-// CONCURRENCY (2), HEIF_DEC (optional path to libheif's heif-dec for iPhone HEIC).
+// CONCURRENCY (2, capped at MAX_CONCURRENCY), HEIF_DEC (optional path to libheif's heif-dec for iPhone HEIC).
 import { createServer } from 'node:http';
 import { heifDecoderFromEnv } from './processor.ts';
 import { PROCESSOR_VERSION, runOnce, supabaseStore } from './worker.ts';
@@ -13,7 +13,14 @@ const env = (name: string, fallback?: string) => {
 
 const store = supabaseStore(env('SUPABASE_URL'), env('SUPABASE_SERVICE_ROLE_KEY'));
 const pollMs = Number(env('POLL_MS', '3000'));
-const concurrency = Number(env('CONCURRENCY', '2'));
+// M10 benchmark decision (PO, Option A): p95 < 8 s per image holds at 2 jobs per 4-vCPU worker
+// (measured p95 3.6 s); scale out with more workers, not more jobs per worker.
+const MAX_CONCURRENCY = 2;
+const requested = Number(env('CONCURRENCY', String(MAX_CONCURRENCY)));
+const concurrency = Math.max(
+  1,
+  Math.min(Number.isFinite(requested) ? requested : MAX_CONCURRENCY, MAX_CONCURRENCY),
+);
 const heifDecoder = await heifDecoderFromEnv();
 const log = (line: string) => process.stdout.write(`${new Date().toISOString()} ${line}\n`);
 
@@ -35,7 +42,10 @@ createServer((req, res) => {
 
 process.on('SIGTERM', () => (stopping = true));
 process.on('SIGINT', () => (stopping = true));
-log(`media-worker started (${PROCESSOR_VERSION}, HEIC ${heifDecoder ? 'on' : 'off'})`);
+if (concurrency !== requested) log(`CONCURRENCY=${requested} capped to ${concurrency}`);
+log(
+  `media-worker started (${PROCESSOR_VERSION}, HEIC ${heifDecoder ? 'on' : 'off'}, concurrency ${concurrency})`,
+);
 
 while (!stopping) {
   try {

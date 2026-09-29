@@ -102,9 +102,11 @@ for (let i = 0; i < 500; i++) {
   if (!r.ok) seqFail++;
 }
 
-// ── 3. 20 concurrent jobs, 5 waves (100 jobs) ──
+// ── 3. stress: 20 concurrent jobs on the worker's CPUs, 5 waves (100 jobs) — stability, not latency ──
 const conc: number[] = [];
 let concFail = 0;
+let concBadOutputs = 0;
+let concLeaks = 0;
 for (let wave = 0; wave < 5; wave++) {
   const batch = Array.from(
     { length: 20 },
@@ -113,9 +115,36 @@ for (let wave = 0; wave < 5; wave++) {
   const res = await Promise.all(batch.map((f) => one(readFileSync(join(dir, f)))));
   for (const x of res) {
     conc.push(x.ms);
-    if (!x.r.ok) concFail++;
+    if (!x.r.ok) {
+      concFail++;
+      continue;
+    }
+    // stress outputs must be as correct as sequential ones: 3 derivatives, within bounds, no metadata
+    const bad =
+      x.r.derivatives.length !== DEFAULT_DERIVATIVES.length ||
+      x.r.derivatives.some(
+        (d) =>
+          Math.max(d.width, d.height) > DEFAULT_DERIVATIVES.find((y) => y.name === d.name)!.max,
+      );
+    if (bad) concBadOutputs++;
+    for (const d of x.r.derivatives) concLeaks += (await metadataLeaks(d.data)).length;
   }
 }
+// ── 4. production latency: 100 jobs through a pool at the worker's CONCURRENCY (capped at 2) ──
+const configuredConcurrency = Math.min(Number(process.env.CONCURRENCY ?? '2'), 2);
+const pool: number[] = [];
+let poolFail = 0;
+let nextJob = 0;
+await Promise.all(
+  Array.from({ length: configuredConcurrency }, async () => {
+    while (nextJob < 100) {
+      const i = nextJob++;
+      const x = await one(readFileSync(join(dir, eligibleFiles[(i * 7) % eligibleFiles.length]!)));
+      pool.push(x.ms);
+      if (!x.r.ok) poolFail++;
+    }
+  }),
+);
 clearInterval(timer);
 
 const summary = {
@@ -159,14 +188,38 @@ const summary = {
       p95: Math.round(pct(conc, 95)),
       max: Math.round(Math.max(...conc)),
       failures: concFail,
+      badOutputs: concBadOutputs,
+      leaks: concLeaks,
     },
+    configuredPool: {
+      concurrency: configuredConcurrency,
+      p50: Math.round(pct(pool, 50)),
+      p95: Math.round(pct(pool, 95)),
+      max: Math.round(Math.max(...pool)),
+      failures: poolFail,
+    },
+    corpusByFormat: Object.fromEntries(
+      Object.entries(byFormat).map(([k, v]) => [
+        k,
+        {
+          n: v.length,
+          p50: Math.round(pct(v, 50)),
+          p95: Math.round(pct(v, 95)),
+          max: Math.round(Math.max(...v)),
+        },
+      ]),
+    ),
   },
   peakRssMB: Math.round(peakRss / 2 ** 20),
+  // PO decision 2026-09-29 (Option A): the p95 target applies at the configured production
+  // concurrency (2 per 4-vCPU worker); the 20-concurrent run is a stress/stability test (0 failures,
+  // correct and metadata-free outputs, completes without OOM/timeouts), not a latency target.
   pass: {
     decode100: decodeOk === eligible,
-    zeroLeaks: leakCount === 0,
-    p95Under8s: pct(seq, 95) < 8000 && pct(conc, 95) < 8000,
-    noFailures: seqFail === 0 && concFail === 0,
+    zeroLeaks: leakCount === 0 && concLeaks === 0,
+    correctOutputs: orientationErrors === 0 && concBadOutputs === 0,
+    p95Under8sAtProductionConcurrency: pct(pool, 95) < 8000,
+    noFailures: seqFail === 0 && concFail === 0 && poolFail === 0,
   },
 };
 mkdirSync('bench/results', { recursive: true });

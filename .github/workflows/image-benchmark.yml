@@ -1,9 +1,12 @@
 name: Image benchmark
 
-# M10 formal image-processor benchmark on Linux (the production worker's OS): the same synthetic
-# corpus as bench/corpus.ts plus real HEVC HEIC files made with libheif's encoder, decoded through
-# heif-dec (libde265). Outputs are cross-checked with exiftool. The summary is published as
-# annotations (readable through the public API). Runs when the worker or benchmark changes.
+# M10 formal image-processor benchmark, run INSIDE the production worker image (apps/media-worker
+# Dockerfile, Debian 13 + libheif/libde265): the synthetic corpus from bench/corpus.ts plus real HEVC
+# HEIC files made with libheif's encoder on the runner. Outputs are cross-checked with exiftool. The
+# summary is published as annotations (readable through the public API) and the Gate step fails the
+# job unless every pass criterion is true. PO decision (Option A): p95 < 8 s applies at the production
+# concurrency (2 per 4-vCPU worker); the 20-concurrent run is a stress test (0 failures, correct and
+# metadata-free outputs, no OOM/timeouts), not a latency target. Runs when the worker or benchmark changes.
 on:
   push:
     paths:
@@ -56,11 +59,15 @@ jobs:
           done
           echo "HEIC files: $(ls bench/corpus/*.heic | wc -l)"
           exiftool -q -if '$GPSLatitude' -p '$FileName' bench/corpus/*.heic | wc -l | xargs echo "HEIC with GPS:"
-      - name: Benchmark
+      - name: Build the production worker image
+        run: bash scripts/ci-annotate.sh "worker image" docker build -t media-worker apps/media-worker
+      - name: Benchmark (inside the production image)
         working-directory: apps/media-worker
-        env:
-          BENCH_DUMP: bench/out
-        run: bash ../../scripts/ci-annotate.sh "image benchmark" node --experimental-strip-types bench/run.ts bench/corpus linux-ci
+        run: |
+          bash ../../scripts/ci-annotate.sh "image benchmark" docker run --rm -u root -e BENCH_DUMP=bench/out \
+            -v "$PWD/bench:/app/bench" -w /app media-worker \
+            node --experimental-strip-types bench/run.ts bench/corpus linux-ci
+          sudo chown -R "$(id -u)" bench
       - name: exiftool cross-check (0 metadata in outputs)
         working-directory: apps/media-worker
         run: |
@@ -81,8 +88,10 @@ jobs:
               'decode ' + s.corpus.decodeOk + '/' + s.corpus.eligible + ' ' + JSON.stringify(s.corpus.byFormat) +
               ' · too large rejected ' + s.corpus.tooLargeRejected + ' · leaks ' + s.metadataLeaks +
               ' · orientation errors ' + s.orientationOrBoundsErrors +
-              ' · p95 corpus ' + l.corpus.p95 + ' ms, seq500 ' + l.sequential500.p95 + ' ms, conc20 ' + l.concurrent20x5.p95 + ' ms' +
-              ' · failures ' + (l.sequential500.failures + l.concurrent20x5.failures) +
+              ' · PRODUCTION pool(' + l.configuredPool.concurrency + ') p50/p95 ' + l.configuredPool.p50 + '/' + l.configuredPool.p95 + ' ms (failures ' + l.configuredPool.failures + ')' +
+              ' · sequential p50/p95 ' + l.sequential500.p50 + '/' + l.sequential500.p95 + ' ms (failures ' + l.sequential500.failures + ')' +
+              ' · STRESS 20 concurrent p50/p95 ' + l.concurrent20x5.p50 + '/' + l.concurrent20x5.p95 + ' ms (failures ' + l.concurrent20x5.failures + ', bad outputs ' + l.concurrent20x5.badOutputs + ', leaks ' + l.concurrent20x5.leaks + ')' +
+              ' · by format ' + JSON.stringify(l.corpusByFormat) +
               ' · peak RSS ' + s.peakRssMB + ' MB · ' + JSON.stringify(s.env) + ' · pass ' + JSON.stringify(s.pass));
             const bad = require('./$f').perFile.filter((p) => p.error || (p.leaks && p.leaks.length));
             if (bad.length) console.log('::warning title=Image benchmark problems::' + JSON.stringify(bad.slice(0, 20)));
