@@ -426,6 +426,8 @@ WHATSAPP_WEBHOOK_VERIFY_TOKEN = "local-verify-token"
 # M9: local worker secret; no LLM key locally, so moderation uses the heuristic classifier
 MODERATE_SECRET = "local-moderate-secret"
 MODERATION_MODE = "heuristic"
+# M10: local media orchestrator secret (local stack uses the stub image classifier)
+MEDIA_ORCHESTRATOR_SECRET = "local-media-secret"
 
 # Auth calls these with their own signatures, not a user JWT.
 [functions.auth-send-sms]
@@ -441,6 +443,9 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.moderate]
+verify_jwt = false
+
+[functions.media-orchestrator]
 verify_jwt = false
 
 [analytics]

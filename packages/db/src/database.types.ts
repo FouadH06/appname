@@ -1616,15 +1616,21 @@ export type Database = {
           business_id: string | null;
           bytes: number | null;
           created_at: string;
+          derivatives: Json | null;
           height: number | null;
           id: string;
+          legal_hold: boolean;
           mime: string | null;
           phash: number | null;
           private_bucket: string;
           private_path: string;
           processed_at: string | null;
+          processor: string | null;
+          processor_version: string | null;
           public_path: string | null;
+          purge_after: string | null;
           purpose: string;
+          rejected_reason: string | null;
           sha256: string | null;
           status: Database['public']['Enums']['media_status'];
           updated_at: string;
@@ -1636,15 +1642,21 @@ export type Database = {
           business_id?: string | null;
           bytes?: number | null;
           created_at?: string;
+          derivatives?: Json | null;
           height?: number | null;
           id?: string;
+          legal_hold?: boolean;
           mime?: string | null;
           phash?: number | null;
           private_bucket: string;
           private_path: string;
           processed_at?: string | null;
+          processor?: string | null;
+          processor_version?: string | null;
           public_path?: string | null;
+          purge_after?: string | null;
           purpose: string;
+          rejected_reason?: string | null;
           sha256?: string | null;
           status?: Database['public']['Enums']['media_status'];
           updated_at?: string;
@@ -1656,15 +1668,21 @@ export type Database = {
           business_id?: string | null;
           bytes?: number | null;
           created_at?: string;
+          derivatives?: Json | null;
           height?: number | null;
           id?: string;
+          legal_hold?: boolean;
           mime?: string | null;
           phash?: number | null;
           private_bucket?: string;
           private_path?: string;
           processed_at?: string | null;
+          processor?: string | null;
+          processor_version?: string | null;
           public_path?: string | null;
+          purge_after?: string | null;
           purpose?: string;
+          rejected_reason?: string | null;
           sha256?: string | null;
           status?: Database['public']['Enums']['media_status'];
           updated_at?: string;
@@ -2245,6 +2263,151 @@ export type Database = {
           slug?: string;
         };
         Relationships: [];
+      };
+      review_media: {
+        Row: {
+          area_id: string;
+          booking_item_id: string;
+          business_id: string;
+          canonical_service_id: string;
+          consent_version: string;
+          consented_at: string;
+          created_at: string;
+          currency: string;
+          featured_at: string | null;
+          featured_by: string | null;
+          featured_rank: number | null;
+          id: string;
+          is_featured: boolean;
+          kind: Database['public']['Enums']['media_kind'];
+          location_id: string;
+          media_asset_id: string;
+          minor_flag: boolean;
+          pair_group: string | null;
+          price_max: number | null;
+          price_min: number | null;
+          price_type: Database['public']['Enums']['price_type'];
+          published_at: string | null;
+          removed_at: string | null;
+          removed_reason: string | null;
+          review_id: string;
+          service_id: string;
+          staff_id: string;
+          state: Database['public']['Enums']['content_state'];
+          trust_tier: Database['public']['Enums']['trust_tier'];
+          updated_at: string;
+          visit_at: string;
+        };
+        Insert: {
+          area_id: string;
+          booking_item_id: string;
+          business_id: string;
+          canonical_service_id: string;
+          consent_version: string;
+          consented_at: string;
+          created_at?: string;
+          currency?: string;
+          featured_at?: string | null;
+          featured_by?: string | null;
+          featured_rank?: number | null;
+          id?: string;
+          is_featured?: boolean;
+          kind?: Database['public']['Enums']['media_kind'];
+          location_id: string;
+          media_asset_id: string;
+          minor_flag?: boolean;
+          pair_group?: string | null;
+          price_max?: number | null;
+          price_min?: number | null;
+          price_type: Database['public']['Enums']['price_type'];
+          published_at?: string | null;
+          removed_at?: string | null;
+          removed_reason?: string | null;
+          review_id: string;
+          service_id: string;
+          staff_id: string;
+          state?: Database['public']['Enums']['content_state'];
+          trust_tier: Database['public']['Enums']['trust_tier'];
+          updated_at?: string;
+          visit_at: string;
+        };
+        Update: {
+          area_id?: string;
+          booking_item_id?: string;
+          business_id?: string;
+          canonical_service_id?: string;
+          consent_version?: string;
+          consented_at?: string;
+          created_at?: string;
+          currency?: string;
+          featured_at?: string | null;
+          featured_by?: string | null;
+          featured_rank?: number | null;
+          id?: string;
+          is_featured?: boolean;
+          kind?: Database['public']['Enums']['media_kind'];
+          location_id?: string;
+          media_asset_id?: string;
+          minor_flag?: boolean;
+          pair_group?: string | null;
+          price_max?: number | null;
+          price_min?: number | null;
+          price_type?: Database['public']['Enums']['price_type'];
+          published_at?: string | null;
+          removed_at?: string | null;
+          removed_reason?: string | null;
+          review_id?: string;
+          service_id?: string;
+          staff_id?: string;
+          state?: Database['public']['Enums']['content_state'];
+          trust_tier?: Database['public']['Enums']['trust_tier'];
+          updated_at?: string;
+          visit_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'review_media_area_id_fkey';
+            columns: ['area_id'];
+            isOneToOne: false;
+            referencedRelation: 'areas';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'review_media_booking_item_id_fkey';
+            columns: ['booking_item_id'];
+            isOneToOne: false;
+            referencedRelation: 'booking_items';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'review_media_business_id_fkey';
+            columns: ['business_id'];
+            isOneToOne: false;
+            referencedRelation: 'businesses';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'review_media_canonical_service_id_fkey';
+            columns: ['canonical_service_id'];
+            isOneToOne: false;
+            referencedRelation: 'canonical_services';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'review_media_media_asset_id_fkey';
+            columns: ['media_asset_id'];
+            isOneToOne: true;
+            referencedRelation: 'media_assets';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'review_media_review_id_fkey';
+            columns: ['review_id'];
+            isOneToOne: false;
+            referencedRelation: 'reviews';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       review_ratings: {
         Row: {
@@ -3141,7 +3304,18 @@ export type Database = {
         };
         Returns: undefined;
       };
+      admin_decide_media_case: {
+        Args: {
+          p_case_id: string;
+          p_decision: Database['public']['Enums']['moderation_decision'];
+          p_keep_minor_flag?: boolean;
+          p_note?: string;
+          p_reason_code: string;
+        };
+        Returns: undefined;
+      };
       admin_get_case: { Args: { p_case_id: string }; Returns: Json };
+      admin_get_media_case: { Args: { p_case_id: string }; Returns: Json };
       admin_list_cases: {
         Args: {
           p_state?: string;
@@ -3285,6 +3459,7 @@ export type Database = {
       };
       biz_get_customer: { Args: { p_business_id: string; p_customer_id: string }; Returns: Json };
       biz_get_notification_settings: { Args: { p_business_id: string }; Returns: Json };
+      biz_get_results: { Args: { p_business_id: string }; Returns: Json };
       biz_get_reviews: { Args: { p_business_id: string; p_tab?: string }; Returns: Json };
       biz_list_bookings: {
         Args: {
@@ -3706,6 +3881,7 @@ export type Database = {
         };
       };
       delete_my_account: { Args: Record<PropertyKey, never>; Returns: Json };
+      delete_my_media: { Args: { p_review_media_id: string }; Returns: undefined };
       delete_my_review: { Args: { p_review_id: string }; Returns: undefined };
       delete_reply: { Args: { p_review_id: string }; Returns: undefined };
       dismiss_claimable_visits: { Args: { p_business_ids: string[] }; Returns: undefined };
@@ -3714,6 +3890,8 @@ export type Database = {
         Returns: Json;
       };
       extend_hold: { Args: { p_booking_id: string; p_hold_token: string }; Returns: string };
+      feature_result: { Args: { p_rank: number; p_review_media_id: string }; Returns: undefined };
+      finalize_media_upload: { Args: { p_media_id: string }; Returns: string };
       get_available_days: {
         Args: {
           p_date_from?: string;
@@ -3741,6 +3919,16 @@ export type Database = {
       };
       get_business_page: { Args: { p_slug: string }; Returns: Json };
       get_business_rating_summary: { Args: { p_business_id: string }; Returns: Json };
+      get_business_results: {
+        Args: {
+          p_before?: string;
+          p_business_id: string;
+          p_limit?: number;
+          p_service_id?: string;
+          p_staff_id?: string;
+        };
+        Returns: Json;
+      };
       get_business_reviews: {
         Args: { p_before?: string; p_business_id: string; p_limit?: number };
         Returns: Json;
@@ -3782,11 +3970,13 @@ export type Database = {
           type: Database['public']['Enums']['notification_type'];
         }[];
       };
+      get_my_review_media: { Args: { p_review_id: string }; Returns: Json };
       get_my_reviews: { Args: Record<PropertyKey, never>; Returns: Json };
       get_next_available: {
         Args: { p_location_id: string; p_service_id: string; p_staff_id?: string };
         Returns: string;
       };
+      get_result: { Args: { p_review_media_id: string }; Returns: Json };
       get_review_context: { Args: { p_booking_id: string }; Returns: Json };
       get_staff_options: { Args: { p_location_id: string; p_service_id: string }; Returns: Json };
       invite_member: {
@@ -3932,6 +4122,32 @@ export type Database = {
         };
       };
       mark_notifications_read: { Args: { p_ids: string[] }; Returns: number };
+      media_claim_classify: { Args: { p_limit?: number; p_vt?: number }; Returns: Json };
+      media_claim_cleanup: { Args: { p_limit?: number; p_vt?: number }; Returns: Json };
+      media_claim_publish: { Args: { p_limit?: number; p_vt?: number }; Returns: Json };
+      media_claim_transform: { Args: { p_limit?: number; p_vt?: number }; Returns: Json };
+      media_classification_record: {
+        Args: {
+          p_decision: string;
+          p_media_id: string;
+          p_minor?: boolean;
+          p_msg_id: number;
+          p_reason_code?: string;
+          p_reasons?: string[];
+          p_run_id: string;
+          p_stages?: Json;
+        };
+        Returns: string;
+      };
+      media_cleanup_done: { Args: { p_msg_id: number }; Returns: undefined };
+      media_processing_complete: {
+        Args: { p_job_id: string; p_msg_id?: number; p_result: Json };
+        Returns: string;
+      };
+      media_publish_complete: {
+        Args: { p_media_id: string; p_msg_id: number; p_public: Json };
+        Returns: string;
+      };
       moderation_claim: { Args: { p_limit?: number; p_vt?: number }; Returns: Json };
       moderation_record: {
         Args: {
@@ -4085,6 +4301,10 @@ export type Database = {
           p_subject_type: Database['public']['Enums']['report_subject'];
         };
         Returns: string;
+      };
+      request_review_media_upload: {
+        Args: { p_consent_version?: string; p_items?: Json; p_review_id: string };
+        Returns: Json;
       };
       request_translation: {
         Args: {
@@ -4283,6 +4503,7 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      unfeature_result: { Args: { p_review_media_id: string }; Returns: undefined };
       update_booking_note: {
         Args: { p_booking_id: string; p_internal_note: string };
         Returns: {
