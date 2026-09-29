@@ -1,6 +1,6 @@
 # M10 — Customer results & media pipeline: report
 
-Status: **awaiting review** · branch `m10-media` (not merged) · image benchmark **passes** (Option A) · branch CI green
+Status: **closed** (approved 2026-09-29, D1–D11 incl. Option A) · merged to `main` (`baca65d`, main CI green)
 
 Hosted staging verification stays deferred with M4–M9 (M4 report checklist, now including M10) and
 is mandatory before any real users. Decisions needed from you are at the end of this report.
