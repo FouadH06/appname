@@ -564,6 +564,35 @@ export type Database = {
           },
         ];
       };
+      business_labels: {
+        Row: {
+          business_id: string;
+          computed_at: string;
+          config_version: number;
+          label: Database['public']['Enums']['discovery_label'];
+        };
+        Insert: {
+          business_id: string;
+          computed_at?: string;
+          config_version: number;
+          label: Database['public']['Enums']['discovery_label'];
+        };
+        Update: {
+          business_id?: string;
+          computed_at?: string;
+          config_version?: number;
+          label?: Database['public']['Enums']['discovery_label'];
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'business_labels_business_id_fkey';
+            columns: ['business_id'];
+            isOneToOne: false;
+            referencedRelation: 'businesses';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       business_locations: {
         Row: {
           address_line: string | null;
@@ -772,6 +801,38 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: 'business_notification_settings_business_id_fkey';
+            columns: ['business_id'];
+            isOneToOne: false;
+            referencedRelation: 'businesses';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      business_quality_score_history: {
+        Row: {
+          business_id: string;
+          components: NonNullable<Json>;
+          config_version: number;
+          day: string;
+          score: number;
+        };
+        Insert: {
+          business_id: string;
+          components: NonNullable<Json>;
+          config_version: number;
+          day: string;
+          score: number;
+        };
+        Update: {
+          business_id?: string;
+          components?: NonNullable<Json>;
+          config_version?: number;
+          day?: string;
+          score?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'business_quality_score_history_business_id_fkey';
             columns: ['business_id'];
             isOneToOne: false;
             referencedRelation: 'businesses';
@@ -2719,6 +2780,99 @@ export type Database = {
           },
         ];
       };
+      search_documents: {
+        Row: {
+          area_id: string;
+          audience: Database['public']['Enums']['audience'];
+          business_id: string;
+          business_slug: string;
+          canonical_service_ids: string[];
+          category_ids: string[];
+          cluster_id: string | null;
+          cover_path: string | null;
+          display_rating: number | null;
+          geo: unknown;
+          labels: Database['public']['Enums']['discovery_label'][];
+          location_id: string;
+          name: string;
+          name_key: string;
+          next_available_at: string | null;
+          price_level: number | null;
+          published_at: string | null;
+          quality_score: number;
+          review_count: number;
+          service_prices: NonNullable<Json>;
+          service_terms: string;
+          tsv: unknown;
+          updated_at: string;
+        };
+        Insert: {
+          area_id: string;
+          audience: Database['public']['Enums']['audience'];
+          business_id: string;
+          business_slug: string;
+          canonical_service_ids: string[];
+          category_ids: string[];
+          cluster_id?: string | null;
+          cover_path?: string | null;
+          display_rating?: number | null;
+          geo: unknown;
+          labels?: Database['public']['Enums']['discovery_label'][];
+          location_id: string;
+          name: string;
+          name_key: string;
+          next_available_at?: string | null;
+          price_level?: number | null;
+          published_at?: string | null;
+          quality_score?: number;
+          review_count?: number;
+          service_prices?: NonNullable<Json>;
+          service_terms: string;
+          tsv: unknown;
+          updated_at?: string;
+        };
+        Update: {
+          area_id?: string;
+          audience?: Database['public']['Enums']['audience'];
+          business_id?: string;
+          business_slug?: string;
+          canonical_service_ids?: string[];
+          category_ids?: string[];
+          cluster_id?: string | null;
+          cover_path?: string | null;
+          display_rating?: number | null;
+          geo?: unknown;
+          labels?: Database['public']['Enums']['discovery_label'][];
+          location_id?: string;
+          name?: string;
+          name_key?: string;
+          next_available_at?: string | null;
+          price_level?: number | null;
+          published_at?: string | null;
+          quality_score?: number;
+          review_count?: number;
+          service_prices?: NonNullable<Json>;
+          service_terms?: string;
+          tsv?: unknown;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'search_documents_business_id_fkey';
+            columns: ['business_id'];
+            isOneToOne: false;
+            referencedRelation: 'businesses';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'search_documents_location_id_fkey';
+            columns: ['location_id'];
+            isOneToOne: true;
+            referencedRelation: 'business_locations';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       service_combo_items: {
         Row: {
           canonical_service_id: string;
@@ -3533,6 +3687,16 @@ export type Database = {
       admin_save_rating_dimension: { Args: { p: Json; p_reason: string }; Returns: string };
       admin_search: { Args: { p_q: string }; Returns: Json };
       admin_search_customers: { Args: { p_q: string }; Returns: Json };
+      admin_search_debug: {
+        Args: {
+          p_cluster_id?: string;
+          p_filters?: Json;
+          p_q: string;
+          p_service_id?: string;
+          p_sort?: string;
+        };
+        Returns: Json;
+      };
       admin_set_business_status: {
         Args: {
           p_business_id: string;
@@ -3560,6 +3724,7 @@ export type Database = {
         Args: { p_business_id: string; p_note?: string; p_reason: string; p_verified: boolean };
         Returns: undefined;
       };
+      admin_zero_result_queries: { Args: { p_days?: number }; Returns: Json };
       archive_staff: { Args: { p_staff_id: string }; Returns: undefined };
       biz_add_note: {
         Args: {
@@ -4156,7 +4321,9 @@ export type Database = {
         }[];
       };
       get_go_live_checklist: { Args: { p_business_id: string }; Returns: Json };
+      get_home: { Args: { p_cluster_id?: string }; Returns: Json };
       get_invitation: { Args: { p_token: string }; Returns: Json };
+      get_landing: { Args: { p_area_slug: string; p_category_slug: string }; Returns: Json };
       get_my_access: { Args: Record<PropertyKey, never>; Returns: Json };
       get_my_booking: { Args: { p_booking_id: string }; Returns: Json };
       get_my_bookings: {
@@ -4630,6 +4797,23 @@ export type Database = {
       restore_staff: { Args: { p_staff_id: string }; Returns: undefined };
       revoke_invitation: { Args: { p_invitation_id: string }; Returns: undefined };
       revoke_member: { Args: { p_business_id: string; p_user_id: string }; Returns: undefined };
+      search_businesses: {
+        Args: {
+          p_area_id?: string;
+          p_category_id?: string;
+          p_cluster_id?: string;
+          p_filters?: Json;
+          p_lat?: number;
+          p_limit?: number;
+          p_lng?: number;
+          p_offset?: number;
+          p_q?: string;
+          p_service_id?: string;
+          p_sort?: string;
+        };
+        Returns: Json;
+      };
+      search_suggest: { Args: { p_cluster_id?: string; p_q: string }; Returns: Json };
       set_notification_preference: {
         Args: {
           p_channel: Database['public']['Enums']['notification_channel'];

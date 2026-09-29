@@ -505,3 +505,16 @@ export async function setCancellationWindow(businessId: string, minutes: number)
     [businessId, minutes],
   );
 }
+
+/** M12: rebuild queued search documents now (the per-minute job would do it within a minute). */
+export async function refreshSearch(): Promise<void> {
+  await db().query('select private.job_search_refresh(100000)');
+}
+
+export async function zeroResultLogged(q: string): Promise<boolean> {
+  const r = await db().query<{ n: number }>(
+    `select count(*)::int as n from private.search_log where q = $1 and results_count = 0`,
+    [q],
+  );
+  return (r.rows[0]?.n ?? 0) > 0;
+}

@@ -7,7 +7,7 @@ test('health endpoint responds', async ({ request }) => {
 });
 
 test('foundation page renders tokens and flips to RTL', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/foundation');
   await expect(page.getByRole('heading', { name: 'APP_NAME' })).toBeVisible();
   await expect(page.getByRole('list', { name: 'Design tokens' }).getByRole('listitem')).toHaveCount(
     14,

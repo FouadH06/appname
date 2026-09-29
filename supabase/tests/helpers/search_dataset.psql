@@ -1,0 +1,133 @@
+-- M12 search dataset: realistic launch-like marketplace, deterministic (md5-based randomness).
+-- Include AFTER fixtures.psql, inside a transaction (everything is rolled back):
+--   \ir ../helpers/search_dataset.psql
+--   select tests.search_dataset(1);   -- scale 1 ≈ 70 businesses (launch); scale 14 ≈ 1,000
+-- Businesses: 3 launch clusters × their areas × 7 live categories, names in EN/AR/FR, 2–5 services with
+-- cluster-realistic prices, 2 public staff, open daily, completed bookings, reviews with dimension
+-- ratings driven by a hidden per-business quality. Then scores + documents are built.
+
+create function tests.rnd(p_seed text) returns double precision language sql immutable as
+  $$ select ('x' || substr(md5(p_seed), 1, 8))::bit(32)::bigint / 4294967295.0 $$;
+
+create function tests.search_dataset(p_scale int default 1) returns int language plpgsql as $$
+declare
+  names jsonb := '{
+    "barber": ["Fade District", "Karim Barber Shop", "حلاق أبو علي", "Le Barbier", "Sharp Cuts", "Gentlemen Club", "صالون الرجال", "Blade & Co"],
+    "hair-salon": ["Salon Rita", "Maison de Coiffure", "صالون ليلى", "Hair Studio 9", "Glow Hair", "Coiffure Nadine", "Balayage Bar", "Studio Mira"],
+    "nails": ["Nail Lab", "Polish & Co", "أظافر نور", "Ongles Chic", "Nail Room", "Gel Garden", "Tips & Toes", "Nailed It"],
+    "lashes-brows": ["Lash Lounge", "Brow Bar Beirut", "رموش جنى", "Cils & Sourcils", "Lash Atelier", "Brow Studio", "Wink", "Arch Studio"],
+    "makeup": ["Makeup by Maya", "Glam Room", "مكياج سارا", "Beauté Studio", "Bridal Glow", "Face Studio", "Contour Lab", "Artist Loft"],
+    "spa": ["Serenity Spa", "Hammam Beirut", "سبا الواحة", "Le Spa Blanc", "Zen Rooms", "Massage House", "Oasis Spa", "Bliss"],
+    "beauty-center": ["Beauty Corner", "Institut Belle", "مركز جمال", "Wax & Glow", "Beauty Hub", "Smooth Studio", "Care Center", "Pure Beauty"]}';
+  base_price jsonb := '{"mens-haircut":15,"beard-trim":8,"haircut-beard":20,"hot-towel-shave":12,"kids-haircut":10,
+    "womens-haircut":30,"blow-dry":20,"hair-color":60,"highlights":90,"balayage":120,"keratin":150,"hair-treatment":40,"updo":50,
+    "manicure":15,"gel-manicure":25,"pedicure":25,"nail-extensions":45,"nail-art":20,"lash-extensions":60,"lash-lift":40,
+    "brow-shaping":10,"brow-tint":15,"brow-lamination":35,"event-makeup":60,"bridal-makeup":250,"massage":50,"facial":45,
+    "moroccan-bath":40,"waxing":20,"face-threading":8}';
+  cl record; ar record; cat record; k int; i int; j int; v_key text; v_biz uuid; v_loc uuid; v_q double precision;
+  v_staff uuid[]; v_services uuid[]; v_svc uuid; v_canon record; v_nsvc int; v_rec uuid; v_bk uuid; v_item uuid;
+  v_start timestamptz; v_n int := 0; v_reviews int; v_price numeric; v_cust uuid[];
+begin
+  -- a pool of customers (reviewers)
+  insert into auth.users (id, aud, role, phone, phone_confirmed_at, created_at, updated_at)
+  select gen_random_uuid(), 'authenticated', 'authenticated', '9617190' || lpad(g::text, 4, '0'), now(),
+         now() - make_interval(days => 200 + g % 300), now()
+  from generate_series(1, 200) g;
+  select array_agg(id order by phone) into v_cust from auth.users where phone like '9617190%';
+
+  for cl in select c.id, c.slug from public.clusters c where c.is_live order by c.sort loop
+    for ar in select a.id, a.slug, a.centroid from public.cluster_areas ca join public.areas a on a.id = ca.area_id
+              where ca.cluster_id = cl.id order by a.slug loop
+      for cat in select c.id, c.slug from public.categories c where c.is_live and c.parent_id is not null order by c.sort loop
+        for k in 1 .. greatest(1, round(p_scale * (1.5 + 2 * tests.rnd(ar.slug || cat.slug)))::int) loop
+          v_key := ar.slug || '-' || cat.slug || '-' || k;
+          v_q := tests.rnd('q' || v_key);                         -- hidden quality 0..1
+          insert into public.businesses (slug, name, primary_category_id, status, published_at, audience, description)
+          values ('sd-' || v_key,
+                  (names -> cat.slug ->> ((k - 1) % 8)) || case when k > 8 or p_scale > 1 then ' ' || k else '' end
+                    || case when ar.slug in ('hamra', 'hazmieh') and k % 3 = 0 then ' ' || initcap(replace(ar.slug, '-', ' ')) else '' end,
+                  cat.id, 'live', now() - make_interval(days => (10 + tests.rnd('p' || v_key) * 500)::int),
+                  case when cat.slug = 'barber' then 'men' when cat.slug in ('nails', 'makeup', 'lashes-brows') and k % 2 = 0 then 'women'
+                       else 'everyone' end::public.audience,
+                  case when v_q > 0.3 then 'A friendly neighbourhood place with experienced staff and online booking.' end)
+          returning id into v_biz;
+          insert into public.business_locations (business_id, area_id, address_line, geo, status)
+          values (v_biz, ar.id, 'Street ' || k,
+                  extensions.st_setsrid(extensions.st_makepoint(extensions.st_x(ar.centroid::extensions.geometry) + (tests.rnd('x' || v_key) - 0.5) * 0.02,
+                                                                extensions.st_y(ar.centroid::extensions.geometry) + (tests.rnd('y' || v_key) - 0.5) * 0.02), 4326)::extensions.geography,
+                  'live')
+          returning id into v_loc;
+          insert into public.location_hours (location_id, business_id, iso_weekday, start_minute, end_minute)
+          select v_loc, v_biz, d, 540, 1200 from generate_series(1, 7) d where d <> 7 or v_q > 0.5;
+          v_staff := '{}';
+          for i in 1 .. 2 loop
+            insert into public.staff_members (business_id, display_name, slug, publicly_bookable)
+            values (v_biz, 'Staff ' || i, 'staff-' || i, true) returning id into v_svc;
+            v_staff := v_staff || v_svc;
+            insert into public.staff_locations (staff_id, location_id, business_id) values (v_svc, v_loc, v_biz);
+            insert into public.staff_weekly_hours (staff_id, location_id, business_id, iso_weekday, start_minute, end_minute, effective_from)
+            select v_svc, v_loc, v_biz, d, 540, 1200, current_date - 30 from generate_series(1, 7) d;
+          end loop;
+          -- 2–5 services of the category (price around the base, pricier in Achrafieh)
+          v_services := '{}';
+          v_nsvc := 2 + (tests.rnd('n' || v_key) * 3.99)::int;
+          for v_canon in select cs.id, cs.slug from public.canonical_services cs where cs.category_id = cat.id and cs.is_active
+                         order by tests.rnd(v_key || cs.slug) limit v_nsvc loop
+            v_price := round(((base_price ->> v_canon.slug)::numeric * (0.7 + tests.rnd('$' || v_key || v_canon.slug) * 0.7)
+                              * case when cl.slug = 'achrafieh-mar-mikhael' then 1.2 else 1 end)::numeric, 0);
+            insert into public.services (business_id, canonical_service_id, name, price_type, price_min, duration_min)
+            values (v_biz, v_canon.id, initcap(replace(v_canon.slug, '-', ' ')),
+                    case when tests.rnd('t' || v_key || v_canon.slug) < 0.2 then 'from' else 'fixed' end::public.price_type,
+                    v_price, 30 + (tests.rnd('d' || v_key || v_canon.slug) * 4)::int * 15)
+            returning id into v_svc;
+            v_services := v_services || v_svc;
+            insert into public.staff_services (staff_id, service_id, business_id) select s, v_svc, v_biz from unnest(v_staff) s;
+          end loop;
+          -- completed visits + reviews (count and stars follow the hidden quality)
+          v_reviews := (tests.rnd('r' || v_key) * 40 * (0.3 + v_q))::int;
+          for j in 1 .. v_reviews * 2 loop
+            v_start := date_trunc('hour', now()) - make_interval(days => j * 2, hours => 3 + j % 5);
+            insert into public.business_customers (business_id, user_id, display_name, acquired_via, claimed_at)
+            values (v_biz, v_cust[1 + (j * 7 + k) % 200], 'Customer ' || j, 'marketplace', now())
+            on conflict do nothing returning id into v_rec;
+            if v_rec is null then
+              select id into v_rec from public.business_customers where business_id = v_biz and user_id = v_cust[1 + (j * 7 + k) % 200];
+            end if;
+            insert into public.bookings (business_id, location_id, business_customer_id, customer_user_id, status, source, starts_at, ends_at,
+                                         created_by_kind, confirmed_at, completed_at)
+            values (v_biz, v_loc, v_rec, v_cust[1 + (j * 7 + k) % 200], 'completed',
+                    case when j % 3 = 0 then 'manual' when j % 3 = 1 then 'marketplace_search' else 'business_link' end::public.booking_source,
+                    v_start, v_start + interval '30 minutes', case when j % 3 = 0 then 'business' else 'customer' end::public.actor_kind,
+                    v_start - interval '1 day', v_start + interval '30 minutes')
+            returning id into v_bk;
+            insert into public.booking_items (booking_id, business_id, location_id, service_id, canonical_service_id, staff_id,
+                                              selection_mode, starts_at, ends_at, occupied, duration_min, price_type, price_min)
+            select v_bk, v_biz, v_loc, s.id, s.canonical_service_id, v_staff[1 + j % 2], 'business', v_start, v_start + interval '30 minutes',
+                   tstzrange(v_start, v_start + interval '30 minutes', '[)'), 30, 'fixed', s.price_min
+            from public.services s where s.id = v_services[1 + j % cardinality(v_services)]
+            returning id into v_item;
+            if j % 2 = 0 then
+              insert into public.reviews (booking_id, booking_item_id, business_id, location_id, staff_id, service_id, canonical_service_id,
+                                          author_user_id, trust_tier, visit_at, overall, rating_state, status, published_at, base_weight, editable_until)
+              select v_bk, v_item, v_biz, v_loc, i.staff_id, i.service_id, i.canonical_service_id, v_cust[1 + (j * 7 + k) % 200],
+                     case when j % 3 = 0 then 'verified_visit' else 'verified_booking' end::public.trust_tier, v_start,
+                     greatest(1, least(5, round(2.6 + v_q * 2.6 + (tests.rnd('s' || v_key || j) - 0.5) * 1.6)))::smallint,
+                     'active', 'published', v_start + interval '1 day', case when j % 3 = 0 then 0.5 else 1.0 end, v_start + interval '7 days'
+              from public.booking_items i where i.id = v_item;
+              insert into public.review_ratings (review_id, dimension_id, score)
+              select r.id, d.id, greatest(1, least(5, round(2.8 + v_q * 2.4 + (tests.rnd(d.key || v_key || j) - 0.5) * 1.4)))::smallint
+              from public.reviews r join public.rating_dimensions d on d.category_id = (select parent_id from public.categories where id = cat.id)
+              where r.booking_id = v_bk and d.is_active and d.key in ('cleanliness', 'punctuality', 'value_for_money');
+            end if;
+          end loop;
+          perform private.recompute_rating_summary(v_biz);
+          v_n := v_n + 1;
+        end loop;
+      end loop;
+    end loop;
+  end loop;
+  perform private.compute_quality_scores();
+  perform private.job_search_refresh(100000);
+  return v_n;
+end $$;
+grant execute on all functions in schema tests to anon, authenticated;
