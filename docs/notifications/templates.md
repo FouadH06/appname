@@ -382,6 +382,39 @@ and (M9) `supabase/migrations/20261005100200_m9_review_templates.sql`.
 >
 > [ فتح التقييمات ↗ ](https://platform.com/biz/{business}/reviews)
 
+## Result photo published (M10) `result_published`
+
+**English — WhatsApp** (template `result_published_v1`, 1 parameter)
+
+> 📸 Your photo from Studio Rita is now live on their page. Thanks for sharing your result!
+>
+> [ View photo ↗ ](https://platform.com/r/{result})
+
+**Arabic — WhatsApp** (template `result_published_v1`, 1 parameter)
+
+> 📸 صورتك من Studio Rita صارت منشورة على صفحتهم. شكرًا لمشاركتك النتيجة!
+>
+> [ عرض الصورة ↗ ](https://platform.com/r/{result})
+
+## Result photo couldn't be published (M10) `result_rejected`
+
+**English — WhatsApp** (template `result_rejected_v1`, 2 parameters)
+
+> One of your photos from Studio Rita couldn't be published: it doesn't seem to show your Haircut.
+> You can add another photo within 30 days of your visit.
+>
+> [ Add another photo ↗ ](https://platform.com/review/{token})
+
+**Arabic — WhatsApp** (template `result_rejected_v1`, 2 parameters)
+
+> لم نتمكن من نشر إحدى صورك من Studio Rita: لا يبدو أنها تُظهر Haircut. يمكنك إضافة صورة أخرى خلال 30
+> يومًا من زيارتك.
+>
+> [ إضافة صورة أخرى ↗ ](https://platform.com/review/{token})
+
+Reasons (`{photo_reason}`): not relevant · not from your visit · contact details or QR code · file
+couldn't be opened · too small · photo guidelines. WhatsApp only (no SMS), like the review messages.
+
 ## Replies to button taps (sent in the customer's open WhatsApp session)
 
 **After Confirm**

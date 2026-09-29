@@ -59,6 +59,34 @@ WebCrypto, so it is unit-tested under Node in `packages/edge-tests`.
 ANTHROPIC_API_KEY=… pnpm --filter @app/edge-tests test moderation-eval` scores the LLM.
 - Translations: `request_translation` (cached per text + language) → queue `translate` → Claude.
 
+## Customer photos (M10)
+
+Private-first: a photo is never public before a decision.
+
+1. `request_review_media_upload` (consent recorded) → the client uploads a ≤ 2048 px JPEG to
+   `ugc-private/{user}/{id}.jpg` (storage policy: only that registered path) → `finalize_media_upload`
+   → queue `media_transform`.
+2. **Transform worker** (`apps/media-worker`, Node + sharp/libvips, Docker; chosen by the M10 benchmark
+   over Edge Functions): `media_claim_transform` → decode (JPEG/PNG/WebP; HEVC HEIC via libheif's
+   `heif-dec`/`heif-convert`), orientation, strip all metadata, `thumb`/`card`/`full` WebP to
+   `ugc-staging`, pHash + blurhash → `media_processing_complete` (idempotent per job). Hash stage in
+   SQL: exact/near duplicates (pHash Hamming distance) → human.
+3. **`media-orchestrator`** (pg_cron via pg_net, `x-media-secret` = `MEDIA_ORCHESTRATOR_SECRET`, Vault
+   `media_orchestrator_url` / `media_orchestrator_secret`): queue `media_classify` → `ImageClassifier`
+   (`ClaudeImageClassifier`: safety, OCR/contact details/QR/documents, relevance to the booked service,
+   minors; structured output, cached system prompt) → `decideImage` → `media_classification_record`;
+   queue `media_publish` copies derivatives to `ugc-public` → `media_publish_complete`; queue
+   `media_cleanup` deletes staging/public objects.
+4. **Auto-publication**: the local stub only on the local stack; Claude only with
+   `MEDIA_AUTO_PUBLISH=true` (after the labelled image eval passes). Hosted without a key: every photo
+   goes to a moderator (A3 image case, blurred by default).
+5. Removal (customer, moderator, account deletion) → public derivatives deleted by the cleanup queue.
+
+Quality: `packages/edge-tests/eval/image-evaluate.ts` — labelled set kept outside Git
+(`IMAGE_EVAL_DIR`, see `image-labels.example.json`); `EVAL_IMAGES=1 IMAGE_EVAL_DIR=… ANTHROPIC_API_KEY=…
+pnpm --filter @app/edge-tests test media-eval`; gate = ≥ 90 % of automatic decisions correct and 0
+falsely public.
+
 ## Secrets
 
 Local values are in `supabase/config.toml` `[edge_runtime.secrets]` (log mode, no real
