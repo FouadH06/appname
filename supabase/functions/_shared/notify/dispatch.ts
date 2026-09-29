@@ -1,12 +1,20 @@
 import { rpc } from '../otp/store.ts';
 import type { Fetch } from '../otp/types.ts';
-import { fill, formatVars, templateButtons, whatsappParams } from './render.ts';
-import type { Claimed, NotifyStore, Outcome, SmsSender, WhatsAppSender } from './types.ts';
+import { fill, formatVars, pushPath, templateButtons, whatsappParams } from './render.ts';
+import type {
+  Claimed,
+  NotifyStore,
+  Outcome,
+  PushSender,
+  SmsSender,
+  WhatsAppSender,
+} from './types.ts';
 
 export interface DispatchDeps {
   store: NotifyStore;
   whatsapp?: WhatsAppSender;
   sms?: SmsSender;
+  push?: PushSender;
   /** live: only Meta-approved WhatsApp templates are sent; log: everything is printed */
   mode: 'live' | 'log';
   limit?: number;
@@ -54,6 +62,29 @@ async function deliver(
   let retryable = false;
 
   for (const channel of n.channels) {
+    if (channel === 'push') {
+      // push reuses the message text (the WhatsApp/SMS copy); no provider approval needed
+      const t = n.templates.push ?? n.templates.whatsapp ?? n.templates.sms;
+      if (!t) {
+        lastError = 'no template for push';
+        continue;
+      }
+      if (!deps.push) {
+        lastError = 'push not configured';
+        continue;
+      }
+      const r = await deps.push.send(n.push_tokens ?? [], {
+        title: vars.business_name || 'APP_NAME',
+        body: fill(t.body, vars),
+        path: pushPath(n.type, n.payload),
+      });
+      if (r.invalidTokens.length) await deps.store.disablePushTokens?.(r.invalidTokens);
+      await deps.store.recordAttempt(n.id, 'push', deps.push.provider, r.messageId, r.ok, r.error);
+      if (r.ok) return { outcome: 'sent', error: null };
+      lastError = r.error ?? 'push failed';
+      retryable ||= r.retryable;
+      continue;
+    }
     const t = n.templates[channel];
     if (!t) {
       lastError = `no ${channel} template`;
@@ -131,6 +162,9 @@ export function postgrestNotifyStore(
     },
     finish: async (id, outcome, error) => {
       await call('notify_finish', { p_notification_id: id, p_outcome: outcome, p_error: error });
+    },
+    disablePushTokens: async (tokens) => {
+      await call('push_tokens_invalid', { p_tokens: tokens });
     },
   };
 }
