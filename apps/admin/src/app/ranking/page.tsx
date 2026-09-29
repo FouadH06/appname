@@ -117,6 +117,7 @@ export default function RankingPage() {
       ) : null}
       {superadmin && active ? <DraftEditor base={active} done={() => void reload()} /> : null}
       <Inspector />
+      <SearchDebugger />
     </Shell>
   );
 }
@@ -277,6 +278,89 @@ function Inspector() {
         >
           {JSON.stringify(ex, null, 2)}
         </pre>
+      ) : null}
+    </Card>
+  );
+}
+
+interface DebugCard {
+  name: string;
+  area: string | null;
+  display_rating: number | null;
+  review_count: number;
+  labels: string[];
+  debug: {
+    rank_score: number;
+    quality_score: number;
+    km: number | null;
+    availability_fit: number;
+    personal: number;
+  };
+}
+
+/** Why results come out in this order for a query: the recommended score and its parts per card. */
+function SearchDebugger() {
+  const [q, setQ] = useState('');
+  const [run, setRun] = useState('');
+  const { data, error } = useData<{
+    total: number;
+    config_version: number;
+    results: DebugCard[];
+    intent_raw: Record<string, unknown>;
+  }>(
+    () =>
+      run
+        ? supabase().rpc('admin_search_debug', { p_q: run })
+        : Promise.resolve({ data: null, error: null }),
+    [run],
+  );
+  return (
+    <Card title="Search debugger">
+      <form
+        className="flex gap-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          setRun(q.trim());
+        }}
+      >
+        <input
+          className={field}
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Query, e.g. 7ala2 hamra"
+          aria-label="Debug query"
+          dir="auto"
+        />
+        <button type="submit" className="h-9 rounded-control border border-line-200 px-3 text-sm">
+          Run
+        </button>
+      </form>
+      <State error={error} />
+      {data ? (
+        <>
+          <p className="mt-2 text-xs text-ink-500">
+            {data.total} results · config v{data.config_version} · intent{' '}
+            {JSON.stringify(data.intent_raw)}
+          </p>
+          <Table
+            rows={data.results}
+            testId="search-debug"
+            cols={[
+              ['#', (c) => data.results.indexOf(c) + 1],
+              ['Business', (c) => <span dir="auto">{c.name}</span>],
+              ['Area', (c) => c.area ?? '—'],
+              ['Rank score', (c) => c.debug.rank_score],
+              ['Quality', (c) => c.debug.quality_score],
+              ['Distance', (c) => (c.debug.km == null ? '—' : `${c.debug.km} km`)],
+              ['Availability', (c) => c.debug.availability_fit],
+              [
+                'Rating',
+                (c) => (c.display_rating ? `${c.display_rating} (${c.review_count})` : 'new'),
+              ],
+              ['Labels', (c) => c.labels.join(', ')],
+            ]}
+          />
+        </>
       ) : null}
     </Card>
   );

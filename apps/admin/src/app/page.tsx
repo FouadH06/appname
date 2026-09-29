@@ -39,6 +39,38 @@ interface Overview {
 
 const pct = (x: number | null) => (x == null ? '—' : `${Math.round(x * 100)}%`);
 
+function ZeroResults() {
+  const { data } = useData<
+    { q: string; q_key: string; n: number; last_at: string; cluster: string | null }[]
+  >(() => supabase().rpc('admin_zero_result_queries', { p_days: 14 }), []);
+  return (
+    <Card
+      title="Searches with no results (14 days)"
+      actions={
+        <Link href="/catalog" className="text-sm text-accent-600">
+          Catalog synonyms →
+        </Link>
+      }
+    >
+      {!data ? null : data.length === 0 ? (
+        <p className="text-sm text-ink-500">All clear.</p>
+      ) : (
+        <ul className="flex flex-col gap-1 text-sm" data-testid="zero-results">
+          {data.slice(0, 10).map((z) => (
+            <li key={z.q_key}>
+              <span dir="auto">“{z.q}”</span>{' '}
+              <span className="text-ink-500">
+                × {z.n}
+                {z.cluster ? ` · ${z.cluster}` : ''} · last {ago(z.last_at)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
+  );
+}
+
 export default function AdminOverview() {
   const access = useAdminGate(ANY_ADMIN);
   const { data, error, loading, reload } = useData<Overview>(
@@ -162,6 +194,7 @@ export default function AdminOverview() {
       </Card>
 
       <div className="grid grid-cols-2 gap-3">
+        {canSee(role, ['ops']) ? <ZeroResults /> : null}
         <Card title="Alerts">
           {a ? (
             <ul className="flex flex-col gap-1 text-sm">
