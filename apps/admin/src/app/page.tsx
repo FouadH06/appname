@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { getMyAccess, type MyAccess } from '@app/api';
 import { supabase } from '@/lib/supabase';
 
-// M4: the gate. Admin screens arrive in M5 (create business) and M9–M11.
+// M4: the gate. Admin screens: create business (M5), moderation queue (M9); more in M10–M11.
 export default function AdminHome() {
   const router = useRouter();
   const [access, setAccess] = useState<MyAccess | null>(null);
@@ -39,6 +39,15 @@ export default function AdminHome() {
           data-testid="create-business-link"
         >
           + Create business
+        </Link>
+      ) : null}
+      {['moderator', 'support', 'superadmin'].includes(access.admin_role ?? '') ? (
+        <Link
+          href="/moderation"
+          className="mt-6 block text-accent-600"
+          data-testid="moderation-link"
+        >
+          Moderation queue
         </Link>
       ) : null}
       <button

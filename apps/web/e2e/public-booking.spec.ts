@@ -6,6 +6,7 @@ import {
   latestBooking,
   notificationsFor,
   renameSlug,
+  setCancellationWindow,
   setBookingMode,
   setStaffPublic,
 } from './support/db';
@@ -43,6 +44,8 @@ test('Instagram link → booked in under a minute; reschedule (Any available) an
   const b = await createCalendarBusiness('Web Salon');
   const slug = await businessSlug(b.businessId);
   await setStaffPublic(b.mayaId, false); // internal-only staff must never show publicly
+  // the first free slot can be minutes away (staff work from 09:00, no notice): keep it changeable
+  await setCancellationWindow(b.businessId, 0);
 
   await test.step('business page: identity, services, only public staff', async () => {
     await page.goto(`/${slug}?utm_source=instagram`);

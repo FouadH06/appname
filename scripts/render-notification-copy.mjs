@@ -27,6 +27,8 @@ const sample = {
   business_slug: 'fade-district',
   business_url: `${web}/fade-district`,
   dashboard_path: 'b1d2/bookings',
+  review_token: 'Rv7Tq2mZ9w',
+  review_link: `${web}/review/Rv7Tq2mZ9w`,
 };
 const withReason = new Set(['request_declined', 'booking_cancelled_by_business']);
 const ORDER = [
@@ -45,18 +47,28 @@ const ORDER = [
   ['biz_new_booking', 'Team alert: new online booking'],
   ['biz_new_request', 'Team alert: new request'],
   ['biz_booking_cancelled', 'Team alert: customer cancelled'],
+  ['review_request', 'Review request (M9)'],
+  ['review_needs_changes', 'Review comment needs changes (M9)'],
+  ['biz_new_review', 'Team alert: new review (M9, owners/managers)'],
 ];
 const URL = {
   view: `${web}/m/{token}`,
   book: `${web}/{business slug}`,
   dashboard: `${web}/biz/{business}/bookings`,
+  review: `${web}/review/{token}`,
+  review_edit: `${web}/review/{token}`,
+  reviews: `${web}/biz/{business}/reviews`,
 };
 
-let md = `# Booking message copy (M7) — for review
+let md = `# Booking message copy (M7 + M9 reviews) — for review
 
 Rendered with the real renderer and sample values: **Fade District**, Haircut with **Karim**,
 **Tue 13 Oct at 4:30 PM** (moved from Mon 12 Oct at 6:00 PM), customer Moe.
-Source of truth: \`scripts/notification-templates.py\` → \`supabase/migrations/20261003100100_m7_templates.sql\`.
+Source of truth: \`scripts/notification-templates.py\` → \`supabase/migrations/20261003100100_m7_templates.sql\`
+and (M9) \`supabase/migrations/20261005100200_m9_review_templates.sql\`.
+
+- M9: the review request goes 2 hours after a completed visit, moved out of quiet hours (22:00–08:00);
+  a visit logged by the business for someone without an account gets a claim link instead.
 
 - **WhatsApp**: body text + buttons. Links are buttons (Meta doesn't allow links or variables at the
   start/end of a template body). *Confirm* / *Cancel* are quick replies: Confirm confirms attendance

@@ -286,6 +286,8 @@ max_frequency = "30s"
 96170000010 = "123456"
 96170000011 = "123456"
 96170000012 = "123456"
+96170000013 = "123456"
+96170000014 = "123456"
 
 # Configure logged in session timeouts.
 # [auth.sessions]
@@ -421,6 +423,9 @@ NOTIFY_DISPATCH_SECRET = "local-notify-dispatch-secret"
 # local-only values so the webhook can be exercised with signed test requests
 WHATSAPP_APP_SECRET = "local-meta-app-secret"
 WHATSAPP_WEBHOOK_VERIFY_TOKEN = "local-verify-token"
+# M9: local worker secret; no LLM key locally, so moderation uses the heuristic classifier
+MODERATE_SECRET = "local-moderate-secret"
+MODERATION_MODE = "heuristic"
 
 # Auth calls these with their own signatures, not a user JWT.
 [functions.auth-send-sms]
@@ -433,6 +438,9 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.notify-dispatch]
+verify_jwt = false
+
+[functions.moderate]
 verify_jwt = false
 
 [analytics]

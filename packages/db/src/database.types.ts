@@ -779,6 +779,44 @@ export type Database = {
           },
         ];
       };
+      business_rating_summary: {
+        Row: {
+          business_id: string;
+          dimensions: NonNullable<Json>;
+          display_rating: number | null;
+          last_review_at: string | null;
+          rating_sum: number;
+          review_count: number;
+          updated_at: string;
+        };
+        Insert: {
+          business_id: string;
+          dimensions?: NonNullable<Json>;
+          display_rating?: number | null;
+          last_review_at?: string | null;
+          rating_sum?: number;
+          review_count?: number;
+          updated_at?: string;
+        };
+        Update: {
+          business_id?: string;
+          dimensions?: NonNullable<Json>;
+          display_rating?: number | null;
+          last_review_at?: string | null;
+          rating_sum?: number;
+          review_count?: number;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'business_rating_summary_business_id_fkey';
+            columns: ['business_id'];
+            isOneToOne: true;
+            referencedRelation: 'businesses';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       business_settings: {
         Row: {
           allow_online_booking: boolean;
@@ -1296,6 +1334,36 @@ export type Database = {
         };
         Relationships: [];
       };
+      content_translations: {
+        Row: {
+          created_at: string;
+          model: string;
+          source_langs: string[];
+          subject_id: string;
+          subject_type: string;
+          target_locale: Database['public']['Enums']['app_locale'];
+          text: string;
+        };
+        Insert: {
+          created_at?: string;
+          model: string;
+          source_langs: string[];
+          subject_id: string;
+          subject_type: string;
+          target_locale: Database['public']['Enums']['app_locale'];
+          text: string;
+        };
+        Update: {
+          created_at?: string;
+          model?: string;
+          source_langs?: string[];
+          subject_id?: string;
+          subject_type?: string;
+          target_locale?: Database['public']['Enums']['app_locale'];
+          text?: string;
+        };
+        Relationships: [];
+      };
       customer_notes: {
         Row: {
           author_user_id: string | null;
@@ -1460,6 +1528,13 @@ export type Database = {
             referencedRelation: 'businesses';
             referencedColumns: ['id'];
           },
+          {
+            foreignKeyName: 'disputes_review_id_fkey';
+            columns: ['review_id'];
+            isOneToOne: false;
+            referencedRelation: 'reviews';
+            referencedColumns: ['id'];
+          },
         ];
       };
       location_closures: {
@@ -1599,6 +1674,92 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: 'media_assets_business_id_fkey';
+            columns: ['business_id'];
+            isOneToOne: false;
+            referencedRelation: 'businesses';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      moderation_cases: {
+        Row: {
+          author_user_id: string | null;
+          auto_confidence: number | null;
+          auto_decision: Database['public']['Enums']['moderation_decision'] | null;
+          business_id: string | null;
+          claimed_at: string | null;
+          claimed_by: string | null;
+          created_at: string;
+          decided_at: string | null;
+          decided_by: string | null;
+          decision: Database['public']['Enums']['moderation_decision'] | null;
+          decision_reason_code: string | null;
+          id: string;
+          note: string | null;
+          priority: number;
+          reasons: string[];
+          redaction: Json | null;
+          report_id: string | null;
+          sla_due_at: string;
+          source: string;
+          state: Database['public']['Enums']['case_state'];
+          subject_id: string;
+          subject_type: Database['public']['Enums']['moderation_subject'];
+          user_action: string | null;
+        };
+        Insert: {
+          author_user_id?: string | null;
+          auto_confidence?: number | null;
+          auto_decision?: Database['public']['Enums']['moderation_decision'] | null;
+          business_id?: string | null;
+          claimed_at?: string | null;
+          claimed_by?: string | null;
+          created_at?: string;
+          decided_at?: string | null;
+          decided_by?: string | null;
+          decision?: Database['public']['Enums']['moderation_decision'] | null;
+          decision_reason_code?: string | null;
+          id?: string;
+          note?: string | null;
+          priority?: number;
+          reasons?: string[];
+          redaction?: Json | null;
+          report_id?: string | null;
+          sla_due_at: string;
+          source: string;
+          state?: Database['public']['Enums']['case_state'];
+          subject_id: string;
+          subject_type: Database['public']['Enums']['moderation_subject'];
+          user_action?: string | null;
+        };
+        Update: {
+          author_user_id?: string | null;
+          auto_confidence?: number | null;
+          auto_decision?: Database['public']['Enums']['moderation_decision'] | null;
+          business_id?: string | null;
+          claimed_at?: string | null;
+          claimed_by?: string | null;
+          created_at?: string;
+          decided_at?: string | null;
+          decided_by?: string | null;
+          decision?: Database['public']['Enums']['moderation_decision'] | null;
+          decision_reason_code?: string | null;
+          id?: string;
+          note?: string | null;
+          priority?: number;
+          reasons?: string[];
+          redaction?: Json | null;
+          report_id?: string | null;
+          sla_due_at?: string;
+          source?: string;
+          state?: Database['public']['Enums']['case_state'];
+          subject_id?: string;
+          subject_type?: Database['public']['Enums']['moderation_subject'];
+          user_action?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'moderation_cases_business_id_fkey';
             columns: ['business_id'];
             isOneToOne: false;
             referencedRelation: 'businesses';
@@ -1792,6 +1953,13 @@ export type Database = {
             referencedRelation: 'businesses';
             referencedColumns: ['id'];
           },
+          {
+            foreignKeyName: 'notifications_review_id_fkey';
+            columns: ['review_id'];
+            isOneToOne: false;
+            referencedRelation: 'reviews';
+            referencedColumns: ['id'];
+          },
         ];
       };
       plan_entitlements: {
@@ -1977,6 +2145,95 @@ export type Database = {
           },
         ];
       };
+      reports: {
+        Row: {
+          created_at: string;
+          details: string | null;
+          dispute_id: string | null;
+          id: string;
+          moderation_case_id: string | null;
+          parts: string[];
+          reason: Database['public']['Enums']['report_reason'];
+          reporter_business_id: string | null;
+          reporter_kind: string;
+          reporter_user_id: string;
+          resolution_note: string | null;
+          resolved_at: string | null;
+          resolved_by: string | null;
+          status: Database['public']['Enums']['report_status'];
+          subject_business_id: string | null;
+          subject_id: string;
+          subject_type: Database['public']['Enums']['report_subject'];
+        };
+        Insert: {
+          created_at?: string;
+          details?: string | null;
+          dispute_id?: string | null;
+          id?: string;
+          moderation_case_id?: string | null;
+          parts?: string[];
+          reason: Database['public']['Enums']['report_reason'];
+          reporter_business_id?: string | null;
+          reporter_kind: string;
+          reporter_user_id: string;
+          resolution_note?: string | null;
+          resolved_at?: string | null;
+          resolved_by?: string | null;
+          status?: Database['public']['Enums']['report_status'];
+          subject_business_id?: string | null;
+          subject_id: string;
+          subject_type: Database['public']['Enums']['report_subject'];
+        };
+        Update: {
+          created_at?: string;
+          details?: string | null;
+          dispute_id?: string | null;
+          id?: string;
+          moderation_case_id?: string | null;
+          parts?: string[];
+          reason?: Database['public']['Enums']['report_reason'];
+          reporter_business_id?: string | null;
+          reporter_kind?: string;
+          reporter_user_id?: string;
+          resolution_note?: string | null;
+          resolved_at?: string | null;
+          resolved_by?: string | null;
+          status?: Database['public']['Enums']['report_status'];
+          subject_business_id?: string | null;
+          subject_id?: string;
+          subject_type?: Database['public']['Enums']['report_subject'];
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'reports_dispute_id_fkey';
+            columns: ['dispute_id'];
+            isOneToOne: false;
+            referencedRelation: 'disputes';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'reports_moderation_case_id_fkey';
+            columns: ['moderation_case_id'];
+            isOneToOne: false;
+            referencedRelation: 'moderation_cases';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'reports_reporter_business_id_fkey';
+            columns: ['reporter_business_id'];
+            isOneToOne: false;
+            referencedRelation: 'businesses';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'reports_subject_business_id_fkey';
+            columns: ['subject_business_id'];
+            isOneToOne: false;
+            referencedRelation: 'businesses';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       reserved_slugs: {
         Row: {
           slug: string;
@@ -1988,6 +2245,245 @@ export type Database = {
           slug?: string;
         };
         Relationships: [];
+      };
+      review_ratings: {
+        Row: {
+          dimension_id: string;
+          review_id: string;
+          score: number;
+        };
+        Insert: {
+          dimension_id: string;
+          review_id: string;
+          score: number;
+        };
+        Update: {
+          dimension_id?: string;
+          review_id?: string;
+          score?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'review_ratings_dimension_id_fkey';
+            columns: ['dimension_id'];
+            isOneToOne: false;
+            referencedRelation: 'rating_dimensions';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'review_ratings_review_id_fkey';
+            columns: ['review_id'];
+            isOneToOne: false;
+            referencedRelation: 'reviews';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      review_replies: {
+        Row: {
+          author_user_id: string;
+          business_id: string;
+          created_at: string;
+          id: string;
+          published_at: string | null;
+          review_id: string;
+          text_display: string | null;
+          text_original: string;
+          text_state: Database['public']['Enums']['content_state'];
+          updated_at: string;
+        };
+        Insert: {
+          author_user_id: string;
+          business_id: string;
+          created_at?: string;
+          id?: string;
+          published_at?: string | null;
+          review_id: string;
+          text_display?: string | null;
+          text_original: string;
+          text_state?: Database['public']['Enums']['content_state'];
+          updated_at?: string;
+        };
+        Update: {
+          author_user_id?: string;
+          business_id?: string;
+          created_at?: string;
+          id?: string;
+          published_at?: string | null;
+          review_id?: string;
+          text_display?: string | null;
+          text_original?: string;
+          text_state?: Database['public']['Enums']['content_state'];
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'review_replies_business_id_fkey';
+            columns: ['business_id'];
+            isOneToOne: false;
+            referencedRelation: 'businesses';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'review_replies_review_id_fkey';
+            columns: ['review_id'];
+            isOneToOne: true;
+            referencedRelation: 'reviews';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      reviews: {
+        Row: {
+          author_user_id: string;
+          base_weight: number;
+          booking_id: string;
+          booking_item_id: string;
+          business_id: string;
+          canonical_service_id: string;
+          created_at: string;
+          deleted_at: string | null;
+          detected_langs: string[];
+          edit_count: number;
+          editable_until: string;
+          fraud_checked_at: string | null;
+          fraud_multiplier: number;
+          id: string;
+          idempotency_key: string | null;
+          legal_hold: boolean;
+          location_id: string;
+          overall: number;
+          published_at: string | null;
+          rating_state: Database['public']['Enums']['rating_state'];
+          removed_at: string | null;
+          removed_reason: string | null;
+          service_id: string;
+          staff_id: string;
+          status: Database['public']['Enums']['review_status'];
+          text_display: string | null;
+          text_original: string | null;
+          text_state: Database['public']['Enums']['content_state'] | null;
+          trust_tier: Database['public']['Enums']['trust_tier'];
+          updated_at: string;
+          visit_at: string;
+        };
+        Insert: {
+          author_user_id: string;
+          base_weight: number;
+          booking_id: string;
+          booking_item_id: string;
+          business_id: string;
+          canonical_service_id: string;
+          created_at?: string;
+          deleted_at?: string | null;
+          detected_langs?: string[];
+          edit_count?: number;
+          editable_until: string;
+          fraud_checked_at?: string | null;
+          fraud_multiplier?: number;
+          id?: string;
+          idempotency_key?: string | null;
+          legal_hold?: boolean;
+          location_id: string;
+          overall: number;
+          published_at?: string | null;
+          rating_state?: Database['public']['Enums']['rating_state'];
+          removed_at?: string | null;
+          removed_reason?: string | null;
+          service_id: string;
+          staff_id: string;
+          status?: Database['public']['Enums']['review_status'];
+          text_display?: string | null;
+          text_original?: string | null;
+          text_state?: Database['public']['Enums']['content_state'] | null;
+          trust_tier: Database['public']['Enums']['trust_tier'];
+          updated_at?: string;
+          visit_at: string;
+        };
+        Update: {
+          author_user_id?: string;
+          base_weight?: number;
+          booking_id?: string;
+          booking_item_id?: string;
+          business_id?: string;
+          canonical_service_id?: string;
+          created_at?: string;
+          deleted_at?: string | null;
+          detected_langs?: string[];
+          edit_count?: number;
+          editable_until?: string;
+          fraud_checked_at?: string | null;
+          fraud_multiplier?: number;
+          id?: string;
+          idempotency_key?: string | null;
+          legal_hold?: boolean;
+          location_id?: string;
+          overall?: number;
+          published_at?: string | null;
+          rating_state?: Database['public']['Enums']['rating_state'];
+          removed_at?: string | null;
+          removed_reason?: string | null;
+          service_id?: string;
+          staff_id?: string;
+          status?: Database['public']['Enums']['review_status'];
+          text_display?: string | null;
+          text_original?: string | null;
+          text_state?: Database['public']['Enums']['content_state'] | null;
+          trust_tier?: Database['public']['Enums']['trust_tier'];
+          updated_at?: string;
+          visit_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'reviews_booking_id_fkey';
+            columns: ['booking_id'];
+            isOneToOne: true;
+            referencedRelation: 'bookings';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'reviews_booking_item_id_fkey';
+            columns: ['booking_item_id'];
+            isOneToOne: false;
+            referencedRelation: 'booking_items';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'reviews_business_id_fkey';
+            columns: ['business_id'];
+            isOneToOne: false;
+            referencedRelation: 'businesses';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'reviews_canonical_service_id_fkey';
+            columns: ['canonical_service_id'];
+            isOneToOne: false;
+            referencedRelation: 'canonical_services';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'reviews_location_id_business_id_fkey';
+            columns: ['location_id', 'business_id'];
+            isOneToOne: false;
+            referencedRelation: 'business_locations';
+            referencedColumns: ['id', 'business_id'];
+          },
+          {
+            foreignKeyName: 'reviews_service_id_business_id_fkey';
+            columns: ['service_id', 'business_id'];
+            isOneToOne: false;
+            referencedRelation: 'services';
+            referencedColumns: ['id', 'business_id'];
+          },
+          {
+            foreignKeyName: 'reviews_staff_id_business_id_fkey';
+            columns: ['staff_id', 'business_id'];
+            isOneToOne: false;
+            referencedRelation: 'staff_members';
+            referencedColumns: ['id', 'business_id'];
+          },
+        ];
       };
       service_combo_items: {
         Row: {
@@ -2620,6 +3116,7 @@ export type Database = {
           p90_seconds: number;
         }[];
       };
+      admin_claim_case: { Args: { p_case_id: string }; Returns: undefined };
       admin_create_business: {
         Args: {
           p_address_line: string;
@@ -2630,6 +3127,25 @@ export type Database = {
           p_name: string;
           p_phone?: string;
           p_slug: string;
+        };
+        Returns: Json;
+      };
+      admin_decide_case: {
+        Args: {
+          p_case_id: string;
+          p_decision: Database['public']['Enums']['moderation_decision'];
+          p_note?: string;
+          p_reason_code: string;
+          p_redaction?: Json;
+          p_user_action?: string;
+        };
+        Returns: undefined;
+      };
+      admin_get_case: { Args: { p_case_id: string }; Returns: Json };
+      admin_list_cases: {
+        Args: {
+          p_state?: string;
+          p_subject_type?: Database['public']['Enums']['moderation_subject'];
         };
         Returns: Json;
       };
@@ -2657,6 +3173,7 @@ export type Database = {
           sent: number;
         }[];
       };
+      admin_release_case: { Args: { p_case_id: string }; Returns: undefined };
       archive_staff: { Args: { p_staff_id: string }; Returns: undefined };
       biz_add_note: {
         Args: {
@@ -2768,6 +3285,7 @@ export type Database = {
       };
       biz_get_customer: { Args: { p_business_id: string; p_customer_id: string }; Returns: Json };
       biz_get_notification_settings: { Args: { p_business_id: string }; Returns: Json };
+      biz_get_reviews: { Args: { p_business_id: string; p_tab?: string }; Returns: Json };
       biz_list_bookings: {
         Args: {
           p_business_id: string;
@@ -3188,7 +3706,13 @@ export type Database = {
         };
       };
       delete_my_account: { Args: Record<PropertyKey, never>; Returns: Json };
+      delete_my_review: { Args: { p_review_id: string }; Returns: undefined };
+      delete_reply: { Args: { p_review_id: string }; Returns: undefined };
       dismiss_claimable_visits: { Args: { p_business_ids: string[] }; Returns: undefined };
+      edit_my_review: {
+        Args: { p_overall: number; p_ratings?: Json; p_review_id: string; p_text?: string };
+        Returns: Json;
+      };
       extend_hold: { Args: { p_booking_id: string; p_hold_token: string }; Returns: string };
       get_available_days: {
         Args: {
@@ -3216,6 +3740,11 @@ export type Database = {
         }[];
       };
       get_business_page: { Args: { p_slug: string }; Returns: Json };
+      get_business_rating_summary: { Args: { p_business_id: string }; Returns: Json };
+      get_business_reviews: {
+        Args: { p_before?: string; p_business_id: string; p_limit?: number };
+        Returns: Json;
+      };
       get_claimable_visits: {
         Args: Record<PropertyKey, never>;
         Returns: {
@@ -3253,10 +3782,12 @@ export type Database = {
           type: Database['public']['Enums']['notification_type'];
         }[];
       };
+      get_my_reviews: { Args: Record<PropertyKey, never>; Returns: Json };
       get_next_available: {
         Args: { p_location_id: string; p_service_id: string; p_staff_id?: string };
         Returns: string;
       };
+      get_review_context: { Args: { p_booking_id: string }; Returns: Json };
       get_staff_options: { Args: { p_location_id: string; p_service_id: string }; Returns: Json };
       invite_member: {
         Args: {
@@ -3401,6 +3932,26 @@ export type Database = {
         };
       };
       mark_notifications_read: { Args: { p_ids: string[] }; Returns: number };
+      moderation_claim: { Args: { p_limit?: number; p_vt?: number }; Returns: Json };
+      moderation_record: {
+        Args: {
+          p_classifier?: Json;
+          p_confidence?: number;
+          p_decision: string;
+          p_id: string;
+          p_langs?: string[];
+          p_msg_id: number;
+          p_normalized?: string;
+          p_pii_spans?: Json;
+          p_reasons?: string[];
+          p_run_id: string;
+          p_stages?: Json;
+          p_subject: Database['public']['Enums']['moderation_subject'];
+          p_text_display?: string;
+          p_text_hash: string;
+        };
+        Returns: string;
+      };
       notify_claim: { Args: { p_limit?: number }; Returns: Json };
       notify_finish: {
         Args: { p_error?: string; p_notification_id: string; p_outcome: string };
@@ -3523,6 +4074,26 @@ export type Database = {
         Args: { p_business_id: string; p_media_ids: string[] };
         Returns: undefined;
       };
+      reply_to_review: { Args: { p_review_id: string; p_text: string }; Returns: string };
+      report_content: {
+        Args: {
+          p_as_business_id?: string;
+          p_details?: string;
+          p_parts?: string[];
+          p_reason: Database['public']['Enums']['report_reason'];
+          p_subject_id: string;
+          p_subject_type: Database['public']['Enums']['report_subject'];
+        };
+        Returns: string;
+      };
+      request_translation: {
+        Args: {
+          p_locale: Database['public']['Enums']['app_locale'];
+          p_subject_id: string;
+          p_subject_type: string;
+        };
+        Returns: Json;
+      };
       reschedule_my_booking: {
         Args: { p_booking_id: string; p_new_start: string; p_staff_id?: string };
         Returns: {
@@ -3634,8 +4205,32 @@ export type Database = {
         };
         Returns: undefined;
       };
+      submit_review: {
+        Args: {
+          p_booking_id: string;
+          p_device_hash?: string;
+          p_idempotency_key?: string;
+          p_overall: number;
+          p_ratings?: Json;
+          p_text?: string;
+        };
+        Returns: Json;
+      };
       transfer_ownership: {
         Args: { p_business_id: string; p_new_owner_user_id: string };
+        Returns: undefined;
+      };
+      translation_claim: { Args: { p_limit?: number; p_vt?: number }; Returns: Json };
+      translation_record: {
+        Args: {
+          p_locale: Database['public']['Enums']['app_locale'];
+          p_model: string;
+          p_msg_id: number;
+          p_source_langs: string[];
+          p_subject_id: string;
+          p_subject_type: string;
+          p_text: string;
+        };
         Returns: undefined;
       };
       undo_no_show: {

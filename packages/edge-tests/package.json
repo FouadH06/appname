@@ -9,6 +9,7 @@
     "test": "vitest run"
   },
   "devDependencies": {
+    "@anthropic-ai/sdk": "0.129.0",
     "@app/eslint-config": "workspace:*",
     "@app/tsconfig": "workspace:*",
     "@types/node": "^24.19.0",

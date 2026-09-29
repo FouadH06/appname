@@ -9,6 +9,7 @@ WebCrypto, so it is unit-tested under Node in `packages/edge-tests`.
 | `whatsapp-webhook`   | M4 → M7   | Meta webhook: message statuses (OTP + booking receipts), Confirm / Cancel buttons |
 | `twilio-status`      | M4        | Twilio SMS status callback (OTP delivery receipts)                                |
 | `notify-dispatch`    | M7        | Notification outbox dispatcher                                                    |
+| `moderate`           | M9        | Review/reply text moderation + on-demand translations (pgmq queues)               |
 | `media-orchestrator` | M10       | Moderation queue consumer; calls the `ImageProcessor`                             |
 
 ## OTP delivery (M4)
@@ -35,6 +36,25 @@ WebCrypto, so it is unit-tested under Node in `packages/edge-tests`.
   the log senders (`OTP_PROVIDER_MODE=log` / `NOTIFY_PROVIDER_MODE=log`).
 - WhatsApp templates must be approved by Meta; submit the copy from
   `supabase/migrations/20261003100100_m7_templates.sql`, then mark each row `approved`.
+
+## Review moderation (M9)
+
+- Submitting a review publishes the star rating at once (after the in-database fraud pre-check); the
+  comment is queued (`pgmq` queue `moderation`) and only shown once `moderate` approves it.
+- `moderate` (pg_cron every minute via pg_net while a queue has work; shared secret
+  `MODERATE_SECRET`, also in Vault as `moderate_secret` + `moderate_url`) claims jobs
+  (`moderation_claim`), runs `_shared/moderation/`: rules (contact details in any digit script,
+  links, spam phrases) → normalisation / language detection (ar, en, fr, Arabizi, mixed) →
+  classifier → decision matrix (`decide.ts`), and records every stage (`moderation_record`, applied
+  only if the text is unchanged). Unsure cases open a moderation case for admins (A2/A3).
+- Classifier: `ClaudeClassifier` (official `@anthropic-ai/sdk`, model `LLM_MODEL`, default
+  `claude-opus-5`, structured JSON output, cached system prompt, server-side `fallbacks: "default"`;
+  a refusal or unusable answer → human; network errors → retried by the queue). Without
+  `ANTHROPIC_API_KEY`: `HeuristicClassifier` (keywords) — on a hosted project in strict mode, so no
+  comment is published without either the LLM or a moderator.
+- Quality: `packages/edge-tests/eval/` — 206 labelled reviews + 30 held out; `EVAL_LLM=1
+ANTHROPIC_API_KEY=… pnpm --filter @app/edge-tests test moderation-eval` scores the LLM.
+- Translations: `request_translation` (cached per text + language) → queue `translate` → Claude.
 
 ## Secrets
 

@@ -1,8 +1,12 @@
-# Booking message copy (M7) — for review
+# Booking message copy (M7 + M9 reviews) — for review
 
 Rendered with the real renderer and sample values: **Fade District**, Haircut with **Karim**,
 **Tue 13 Oct at 4:30 PM** (moved from Mon 12 Oct at 6:00 PM), customer Moe.
-Source of truth: `scripts/notification-templates.py` → `supabase/migrations/20261003100100_m7_templates.sql`.
+Source of truth: `scripts/notification-templates.py` → `supabase/migrations/20261003100100_m7_templates.sql`
+and (M9) `supabase/migrations/20261005100200_m9_review_templates.sql`.
+
+- M9: the review request goes 2 hours after a completed visit, moved out of quiet hours (22:00–08:00);
+  a visit logged by the business for someone without an account gets a claim link instead.
 
 - **WhatsApp**: body text + buttons. Links are buttons (Meta doesn't allow links or variables at the
   start/end of a template body). *Confirm* / *Cancel* are quick replies: Confirm confirms attendance
@@ -319,6 +323,64 @@ Source of truth: `scripts/notification-templates.py` → `supabase/migrations/20
 > ❌ ألغى الزبون: Moe، Haircut مع Karim، الثلاثاء، 13 تشرين الأول الساعة 4:30 م. أصبح الوقت متاحًا من جديد.
 >
 > [ فتح الحجوزات ↗ ](https://platform.com/biz/{business}/bookings)
+
+## Review request (M9) `review_request`
+
+**English — WhatsApp** (template `review_request_v1`, 2 parameters)
+
+> How was your Haircut at Fade District? Leave a quick review, it helps others choose.
+>
+> [ Leave a review ↗ ](https://platform.com/review/{token})
+
+**English — SMS**
+
+> How was your Haircut at Fade District? Leave a quick review, it helps others choose. Review: https://platform.com/review/Rv7Tq2mZ9w
+
+**Arabic — WhatsApp** (template `review_request_v1`, 2 parameters)
+
+> كيف كانت تجربتك مع Haircut في Fade District؟ اترك تقييمًا سريعًا، فهو يساعد الآخرين على الاختيار.
+>
+> [ اترك تقييمًا ↗ ](https://platform.com/review/{token})
+
+**Arabic — SMS**
+
+> كيف كانت تجربتك مع Haircut في Fade District؟ اترك تقييمًا سريعًا، فهو يساعد الآخرين على الاختيار. للتقييم: https://platform.com/review/Rv7Tq2mZ9w
+
+## Review comment needs changes (M9) `review_needs_changes`
+
+**English — WhatsApp** (template `review_needs_changes_v1`, 1 parameters)
+
+> Your rating for Fade District is live, but your comment couldn't be published as written. You can edit it within 7 days.
+>
+> [ Edit my review ↗ ](https://platform.com/review/{token})
+
+**English — SMS**
+
+> Your rating for Fade District is live, but your comment couldn't be published as written. You can edit it within 7 days. Edit: https://platform.com/review/Rv7Tq2mZ9w
+
+**Arabic — WhatsApp** (template `review_needs_changes_v1`, 1 parameters)
+
+> تقييمك لـ Fade District منشور، لكن تعليقك لم يُنشر بصيغته الحالية. يمكنك تعديله خلال 7 أيام.
+>
+> [ تعديل تقييمي ↗ ](https://platform.com/review/{token})
+
+**Arabic — SMS**
+
+> تقييمك لـ Fade District منشور، لكن تعليقك لم يُنشر بصيغته الحالية. يمكنك تعديله خلال 7 أيام. للتعديل: https://platform.com/review/Rv7Tq2mZ9w
+
+## Team alert: new review (M9, owners/managers) `biz_new_review`
+
+**English — WhatsApp** (template `biz_new_review_v1`, 2 parameters)
+
+> ⭐ New review for Haircut with Karim. Reply from your dashboard.
+>
+> [ Open reviews ↗ ](https://platform.com/biz/{business}/reviews)
+
+**Arabic — WhatsApp** (template `biz_new_review_v1`, 2 parameters)
+
+> ⭐ تقييم جديد لـ Haircut مع Karim. يمكنك الرد من لوحة التحكم.
+>
+> [ فتح التقييمات ↗ ](https://platform.com/biz/{business}/reviews)
 
 ## Replies to button taps (sent in the customer's open WhatsApp session)
 
