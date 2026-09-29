@@ -16,7 +16,7 @@ test.afterAll(closePool);
 test('find, filter and land on a business through search', async ({ page }) => {
   test.setTimeout(120_000);
   const b = await createBusiness('Searchable Barber');
-  await refreshSearch();
+  await refreshSearch(b.businessId);
   const name = b.name;
   const slug = await businessSlug(b.businessId);
 

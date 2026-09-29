@@ -84,7 +84,8 @@ begin
             insert into public.staff_services (staff_id, service_id, business_id) select s, v_svc, v_biz from unnest(v_staff) s;
           end loop;
           -- completed visits + reviews (count and stars follow the hidden quality)
-          v_reviews := (tests.rnd('r' || v_key) * 40 * (0.3 + v_q))::int;
+          -- history thins out at large scales (search latency depends on documents, not history size)
+          v_reviews := (tests.rnd('r' || v_key) * 40 * (0.3 + v_q) / greatest(1, p_scale / 2.0))::int;
           for j in 1 .. v_reviews * 2 loop
             v_start := date_trunc('hour', now()) - make_interval(days => j * 2, hours => 3 + j % 5);
             insert into public.business_customers (business_id, user_id, display_name, acquired_via, claimed_at)

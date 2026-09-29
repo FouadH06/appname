@@ -506,9 +506,15 @@ export async function setCancellationWindow(businessId: string, minutes: number)
   );
 }
 
-/** M12: rebuild queued search documents now (the per-minute job would do it within a minute). */
-export async function refreshSearch(): Promise<void> {
-  await db().query('select private.job_search_refresh(100000)');
+/**
+ * M12: build a business's search documents now. Directly, not through the queue: the per-minute cron job
+ * may have claimed the queue entry (skip locked) and not committed yet.
+ */
+export async function refreshSearch(businessId: string): Promise<void> {
+  await db().query(
+    'select private.refresh_search_document(id) from public.business_locations where business_id = $1',
+    [businessId],
+  );
 }
 
 export async function zeroResultLogged(q: string): Promise<boolean> {

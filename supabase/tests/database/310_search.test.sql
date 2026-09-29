@@ -111,8 +111,14 @@ select is((public.search_businesses(null, null, null, (select id from public.clu
   'cluster filter');
 select is(tests.names(public.search_businesses(null, null, null, null, null, 33.8425, 35.5361, '{"max_km": 2}')),
           array['Fade District', 'Private Staff Barber'], 'distance filter around Hazmieh');
-select is((public.search_businesses('manicure', null, null, null, null, null, null, '{"available_today": true}') ->> 'total')::int, 1,
-  'available today (open around the clock here)');
+-- available today = a public slot before midnight Beirut (compared with the precomputed next slot, so the
+-- test holds at any hour, incl. late evening when today's slots are gone)
+select tests.as_postgres();
+select is((public.search_businesses('manicure', null, null, null, null, null, null, '{"available_today": true}') ->> 'total')::int,
+          (select count(*)::int from public.search_documents where business_id = tests.id('maya')
+             and next_available_at < (date_trunc('day', now() at time zone 'Asia/Beirut') + interval '1 day') at time zone 'Asia/Beirut'),
+  'available today = next public slot before midnight');
+select tests.as_anon();
 select is((public.search_businesses(null, null, null, null, null, null, null, '{"min_rating": 4}') ->> 'total')::int, 0,
   'minimum rating excludes businesses without a displayed rating');
 select is(public.search_businesses(null, null, null, null, null, null, null, '{}', 'price') -> 'results',

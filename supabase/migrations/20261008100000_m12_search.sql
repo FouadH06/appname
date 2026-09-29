@@ -39,6 +39,8 @@ create index on public.search_documents using gist (geo);
 create index on public.search_documents (cluster_id, quality_score desc);
 alter table public.search_documents enable row level security;   -- read through the search RPCs only
 
+create index if not exists business_locations_business_id_idx on public.business_locations (business_id);
+
 create table private.search_refresh_queue (
   location_id   uuid primary key,
   requested_at  timestamptz not null default now()
@@ -83,13 +85,19 @@ create table private.search_log (
 create index on private.search_log (created_at desc) where results_count = 0;
 
 -- ─── Refresh: triggers enqueue locations, a per-minute job rebuilds them ────
+-- two indexed branches (an OR across both columns would scan every location on each booking insert)
 create function private.enqueue_search_refresh(p_business_id uuid, p_location_id uuid default null) returns void
-language sql volatile security definer set search_path = '' as $$
-  insert into private.search_refresh_queue (location_id)
-  select l.id from public.business_locations l
-  where (p_location_id is not null and l.id = p_location_id) or (p_location_id is null and l.business_id = p_business_id)
-  on conflict (location_id) do update set requested_at = excluded.requested_at
-$$;
+language plpgsql volatile security definer set search_path = '' as $$
+begin
+  if p_location_id is not null then
+    insert into private.search_refresh_queue (location_id) values (p_location_id)
+    on conflict (location_id) do update set requested_at = excluded.requested_at;
+  else
+    insert into private.search_refresh_queue (location_id)
+    select l.id from public.business_locations l where l.business_id = p_business_id
+    on conflict (location_id) do update set requested_at = excluded.requested_at;
+  end if;
+end $$;
 
 create function private.search_touch() returns trigger
 language plpgsql security definer set search_path = '' as $$
@@ -697,10 +705,14 @@ begin
       group by cs.id order by rnk, tlen, places desc, cs.name_en limit 5) q), '[]'),
     'businesses', coalesce((select jsonb_agg(jsonb_build_object('slug', d.business_slug, 'name', d.name,
                      'area', (select a.name_en from public.areas a where a.id = d.area_id), 'display_rating', d.display_rating))
-                   from (select distinct on (business_id) * from public.search_documents d
-                         where (d.name_key like '%' || v_key || '%' or (length(v_key) >= 3 and d.name_key operator(extensions.%) v_key))
-                           and (p_cluster_id is null or d.cluster_id = p_cluster_id)
-                         order by business_id, extensions.similarity(d.name_key, v_key) desc limit 5) d), '[]'),
+                   -- best matches first: the name contains the text, then by similarity (one row per business)
+                   from (select * from (select distinct on (business_id) d.*, d.name_key like '%' || v_key || '%' as contains,
+                                               extensions.similarity(d.name_key, v_key) as sim
+                                        from public.search_documents d
+                                        where (d.name_key like '%' || v_key || '%' or (length(v_key) >= 3 and d.name_key operator(extensions.%) v_key))
+                                          and (p_cluster_id is null or d.cluster_id = p_cluster_id)
+                                        order by business_id, extensions.similarity(d.name_key, v_key) desc) x
+                         order by contains desc, sim desc, name limit 5) d), '[]'),
     'areas', coalesce((select jsonb_agg(jsonb_build_object('id', a.id, 'slug', a.slug, 'name', a.name_en, 'name_ar', a.name_ar))
                        from (select distinct a.* from public.areas a left join public.area_aliases x on x.area_id = a.id
                              where a.level = 'area' and a.is_live
