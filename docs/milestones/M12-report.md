@@ -1,6 +1,6 @@
 # M12 — Search & discovery: report
 
-Status: **awaiting review** · branch `m12-search` (not merged)
+Status: **closed** (approved 2026-09-29; M12 decisions locked — see decision log) · merged to `main` (`bf891e9`, main CI green)
 
 Lean scope per the PO: deterministic, explainable ranking from the documented inputs; no ML, embeddings,
 personalization or recommendations. Hosted verification is deferred with M4–M11 (M4 checklist, now
