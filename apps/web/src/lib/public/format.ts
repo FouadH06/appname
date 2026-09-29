@@ -1,5 +1,11 @@
 import { beirutParts } from '../biz/schedule';
-import type { BusinessPage, PriceType } from './types';
+import type { BusinessPage, PriceType, PublicReview } from './types';
+
+/** Trust labels (plain module so server components can read it, unlike a 'use client' export). */
+export const TIER_LABEL: Record<PublicReview['trust_tier'], string> = {
+  verified_booking: 'Verified booking',
+  verified_visit: 'Verified visit',
+};
 
 // Formatting for the public pages. Times are always Beirut time (Phase 2 §5), whatever the
 // visitor's device says.
@@ -10,6 +16,31 @@ export function mediaUrl(path: string | null | undefined): string | null {
   const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
   if (!path || !base) return null;
   return `${base}/storage/v1/object/public/business-media/${path}`;
+}
+
+/** Published customer-result derivatives (M10): only ever ugc-public paths. */
+export function ugcUrl(path: string | null | undefined): string | null {
+  const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!path || !base) return null;
+  return `${base}/storage/v1/object/public/ugc-public/${path}`;
+}
+
+const PHOTO_REASONS: Record<string, string> = {
+  not_relevant: "It doesn't seem to show your {service}.",
+  not_your_result: "It looks like a photo that isn't from your visit.",
+  duplicate: 'You already shared this photo.',
+  contact_info: 'It shows contact details or a QR code.',
+  unsupported_file: "The file couldn't be opened.",
+  too_small: 'The image is too small (at least 300 px).',
+  upload_incomplete: "The upload didn't finish. Try again.",
+};
+
+/** Why a photo wasn't published — the same wording as the WhatsApp message, never safety details. */
+export function photoReasonText(code: string | null | undefined, service: string): string {
+  return (PHOTO_REASONS[code ?? ''] ?? "It doesn't follow our photo guidelines.").replace(
+    '{service}',
+    service || 'service',
+  );
 }
 
 export function money(v: number | null | undefined, currency = 'USD') {

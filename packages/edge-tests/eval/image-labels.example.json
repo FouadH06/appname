@@ -1,0 +1,52 @@
+[
+  {
+    "file": "hair-001.jpg",
+    "category": "hair",
+    "service": "Haircut",
+    "canonical": "haircut",
+    "expected": "approve"
+  },
+  {
+    "file": "nails-001.jpg",
+    "category": "nails",
+    "service": "Gel manicure",
+    "canonical": "manicure",
+    "expected": "approve"
+  },
+  {
+    "file": "nails-as-haircut.jpg",
+    "category": "irrelevant",
+    "service": "Haircut",
+    "canonical": "haircut",
+    "expected": "reject",
+    "note": "a real result, but not of the booked service"
+  },
+  {
+    "file": "meme-001.png",
+    "category": "meme",
+    "service": "Beard trim",
+    "canonical": "beard_trim",
+    "expected": "reject"
+  },
+  {
+    "file": "screenshot-instagram.png",
+    "category": "contact_info",
+    "service": "Makeup",
+    "canonical": "makeup",
+    "expected": "reject"
+  },
+  {
+    "file": "id-card.jpg",
+    "category": "document",
+    "service": "Haircut",
+    "canonical": "haircut",
+    "expected": "manual_review"
+  },
+  {
+    "file": "child-haircut.jpg",
+    "category": "minor",
+    "service": "Kids haircut",
+    "canonical": "haircut",
+    "expected": "manual_review"
+  }
+]

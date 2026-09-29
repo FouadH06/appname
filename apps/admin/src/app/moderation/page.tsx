@@ -98,7 +98,11 @@ export default function ModerationQueue() {
           {rows.map((c) => (
             <li key={c.id}>
               <Link
-                href={`/moderation/${c.id}`}
+                href={
+                  c.subject_type.endsWith('_media')
+                    ? `/moderation/media/${c.id}`
+                    : `/moderation/${c.id}`
+                }
                 className="flex flex-col gap-1 p-3 hover:bg-surface-50"
                 data-testid="case-row"
               >

@@ -102,7 +102,9 @@ jobs:
         run: bash scripts/ci-annotate.sh "supabase start" supabase start -x studio,imgproxy,logflare,vector,inbucket,postgres-meta,supavisor
       - name: App env from the local stack
         run: |
-          eval "$(supabase status -o env | grep -E '^(API_URL|PUBLISHABLE_KEY)=')"
+          eval "$(supabase status -o env | grep -E '^(API_URL|PUBLISHABLE_KEY|SERVICE_ROLE_KEY)=')"
+          # the LOCAL CI stack's well-known demo key — e2e runs the media worker against it (never a hosted key)
+          echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY" >> "$GITHUB_ENV"
           for app in web admin; do
             {
               echo "NEXT_PUBLIC_SUPABASE_URL=$API_URL"

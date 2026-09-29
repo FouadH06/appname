@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound, permanentRedirect } from 'next/navigation';
 import { Attribution } from '@/components/public/attribution';
+import { ResultsStrip } from '@/components/public/results';
 import { RatingBreakdown, RatingHeadline, ReviewList } from '@/components/public/reviews';
 import {
   BookedBanner,
@@ -21,7 +22,7 @@ import {
   priceText,
   waLink,
 } from '@/lib/public/format';
-import { getBusinessPage, getBusinessReviews } from '@/lib/public/server';
+import { getBusinessPage, getBusinessResults, getBusinessReviews } from '@/lib/public/server';
 import type { BusinessPage, PublicService } from '@/lib/public/types';
 
 // C1 Public business booking page — platform.com/{slug}. Server-rendered and cached for a minute
@@ -82,7 +83,10 @@ export default async function BusinessPageRoute({ params }: Params) {
   }
 
   const { business: b, location: l } = p;
-  const reviews = await getBusinessReviews(b.id, b.slug);
+  const [reviews, results] = await Promise.all([
+    getBusinessReviews(b.id, b.slug),
+    getBusinessResults(b.id, b.slug, 8),
+  ]);
   const cover = mediaUrl(b.cover_path);
   const photoUrls = Object.fromEntries(p.staff.map((s) => [s.id, mediaUrl(s.photo_path)]));
   const bookable = p.services.filter((s) => s.online);
@@ -261,6 +265,14 @@ export default async function BusinessPageRoute({ params }: Params) {
                   services={p.services}
                   canBook={p.accepting}
                 />
+              </section>
+            ) : null}
+
+            {/* customer results (C1 strip; hidden until there are some) */}
+            {results.total > 0 ? (
+              <section className={`${card} flex flex-col gap-3`} id="results">
+                <h2 className="text-lg font-semibold">Customer results</h2>
+                <ResultsStrip slug={b.slug} businessName={b.name} data={results} />
               </section>
             ) : null}
 

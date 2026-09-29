@@ -1,5 +1,6 @@
 'use client';
 
+import { TIER_LABEL } from '@/lib/public/format';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { PublicReview, RatingSummary } from '@/lib/public/types';
 import { supabase } from '@/lib/supabase';
@@ -11,11 +12,6 @@ const monthText = (iso: string) =>
   new Intl.DateTimeFormat('en', { month: 'long', year: 'numeric', timeZone: 'Asia/Beirut' }).format(
     new Date(iso),
   );
-
-export const TIER_LABEL: Record<PublicReview['trust_tier'], string> = {
-  verified_booking: 'Verified booking',
-  verified_visit: 'Verified visit',
-};
 
 export function Stars({ value, className = '' }: { value: number; className?: string }) {
   const full = Math.round(value);
