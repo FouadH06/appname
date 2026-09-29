@@ -1,7 +1,8 @@
+import { readFileSync } from 'node:fs';
 import sharp from 'sharp';
 import { describe, expect, it } from 'vitest';
 import { metadataLeaks, webpChunks } from './metadata.ts';
-import { hamming, sniff, transform } from './processor.ts';
+import { hamming, heifDecoderFromEnv, sniff, transform } from './processor.ts';
 
 // A camera-like JPEG with GPS, make/model and an orientation tag
 async function photo(w: number, h: number, orientation = 1, seed = 1): Promise<Buffer> {
@@ -126,5 +127,51 @@ describe('transform', () => {
       ok: true,
       original: { mime: 'image/heic', width: 1000, height: 800 },
     });
+  });
+
+  // src/fixtures/hevc-gps.heic: a real HEVC-coded HEIC (libheif heif-enc + x265) with GPS + Make/Model
+  const realHeic = readFileSync(new URL('./fixtures/hevc-gps.heic', import.meta.url));
+
+  it('a real HEVC HEIC goes to the libheif decoder (libvips reads its header but cannot decode it)', async () => {
+    expect(sniff(realHeic)).toBe('image/heic');
+    let called = 0;
+    const png = await sharp(await photo(320, 240))
+      .png()
+      .toBuffer();
+    const r = await transform(realHeic, {
+      minSide: 100,
+      heifDecoder: () => {
+        called++;
+        return Promise.resolve(png);
+      },
+    });
+    expect(called).toBe(1);
+    expect(r.ok).toBe(true);
+  });
+
+  it('decoder failures carry the decoder output', async () => {
+    const r = await transform(realHeic, {
+      minSide: 100,
+      heifDecoder: () => Promise.reject(new Error('heif-dec: plugin missing')),
+    });
+    expect(r).toMatchObject({ ok: false, error_code: 'DECODE_FAILED' });
+    expect(!r.ok && r.detail).toContain('plugin missing');
+  });
+});
+
+// Runs where libheif's CLI is installed (Linux CI benchmark job, the worker's Docker image).
+const heifDecoder = await heifDecoderFromEnv();
+describe.skipIf(!heifDecoder)('transform · real HEVC decode (libheif)', () => {
+  it('decodes, strips GPS/EXIF and keeps the original size', async () => {
+    const heic = readFileSync(new URL('./fixtures/hevc-gps.heic', import.meta.url));
+    const r = await transform(heic, { minSide: 100, heifDecoder });
+    expect(r).toMatchObject({
+      ok: true,
+      original: { mime: 'image/heic', width: 320, height: 240 },
+    });
+    if (!r.ok) return;
+    for (const d of r.derivatives) {
+      expect(await metadataLeaks(d.data)).toEqual([]);
+    }
   });
 });

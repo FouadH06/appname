@@ -30,12 +30,20 @@ jobs:
       - name: libheif (HEVC encode + decode) and exiftool
         run: |
           sudo apt-get update -qq
-          bash scripts/ci-annotate.sh "libheif install" sudo apt-get install -y -qq libheif-examples libimage-exiftool-perl
-          # HEVC plugins are separate packages on newer Ubuntu (libheif >= 1.17); older ones bundle them
-          sudo apt-get install -y -qq libheif-plugin-libde265 libheif-plugin-x265 || true
+          # HEVC decode (libde265) and encode (x265) are separate plugin packages on Ubuntu 24.04 (libheif 1.17)
+          bash scripts/ci-annotate.sh "libheif install" sudo apt-get install -y -qq libheif-examples \
+            libheif-plugin-libde265 libheif-plugin-x265 libimage-exiftool-perl
           dec=$(command -v heif-dec || command -v heif-convert || true)
           echo "::notice title=libheif tools::decoder=${dec:-none} encoder=$(command -v heif-enc || echo none) exiftool=$(exiftool -ver) libheif=$(dpkg -s libheif1 2>/dev/null | sed -n 's/^Version: //p')"
           [ -n "$dec" ] && command -v heif-enc
+      - name: HEVC round trip (the tools really encode and decode HEVC)
+        working-directory: apps/media-worker
+        run: |
+          dec=$(command -v heif-dec || command -v heif-convert)
+          "$dec" src/fixtures/hevc-gps.heic /tmp/rt.png
+          test -s /tmp/rt.png
+      - name: Worker unit tests (incl. real HEVC decode + metadata strip)
+        run: bash scripts/ci-annotate.sh "media-worker tests" pnpm --filter @app/media-worker test
       - name: Corpus (200 JPEG/PNG/WebP) + 40 HEIC from upright JPEGs
         working-directory: apps/media-worker
         run: |
@@ -78,4 +86,20 @@ jobs:
               ' · peak RSS ' + s.peakRssMB + ' MB · ' + JSON.stringify(s.env) + ' · pass ' + JSON.stringify(s.pass));
             const bad = require('./$f').perFile.filter((p) => p.error || (p.leaks && p.leaks.length));
             if (bad.length) console.log('::warning title=Image benchmark problems::' + JSON.stringify(bad.slice(0, 20)));
+          "
+      - name: Gate (every M10 pass criterion must be true)
+        working-directory: apps/media-worker
+        run: |
+          f=bench/results/external-linux-ci.json
+          [ -f "$f" ] || { echo "::error title=Image benchmark gate::no results file"; exit 1; }
+          node -e "
+            const s = require('./$f').summary;
+            const heic = (s.corpus.byFormat.heic || 0);
+            const failed = Object.entries(s.pass).filter(([, v]) => v !== true).map(([k]) => k);
+            if (!heic) failed.push('heicDecoded');
+            if (failed.length) {
+              console.log('::error title=Image benchmark gate::failed: ' + failed.join(', ') + ' · ' + JSON.stringify(s.pass));
+              process.exit(1);
+            }
+            console.log('::notice title=Image benchmark gate::all criteria pass ' + JSON.stringify(s.pass) + ' · HEIC decoded ' + heic);
           "

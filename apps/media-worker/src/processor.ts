@@ -63,7 +63,14 @@ export async function heifDecoderFromEnv(
     const dst = join(tmpdir(), `${id}.png`);
     try {
       await writeFile(src, heic);
-      await run(decoder, [src, dst], { timeout: 60_000 });
+      try {
+        await run(decoder, [src, dst], { timeout: 60_000 });
+      } catch (e) {
+        const err = e as { stderr?: string; message?: string };
+        throw new Error(`${decoder}: ${(err.stderr || err.message || String(e)).trim()}`, {
+          cause: e,
+        });
+      }
       return await readFile(dst);
     } finally {
       await Promise.all([rm(src, { force: true }), rm(dst, { force: true })]);
@@ -130,11 +137,12 @@ export async function transform(
 
   let decodable = input;
   if (sniffed === 'image/heic') {
-    // libvips (prebuilt) only decodes AVIF-coded HEIF; iPhone photos are HEVC → libheif CLI
+    // libvips (prebuilt) only decodes AVIF-coded HEIF; iPhone photos are HEVC → libheif CLI.
+    // metadata() only parses the header (it succeeds for HEVC too), so decide on the codec.
     const canVips = await sharp(input)
       .metadata()
       .then(
-        () => true,
+        (m) => m.compression === 'av1',
         () => false,
       );
     if (!canVips) {
