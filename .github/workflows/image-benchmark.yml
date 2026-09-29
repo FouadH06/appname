@@ -1,0 +1,114 @@
+name: Image benchmark
+
+# M10 formal image-processor benchmark, run INSIDE the production worker image (apps/media-worker
+# Dockerfile, Debian 13 + libheif/libde265): the synthetic corpus from bench/corpus.ts plus real HEVC
+# HEIC files made with libheif's encoder on the runner. Outputs are cross-checked with exiftool. The
+# summary is published as annotations (readable through the public API) and the Gate step fails the
+# job unless every pass criterion is true. PO decision (Option A): p95 < 8 s applies at the production
+# concurrency (2 per 4-vCPU worker); the 20-concurrent run is a stress test (0 failures, correct and
+# metadata-free outputs, no OOM/timeouts), not a latency target. Runs when the worker or benchmark changes.
+on:
+  push:
+    paths:
+      - 'apps/media-worker/**'
+      - '.github/workflows/image-benchmark.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark:
+    name: Image benchmark (Linux, HEIC)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: libheif (HEVC encode + decode) and exiftool
+        run: |
+          sudo apt-get update -qq
+          # HEVC decode (libde265) and encode (x265) are separate plugin packages on Ubuntu 24.04 (libheif 1.17)
+          bash scripts/ci-annotate.sh "libheif install" sudo apt-get install -y -qq libheif-examples \
+            libheif-plugin-libde265 libheif-plugin-x265 libimage-exiftool-perl
+          dec=$(command -v heif-dec || command -v heif-convert || true)
+          echo "::notice title=libheif tools::decoder=${dec:-none} encoder=$(command -v heif-enc || echo none) exiftool=$(exiftool -ver) libheif=$(dpkg -s libheif1 2>/dev/null | sed -n 's/^Version: //p')"
+          [ -n "$dec" ] && command -v heif-enc
+      - name: HEVC round trip (the tools really encode and decode HEVC)
+        working-directory: apps/media-worker
+        run: |
+          dec=$(command -v heif-dec || command -v heif-convert)
+          "$dec" src/fixtures/hevc-gps.heic /tmp/rt.png
+          test -s /tmp/rt.png
+      - name: Worker unit tests (incl. real HEVC decode + metadata strip)
+        run: bash scripts/ci-annotate.sh "media-worker tests" pnpm --filter @app/media-worker test
+      - name: Corpus (200 JPEG/PNG/WebP) + 40 HEIC from upright JPEGs
+        working-directory: apps/media-worker
+        run: |
+          node --experimental-strip-types bench/corpus.ts bench/corpus 200
+          n=0
+          for f in bench/corpus/*-o1.jpg; do
+            b=$(basename "$f" .jpg); id=${b%%-*}; rest=${b#*-}
+            heif-enc -q 85 "$f" -o "bench/corpus/${id}h-${rest}.heic" >/dev/null && n=$((n+1))
+            [ "$n" -ge 40 ] && break
+          done
+          echo "HEIC files: $(ls bench/corpus/*.heic | wc -l)"
+          exiftool -q -if '$GPSLatitude' -p '$FileName' bench/corpus/*.heic | wc -l | xargs echo "HEIC with GPS:"
+      - name: Build the production worker image
+        run: bash scripts/ci-annotate.sh "worker image" docker build -t media-worker apps/media-worker
+      - name: Benchmark (inside the production image)
+        working-directory: apps/media-worker
+        run: |
+          bash ../../scripts/ci-annotate.sh "image benchmark" docker run --rm -u root -e BENCH_DUMP=bench/out \
+            -v "$PWD/bench:/app/bench" -w /app media-worker \
+            node --experimental-strip-types bench/run.ts bench/corpus linux-ci
+          sudo chown -R "$(id -u)" bench
+      - name: exiftool cross-check (0 metadata in outputs)
+        working-directory: apps/media-worker
+        run: |
+          leaks=$(exiftool -q -r -if '$GPSLatitude or $Make or $Model or $Orientation or $XMP:all or $EXIF:all' -p '$FileName' bench/out | wc -l)
+          files=$(ls bench/out | wc -l)
+          echo "::notice title=exiftool cross-check::${files} derivative files checked, ${leaks} with metadata"
+          [ "$leaks" -eq 0 ]
+      - name: Publish summary
+        if: always()
+        working-directory: apps/media-worker
+        run: |
+          f=bench/results/external-linux-ci.json
+          [ -f "$f" ] || exit 0
+          node -e "
+            const s = require('./$f').summary;
+            const l = s.latencyMs;
+            console.log('::notice title=Image benchmark (linux)::' +
+              'decode ' + s.corpus.decodeOk + '/' + s.corpus.eligible + ' ' + JSON.stringify(s.corpus.byFormat) +
+              ' · too large rejected ' + s.corpus.tooLargeRejected + ' · leaks ' + s.metadataLeaks +
+              ' · orientation errors ' + s.orientationOrBoundsErrors +
+              ' · PRODUCTION pool(' + l.configuredPool.concurrency + ') p50/p95 ' + l.configuredPool.p50 + '/' + l.configuredPool.p95 + ' ms (failures ' + l.configuredPool.failures + ')' +
+              ' · sequential p50/p95 ' + l.sequential500.p50 + '/' + l.sequential500.p95 + ' ms (failures ' + l.sequential500.failures + ')' +
+              ' · STRESS 20 concurrent p50/p95 ' + l.concurrent20x5.p50 + '/' + l.concurrent20x5.p95 + ' ms (failures ' + l.concurrent20x5.failures + ', bad outputs ' + l.concurrent20x5.badOutputs + ', leaks ' + l.concurrent20x5.leaks + ')' +
+              ' · by format ' + JSON.stringify(l.corpusByFormat) +
+              ' · peak RSS ' + s.peakRssMB + ' MB · ' + JSON.stringify(s.env) + ' · pass ' + JSON.stringify(s.pass));
+            const bad = require('./$f').perFile.filter((p) => p.error || (p.leaks && p.leaks.length));
+            if (bad.length) console.log('::warning title=Image benchmark problems::' + JSON.stringify(bad.slice(0, 20)));
+          "
+      - name: Gate (every M10 pass criterion must be true)
+        working-directory: apps/media-worker
+        run: |
+          f=bench/results/external-linux-ci.json
+          [ -f "$f" ] || { echo "::error title=Image benchmark gate::no results file"; exit 1; }
+          node -e "
+            const s = require('./$f').summary;
+            const heic = (s.corpus.byFormat.heic || 0);
+            const failed = Object.entries(s.pass).filter(([, v]) => v !== true).map(([k]) => k);
+            if (!heic) failed.push('heicDecoded');
+            if (failed.length) {
+              console.log('::error title=Image benchmark gate::failed: ' + failed.join(', ') + ' · ' + JSON.stringify(s.pass));
+              process.exit(1);
+            }
+            console.log('::notice title=Image benchmark gate::all criteria pass ' + JSON.stringify(s.pass) + ' · HEIC decoded ' + heic);
+          "

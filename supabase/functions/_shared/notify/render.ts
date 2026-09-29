@@ -26,6 +26,37 @@ function when(iso: unknown, tz: string, locale: Locale) {
 
 const str = (v: unknown) => (typeof v === 'string' ? v.trim() : '');
 
+const PHOTO_REASONS: Record<string, Record<'en' | 'ar', string>> = {
+  not_relevant: {
+    en: "it doesn't seem to show your {service}.",
+    ar: 'لا يبدو أنها تُظهر {service}.',
+  },
+  not_your_result: {
+    en: "it looks like a photo that isn't from your visit.",
+    ar: 'يبدو أنها ليست صورة من زيارتك.',
+  },
+  contact_info: {
+    en: 'it shows contact details or a QR code.',
+    ar: 'تحتوي على معلومات تواصل أو رمز QR.',
+  },
+  unsupported_file: { en: "the file couldn't be opened.", ar: 'تعذّر فتح الملف.' },
+  too_small: { en: 'the image is too small.', ar: 'الصورة صغيرة جدًا.' },
+  guidelines: {
+    en: "it doesn't follow our photo guidelines.",
+    ar: 'لا تتوافق مع إرشادات الصور لدينا.',
+  },
+};
+
+/** Reason codes (M10 media pipeline / moderators) → a customer-facing sentence. */
+export function photoReason(code: string, service: string, locale: Locale): string {
+  const r = PHOTO_REASONS[code] ?? PHOTO_REASONS.guidelines!;
+  // French messages fall back to English (templates exist in EN + AR)
+  return r[locale === 'ar' ? 'ar' : 'en'].replace(
+    '{service}',
+    service || (locale === 'ar' ? 'الخدمة' : 'service'),
+  );
+}
+
 /** Template variables from an outbox payload. */
 export function formatVars(
   payload: Record<string, unknown>,
@@ -53,6 +84,8 @@ export function formatVars(
     link: str(payload.link),
     business_url: str(payload.business_url),
     review_link: str(payload.review_link),
+    // why a result photo wasn't published (a sentence; never safety details)
+    photo_reason: photoReason(str(payload.photo_reason_code), str(payload.service_name), locale),
     // star rating (1–5) of a new review, for the team alert
     rating: typeof payload.rating === 'number' ? String(payload.rating) : str(payload.rating),
     dashboard_link: str(payload.dashboard_link),
@@ -93,7 +126,11 @@ export function templateButtons(t: Template, payload: Record<string, unknown>): 
             ? str(payload.review_token) // {web}/review/{{1}}
             : b === 'reviews'
               ? str(payload.dashboard_path).replace(/\/bookings$/, '/reviews') // {web}/biz/{{1}}
-              : str(payload.dashboard_path);
+              : b === 'result'
+                ? str(payload.result_id) // {web}/r/{{1}}
+                : b === 'photos'
+                  ? str(payload.review_token) // {web}/review/{{1}}
+                  : str(payload.dashboard_path);
     return { kind: 'url', text: suffix || '-' };
   });
 }

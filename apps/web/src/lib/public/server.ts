@@ -1,4 +1,4 @@
-import type { BusinessPageResult, PublicReview } from './types';
+import type { BusinessPageResult, BusinessResults, PublicReview, ResultDetail } from './types';
 
 // Server-side reads for the public pages (SSR / ISR). Plain PostgREST calls with the public anon
 // key: the payloads are the same for every visitor, so they can be cached for a minute.
@@ -44,4 +44,47 @@ export async function getBusinessReviews(
   } catch {
     return [];
   }
+}
+
+async function publicRpc<T>(
+  name: string,
+  args: Record<string, unknown>,
+  tags: string[],
+  fallback: T,
+): Promise<T> {
+  const { url, key } = env();
+  if (!url || !key) return fallback;
+  try {
+    const res = await fetch(`${url}/rest/v1/rpc/${name}`, {
+      method: 'POST',
+      headers: { apikey: key, Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(args),
+      next: { revalidate: 60, tags },
+    });
+    if (!res.ok) return fallback;
+    return (await res.json()) as T;
+  } catch {
+    return fallback;
+  }
+}
+
+/** Customer results (M10): featured row + organic feed (same 1-minute cache as the page). */
+export function getBusinessResults(
+  businessId: string,
+  slug: string,
+  limit = 24,
+  serviceId?: string,
+): Promise<BusinessResults> {
+  return publicRpc<BusinessResults>(
+    'get_business_results',
+    { p_business_id: businessId, p_limit: limit, p_service_id: serviceId ?? null },
+    [`business:${slug.toLowerCase()}`],
+    { featured: [], items: [], total: 0 },
+  );
+}
+
+export function getResult(id: string): Promise<ResultDetail> {
+  return publicRpc<ResultDetail>('get_result', { p_review_media_id: id }, [`result:${id}`], {
+    state: 'removed',
+  });
 }

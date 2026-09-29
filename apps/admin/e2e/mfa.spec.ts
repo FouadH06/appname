@@ -1,4 +1,7 @@
+import { execSync } from 'node:child_process';
 import { createHmac } from 'node:crypto';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { expect, test, type Page } from '@playwright/test';
 import pg from 'pg';
 
@@ -97,6 +100,70 @@ async function createPipelineCase(db: pg.Client, text: string): Promise<string> 
     [review, biz, author],
   );
   return review;
+}
+
+/** A customer photo on that review, held for a human (M10), with its card derivative in ugc-staging. */
+async function createImageCase(db: pg.Client, reviewId: string): Promise<string> {
+  const media = (
+    await db.query<{ id: string; author: string }>(
+      `insert into public.media_assets (uploader_user_id, business_id, purpose, private_bucket, private_path, mime,
+                                        width, height, status, processor, derivatives)
+       select r.author_user_id, r.business_id, 'review_media', 'ugc-private', r.author_user_id || '/' || gen_random_uuid() || '.jpg',
+              'image/jpeg', 8, 8, 'processing', 'external',
+              jsonb_build_array(jsonb_build_object('name', 'card', 'path', gen_random_uuid() || '/card.webp', 'width', 8, 'height', 8))
+       from public.reviews r where r.id = $1 returning id, uploader_user_id as author`,
+      [reviewId],
+    )
+  ).rows[0]!;
+  await db.query(
+    `insert into public.review_media (review_id, media_asset_id, booking_item_id, consent_version, consented_at, business_id,
+                                      location_id, area_id, staff_id, service_id, canonical_service_id, price_type, price_min,
+                                      visit_at, trust_tier)
+     select r.id, $2, r.booking_item_id, 'c16-v1', now(), r.business_id, r.location_id, l.area_id, r.staff_id, r.service_id,
+            r.canonical_service_id, 'fixed', 15, r.visit_at, r.trust_tier
+     from public.reviews r join public.business_locations l on l.id = r.location_id where r.id = $1`,
+    [reviewId, media.id],
+  );
+  await db.query(`select private.media_to_human($1, 'review_media', '{relevance_unsure}')`, [
+    media.id,
+  ]);
+  // the moderator sees the processed card derivative through a short-lived signed URL
+  const path = (
+    await db.query<{ path: string }>(
+      `select derivatives -> 0 ->> 'path' as path from public.media_assets where id = $1`,
+      [media.id],
+    )
+  ).rows[0]!.path;
+  const webp = Buffer.from(
+    'UklGRjgAAABXRUJQVlA4ICwAAACwAQCdASoIAAgAAUAmJaACdLoABDAAAP7bUf/Ys5bAvH/8zR+k30m7mAAAAA==',
+    'base64',
+  );
+  const res = await fetch(`${API}/storage/v1/object/ugc-staging/${path}`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${localServiceKey()}`, 'Content-Type': 'image/webp' },
+    body: webp,
+  });
+  if (!res.ok) throw new Error(`staging upload failed: ${res.status} ${await res.text()}`);
+  return (
+    await db.query<{ id: string }>(
+      `select id from public.moderation_cases where subject_type = 'review_media' and subject_id = $1`,
+      [media.id],
+    )
+  ).rows[0]!.id;
+}
+
+const API = 'http://127.0.0.1:54321';
+/** The LOCAL stack's service key (CI exports it; locally read from the CLI). Never a hosted key. */
+function localServiceKey(): string {
+  const out = process.env.SUPABASE_SERVICE_ROLE_KEY
+    ? `SERVICE_ROLE_KEY=${process.env.SUPABASE_SERVICE_ROLE_KEY}`
+    : execSync('npx supabase status -o env', {
+        cwd: resolve(dirname(fileURLToPath(import.meta.url)), '../../..'),
+        encoding: 'utf8',
+      });
+  const m = /^SERVICE_ROLE_KEY="?([^"\n]+)"?$/m.exec(out);
+  if (!m) throw new Error('local service key not found');
+  return m[1]!;
 }
 
 async function waitForNextTotpWindow() {
@@ -216,6 +283,33 @@ test('admin must enroll TOTP and reach aal2 before anything works', async ({ pag
       [reviewId],
     );
     expect(decided.rows[0]).toEqual({ text_state: 'approved', audited: 1 });
+
+    // ── M10 image case: blurred until revealed; the moderator rejects an irrelevant photo ──
+    const caseId = await createImageCase(db, reviewId);
+    await page.goto('/moderation');
+    await page.locator(`a[href="/moderation/media/${caseId}"]`).click();
+    const img = page
+      .getByTestId('media-case-image')
+      .getByRole('img', { name: 'Photo under review' });
+    await expect(img).toHaveAttribute('data-revealed', 'false');
+    await expect(img).toHaveClass(/blur-2xl/);
+    await expect.poll(() => img.evaluate((el: HTMLImageElement) => el.naturalWidth)).toBe(8); // signed URL loads
+    await page.getByTestId('reveal').click();
+    await expect(img).toHaveAttribute('data-revealed', 'true');
+    await page.getByTestId('claim-case').click();
+    const decideImage = page.getByTestId('decide');
+    await decideImage.getByLabel('Reject (author told the reason)').check();
+    await decideImage.getByLabel('Reason code').selectOption('not_relevant');
+    await decideImage.getByTestId('submit-decision').click();
+    await expect(page.getByTestId('case-decided')).toBeVisible();
+    const imageDecided = await db.query<{ state: string; audited: number; told: number }>(
+      `select rm.state::text,
+              (select count(*)::int from audit.admin_actions a where a.subject_id = rm.media_asset_id and a.action = 'moderation.decide_media') as audited,
+              (select count(*)::int from public.notifications n where n.type = 'result_rejected' and n.payload ->> 'result_id' = rm.id::text) as told
+       from public.review_media rm join public.moderation_cases c on c.subject_id = rm.media_asset_id where c.id = $1`,
+      [caseId],
+    );
+    expect(imageDecided.rows[0]).toEqual({ state: 'rejected', audited: 1, told: 1 });
   } finally {
     await db.end();
   }

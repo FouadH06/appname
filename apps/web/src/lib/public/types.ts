@@ -183,3 +183,56 @@ export interface PublicReview {
   ratings: Record<string, number>;
   reply: { text: string; published_at: string | null } | null;
 }
+
+// ─── M10 customer results ──────────────────────────────────────────────────
+export interface ResultImage {
+  path: string;
+  width: number;
+  height: number;
+}
+
+export interface PublicResult {
+  id: string;
+  kind: 'result' | 'before' | 'after';
+  is_featured: boolean;
+  featured_rank: number | null;
+  images: { thumb: ResultImage; card: ResultImage; full: ResultImage };
+  blurhash: string | null;
+  width: number;
+  height: number;
+  service: string | null;
+  service_id: string;
+  /** first name; "a team member" (internal) or "a former team member" */
+  staff: string | null;
+  staff_id: string | null;
+  price_type: PriceType;
+  price_min: number | null;
+  price_max: number | null;
+  currency: string;
+  visit_at: string;
+  trust_tier: 'verified_booking' | 'verified_visit';
+  published_at: string;
+}
+
+export interface BusinessResults {
+  featured: PublicResult[];
+  items: PublicResult[];
+  total: number;
+}
+
+export type ResultDetail =
+  | { state: 'removed' }
+  | (PublicResult & {
+      state: 'ok';
+      business: {
+        id: string;
+        name: string;
+        slug: string;
+        rating: RatingSummary;
+        area: string | null;
+      };
+      review: PublicReview;
+      more: PublicResult[];
+      prev_id: string | null;
+      next_id: string | null;
+    });

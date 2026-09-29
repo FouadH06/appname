@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Body, Notice, PageHeader, btn, codeOf, input } from '@/components/biz/ui';
+import { ResultsFeaturing } from '@/components/biz/results-featuring';
 import { ReviewCard, Stars } from '@/components/public/reviews';
 import { useBiz } from '@/lib/biz/context';
 import { useLoad } from '@/lib/biz/use-load';
@@ -20,12 +21,13 @@ interface Payload {
   summary: RatingSummary & { response_rate: number | null; needs_reply: number };
   reviews: BizReview[];
 }
-type Tab = 'needs_reply' | 'all' | 'reported';
+type Tab = 'needs_reply' | 'all' | 'reported' | 'photos';
 
 const TABS: [Tab, string][] = [
   ['needs_reply', 'Needs reply'],
   ['all', 'All'],
   ['reported', 'Reported'],
+  ['photos', 'Customer photos'],
 ];
 const REASONS: [string, string][] = [
   ['abusive_language', 'Abusive or insulting language'],
@@ -222,7 +224,7 @@ export default function ReviewsPage() {
   const { data, reload } = useLoad(async () => {
     const { data: d, error } = await supabase().rpc('biz_get_reviews', {
       p_business_id: business.id,
-      p_tab: tab,
+      p_tab: tab === 'photos' ? 'all' : tab,
     });
     if (error) return { error: describeError(codeOf(error)) };
     return d as unknown as Payload;
@@ -289,7 +291,9 @@ export default function ReviewsPage() {
         </div>
         {flash ? <Notice tone="success">{flash}</Notice> : null}
 
-        {!data ? (
+        {tab === 'photos' ? (
+          <ResultsFeaturing businessId={business.id} />
+        ) : !data ? (
           <p className="text-sm text-ink-500">Loading…</p>
         ) : 'error' in data ? (
           <Notice tone="danger">{data.error}</Notice>

@@ -5,7 +5,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { primaryButton, secondaryButton } from '@/components/card';
 import { describeError } from '@/lib/copy';
 import { supabase } from '@/lib/supabase';
-import { TIER_LABEL } from './reviews';
+import { ResultUploader } from './result-uploader';
+import { TIER_LABEL } from '@/lib/public/format';
 
 // C15 Write a review (Phase 2 C15; Part 4 §1.3). Stars are required and published right away; the
 // comment is optional and appears after the automatic check. One edit within 7 days.
@@ -231,6 +232,9 @@ export function ReviewForm({ bookingId }: { bookingId: string }) {
                       ? 'Rating published · comment waiting for a moderator'
                       : 'Published'}
             </p>
+            {r.status !== 'removed' ? (
+              <ResultUploader reviewId={r.id} service={ctx.service ?? ''} />
+            ) : null}
             {r.can_edit ? (
               <button
                 type="button"
