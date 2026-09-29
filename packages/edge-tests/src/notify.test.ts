@@ -69,6 +69,17 @@ describe('render', () => {
     expect(`${ar.date} ${ar.time}`).not.toMatch(/[٠-٩]/);
   });
 
+  it('new-review team alert shows the star rating (M9)', () => {
+    const vars = formatVars({ ...payload, rating: 2 }, 'en');
+    expect(
+      fill(
+        '⭐ New {rating}-star review for {service_name} with {staff_name}. Reply from your dashboard.',
+        vars,
+      ),
+    ).toBe('⭐ New 2-star review for Haircut with Karim. Reply from your dashboard.');
+    expect(formatVars({ ...payload, rating: 5 }, 'ar').rating).toBe('5');
+  });
+
   it('leaves no gaps for missing values and gives WhatsApp non-empty parameters', () => {
     const vars = formatVars({ ...payload, reason: '' }, 'en');
     expect(

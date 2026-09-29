@@ -106,7 +106,7 @@ select ok(not exists (select 1 from public.biz_get_available_slots(tests.id('biz
 select tests.act_as('staff_user');
 select throws_ok($$ select public.biz_block_time(tests.id('Maya'), now() + interval '1 day', now() + interval '25 hours') $$,
   'P0001', 'FORBIDDEN', 'staff cannot block a colleague''s time');
-select lives_ok($$ select public.biz_block_time(tests.id('Karim'), now() + interval '3 days', now() + interval '73 hours', 'personal') $$,
+select lives_ok($$ select public.biz_block_time(tests.id('Karim'), tests.at(tests.day(3), '16:00'), tests.at(tests.day(3), '17:00'), 'personal') $$,
   'staff block their own time');
 select throws_ok($$ select public.biz_block_time(tests.id('Karim'), now() + interval '2 hours', now() + interval '1 hour') $$,
   'P0001', 'INVALID_RANGE', 'end after start');

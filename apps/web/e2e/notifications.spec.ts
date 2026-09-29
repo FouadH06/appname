@@ -140,7 +140,11 @@ test('booking messages: queue → dispatch → WhatsApp Confirm; alert settings;
     await expect(table).toBeVisible();
     const mine = table.getByRole('switch', { name: /New online booking for .*/ }).first();
     await expect(mine).toBeChecked(); // managers get alerts by default
-    await mine.uncheck();
+    // wait for the save before reloading (a reload would abort a slow request)
+    await Promise.all([
+      page.waitForResponse((r) => r.url().includes('/rpc/biz_set_notification_setting') && r.ok()),
+      mine.uncheck(),
+    ]);
     await expect(mine).not.toBeChecked();
     await page.reload();
     await expect(

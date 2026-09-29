@@ -2,7 +2,10 @@
   "extends": "@app/tsconfig/library.json",
   "compilerOptions": {
     "allowImportingTsExtensions": true,
-    "types": ["node"]
+    "types": ["node"],
+    "paths": {
+      "npm:@anthropic-ai/sdk@0.129.0": ["./node_modules/@anthropic-ai/sdk/index.d.ts"]
+    }
   },
   "include": ["src", "vitest.config.ts", "../../supabase/functions/**/*.ts"]
 }

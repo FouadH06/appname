@@ -302,6 +302,10 @@ export function BookingDetail({
             <Link className={btn} href={`/${b.business.slug}/book?service=${b.service_id}`}>
               Book again with anyone
             </Link>
+            {/* the review page explains when a visit can't be reviewed (window, already done) */}
+            <Link className={btn} href={`/bookings/${b.id}/review`} data-testid="leave-review">
+              Leave a review
+            </Link>
           </>
         ) : null}
         {b.status === 'cancelled' && b.business.live ? (

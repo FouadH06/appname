@@ -87,7 +87,13 @@
     "HOLD_NOT_FOUND": "That time isn't held anymore. Pick a time again.",
     "CUSTOMER_BLOCKED": "Online booking isn't available for this account. Contact the business on WhatsApp.",
     "TOO_MANY_ACTIVE_BOOKINGS": "You already have the maximum number of upcoming bookings here. Manage them in My bookings.",
-    "OVERLAP_SAME_BUSINESS": "You already have a booking here at that time."
+    "OVERLAP_SAME_BUSINESS": "You already have a booking here at that time.",
+    "NOT_ELIGIBLE": "Only the customer of a completed visit can review it.",
+    "ALREADY_REVIEWED": "You've already reviewed this visit.",
+    "REVIEW_WINDOW_CLOSED": "Reviews can be left up to 30 days after the visit.",
+    "TEXT_LENGTH": "Comments need between 20 and 2,000 characters.",
+    "REPORT_LIMIT": "You have 10 open reports. Wait for them to be reviewed before sending more.",
+    "CASE_TAKEN": "Another moderator is handling this case."
   },
   "roles": {
     "owner": "Owner",

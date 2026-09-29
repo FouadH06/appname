@@ -72,7 +72,7 @@ export interface BusinessPage {
   };
   services: PublicService[];
   staff: PublicStaff[];
-  rating: null;
+  rating: RatingSummary;
   price_from: number | null;
 }
 
@@ -158,3 +158,28 @@ export type MyBookingDetail = MyBooking & {
   reminders_sent: number;
   messages_failed: boolean;
 };
+
+// ─── M9 verified reviews ────────────────────────────────────────────────────
+export interface RatingSummary {
+  review_count: number;
+  /** only from 5 counted reviews */
+  display_rating: number | null;
+  dimensions: Record<string, { label_en: string; label_ar: string; average: number | null }> | null;
+}
+
+export interface PublicReview {
+  id: string;
+  overall: number;
+  trust_tier: 'verified_booking' | 'verified_visit';
+  visit_at: string;
+  published_at: string;
+  author: string;
+  service: string | null;
+  staff: string | null;
+  staff_id: string | null;
+  /** approved (possibly redacted) text only */
+  text: string | null;
+  langs: string[];
+  ratings: Record<string, number>;
+  reply: { text: string; published_at: string | null } | null;
+}

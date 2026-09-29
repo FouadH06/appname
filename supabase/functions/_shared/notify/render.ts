@@ -52,6 +52,9 @@ export function formatVars(
         : "We're sorry for the inconvenience.",
     link: str(payload.link),
     business_url: str(payload.business_url),
+    review_link: str(payload.review_link),
+    // star rating (1–5) of a new review, for the team alert
+    rating: typeof payload.rating === 'number' ? String(payload.rating) : str(payload.rating),
     dashboard_link: str(payload.dashboard_link),
     business_phone: str(payload.business_phone),
   };
@@ -86,7 +89,11 @@ export function templateButtons(t: Template, payload: Record<string, unknown>): 
         ? str(payload.link_token)
         : b === 'book'
           ? str(payload.business_slug)
-          : str(payload.dashboard_path);
+          : b === 'review' || b === 'review_edit'
+            ? str(payload.review_token) // {web}/review/{{1}}
+            : b === 'reviews'
+              ? str(payload.dashboard_path).replace(/\/bookings$/, '/reviews') // {web}/biz/{{1}}
+              : str(payload.dashboard_path);
     return { kind: 'url', text: suffix || '-' };
   });
 }

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound, permanentRedirect } from 'next/navigation';
 import { Attribution } from '@/components/public/attribution';
+import { RatingBreakdown, RatingHeadline, ReviewList } from '@/components/public/reviews';
 import {
   BookedBanner,
   NextAvailable,
@@ -20,7 +21,7 @@ import {
   priceText,
   waLink,
 } from '@/lib/public/format';
-import { getBusinessPage } from '@/lib/public/server';
+import { getBusinessPage, getBusinessReviews } from '@/lib/public/server';
 import type { BusinessPage, PublicService } from '@/lib/public/types';
 
 // C1 Public business booking page — platform.com/{slug}. Server-rendered and cached for a minute
@@ -81,6 +82,7 @@ export default async function BusinessPageRoute({ params }: Params) {
   }
 
   const { business: b, location: l } = p;
+  const reviews = await getBusinessReviews(b.id, b.slug);
   const cover = mediaUrl(b.cover_path);
   const photoUrls = Object.fromEntries(p.staff.map((s) => [s.id, mediaUrl(s.photo_path)]));
   const bookable = p.services.filter((s) => s.online);
@@ -149,9 +151,7 @@ export default async function BusinessPageRoute({ params }: Params) {
               <p className="text-sm">
                 <OpenNow hours={p.hours} />
               </p>
-              <p className="text-sm text-ink-500">
-                New on APP_NAME — reviews appear after verified visits.
-              </p>
+              <RatingHeadline rating={p.rating} />
             </section>
 
             {/* quick actions */}
@@ -263,6 +263,23 @@ export default async function BusinessPageRoute({ params }: Params) {
                 />
               </section>
             ) : null}
+
+            {/* verified reviews */}
+            <section className={`${card} flex flex-col gap-3`} id="reviews" data-testid="reviews">
+              <h2 className="text-lg font-semibold">Reviews</h2>
+              <RatingBreakdown rating={p.rating} />
+              {reviews.length ? (
+                <ReviewList businessId={b.id} businessName={b.name} initial={reviews} />
+              ) : (
+                <p className="text-sm text-ink-700">
+                  No reviews yet. Only customers with a completed visit can review.
+                </p>
+              )}
+              <p className="text-xs text-ink-500">
+                Every review comes from a real booking or visit. Businesses can reply but can’t
+                remove reviews.
+              </p>
+            </section>
 
             {/* photos */}
             {b.portfolio.length ? (

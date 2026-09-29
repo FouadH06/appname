@@ -446,3 +446,62 @@ export async function setBookingMode(businessId: string, mode: 'instant' | 'requ
 export async function renameSlug(businessId: string, slug: string) {
   await db().query(`update public.businesses set slug = $2 where id = $1`, [businessId, slug]);
 }
+
+// ─── M9 reviews ────────────────────────────────────────────────────────────
+/** The token the review-request message would carry (claim link for a visit without an account). */
+export async function reviewToken(bookingId: string): Promise<string> {
+  return (
+    await one<{ t: string }>(`select private.review_link_payload($1) ->> 'review_token' as t`, [
+      bookingId,
+    ])
+  ).t;
+}
+
+export async function reviewState(bookingId: string): Promise<{
+  rating_state: string;
+  text_state: string | null;
+  text_display: string | null;
+} | null> {
+  const r = await db().query(
+    `select rating_state::text, text_state::text, text_display from public.reviews where booking_id = $1`,
+    [bookingId],
+  );
+  return r.rows[0] ?? null;
+}
+
+export async function replyState(bookingId: string): Promise<string | null> {
+  const r = await db().query<{ s: string }>(
+    `select rp.text_state::text as s from public.review_replies rp join public.reviews r on r.id = rp.review_id
+     where r.booking_id = $1`,
+    [bookingId],
+  );
+  return r.rows[0]?.s ?? null;
+}
+
+export async function reportFor(
+  bookingId: string,
+): Promise<{ reason: string; status: string } | null> {
+  const r = await db().query(
+    `select rep.reason::text, rep.status::text from public.reports rep join public.reviews r on r.id = rep.subject_id
+     where r.booking_id = $1`,
+    [bookingId],
+  );
+  return r.rows[0] ?? null;
+}
+
+/** Reruns: move this user's earlier reviews out of today's 5-per-day limit. */
+export async function ageReviewsOf(phoneDigits: string) {
+  await db().query(
+    `update public.reviews set created_at = created_at - interval '2 days'
+     where author_user_id in (select id from auth.users where phone = $1)`,
+    [phoneDigits],
+  );
+}
+
+/** Cancellation window for new bookings (0 = change/cancel any time before the start). */
+export async function setCancellationWindow(businessId: string, minutes: number) {
+  await db().query(
+    `update public.business_settings set cancellation_window_minutes = $2 where business_id = $1`,
+    [businessId, minutes],
+  );
+}
