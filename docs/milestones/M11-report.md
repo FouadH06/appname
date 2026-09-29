@@ -1,6 +1,6 @@
 # M11 — Admin console: report
 
-Status: **awaiting review** · branch `m11-admin` (not merged)
+Status: **closed** (approved 2026-09-29, D1–D9) · merged to `main` (`63af1c5`, main CI green)
 
 Lean and operational, per the PO's M11 direction. Hosted verification stays deferred with M4–M10 (M4
 checklist, now including M11) and is mandatory before real users.
