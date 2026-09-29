@@ -415,6 +415,34 @@ and (M9) `supabase/migrations/20261005100200_m9_review_templates.sql`.
 Reasons (`{photo_reason}`): not relevant · not from your visit · contact details or QR code · file
 couldn't be opened · too small · photo guidelines. WhatsApp only (no SMS), like the review messages.
 
+## Dispute update to the customer (M11) `dispute_update`
+
+**English — WhatsApp** (template `dispute_update_v1`, 4 parameters; button "View booking")
+
+> Update on your Haircut booking at Fade District on Tue 13 Oct: we reviewed your request and removed
+> the no-show. Thanks for your patience. Details are on your booking page.
+
+**Arabic — WhatsApp** (template `dispute_update_v1`)
+
+> تحديث بخصوص حجز Haircut في Fade District يوم الثلاثاء 13 تشرين الأول: راجعنا طلبك وأزلنا تسجيل الغياب.
+> شكرًا لصبرك. التفاصيل في صفحة حجزك.
+
+## Dispute update to the business (M11) `biz_report_resolved`
+
+**English — WhatsApp** (template `biz_report_resolved_v1`, 4 parameters; button "Open bookings")
+
+> Update on the Haircut booking with Lina on Tue 13 Oct: after our review the no-show was removed and
+> the visit counts as completed. Details are in your dashboard.
+
+**Arabic — WhatsApp** (template `biz_report_resolved_v1`)
+
+> تحديث بخصوص حجز Haircut مع Lina يوم الثلاثاء 13 تشرين الأول: بعد المراجعة أُزيل تسجيل الغياب وتُحتسب الزيارة
+> مكتملة. التفاصيل في لوحة التحكم.
+
+`{dispute_result}` sentences (customer / business, EN + AR in `_shared/notify/render.ts`): no-show upheld ·
+overturned · voided · review kept · comment removed · review removed · more information needed. WhatsApp
+only (no SMS). Legal and ownership cases are not messaged automatically.
+
 ## Replies to button taps (sent in the customer's open WhatsApp session)
 
 **After Confirm**

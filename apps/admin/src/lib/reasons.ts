@@ -1,0 +1,58 @@
+// Reason codes per admin action (stored in audit.admin_actions.reason_code). Short, stable, snake_case.
+export const REASONS = {
+  businessStatus: [
+    'onboarding_complete',
+    'owner_request',
+    'policy_violation',
+    'fraud_investigation',
+    'quality_issue',
+    'closed_permanently',
+    'reinstated',
+    'other',
+  ],
+  verify: ['documents_checked', 'site_visit', 'verification_revoked', 'other'],
+  testFlag: ['internal_demo', 'qa_account', 'real_business', 'other'],
+  userStatus: [
+    'abuse',
+    'fraud',
+    'spam',
+    'no_show_pattern',
+    'appeal_accepted',
+    'warning_expired',
+    'other',
+  ],
+  forgive: ['goodwill', 'emergency', 'business_error', 'duplicate_mark', 'other'],
+  quarantine: ['suspected_manipulation', 'fraud_signal', 'investigation', 'other'],
+  restore: ['investigation_cleared', 'wrongly_removed', 'appeal_accepted', 'other'],
+  removeReview: [
+    'fake_review',
+    'not_a_real_visit',
+    'abusive_language',
+    'personal_information',
+    'legal_request',
+    'other',
+  ],
+  dispute: [
+    'reminder_confirmed',
+    'business_evidence',
+    'customer_evidence',
+    'no_evidence',
+    'unclear',
+    'policy',
+    'legal_reference',
+    'other',
+  ],
+  catalog: [
+    'new_service',
+    'zero_result_query',
+    'relevance_hints',
+    'dialect_synonym',
+    'cleanup',
+    'launch_area',
+    'business_suggestion',
+    'other',
+  ],
+  ranking: ['pilot_tuning', 'small_market_thresholds', 'revert', 'bug_fix', 'other'],
+} as const;
+
+export const reasons = (k: keyof typeof REASONS): string[] => [...REASONS[k]];
