@@ -1,6 +1,6 @@
 # M9 — Verified reviews, moderation & fraud pre-checks: report
 
-Status: **approved in principle (2026-09-29); follow-up done, merge after green branch CI** · Branch `m9-reviews`
+Status: **closed** (approved 2026-09-29, D1–D11 + rated team alert + moderation gate) · merged to `main` (`f60b69c`, main CI green)
 
 Hosted staging verification stays deferred with M4–M8 (M4 report checklist, now including M9) and
 is mandatory before any real users. Three decisions are needed from you (end of this report): the
