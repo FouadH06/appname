@@ -5,7 +5,7 @@ create extension if not exists pgtap with schema extensions;
 set local search_path = extensions, public;
 -- Run as postgres everywhere (hosted CLI connects as a temporary login role).
 set local role postgres;
-select plan(17);
+select plan(18);
 
 -- ─── test helpers ───
 create schema tests;
@@ -77,16 +77,19 @@ select throws_ok($$ insert into public.service_synonyms (canonical_service_id, t
   '42501', null, 'customer cannot write catalog');
 set local role postgres;
 
--- ─── ops admin ───
+-- ─── ops admin (M11: catalog writes only through audited admin RPCs) ───
 select tests.act_as('ops', 'aal1');
-select throws_ok($$ insert into public.service_synonyms (canonical_service_id, term, lang)
-                    select id, 'balayage libanais', 'fr' from public.canonical_services where slug = 'balayage' $$,
-  '42501', null, 'ops without MFA (aal1) cannot write catalog');
+select throws_ok($$ select public.admin_add_synonym((select id from public.canonical_services where slug = 'balayage'),
+                                                    'balayage libanais', 'fr', 'zero-result query') $$,
+  'P0001', 'FORBIDDEN', 'ops without MFA (aal1) cannot edit the catalog');
 set local role postgres;
 select tests.act_as('ops', 'aal2');
-select lives_ok($$ insert into public.service_synonyms (canonical_service_id, term, lang)
-                   select id, 'balayage libanais', 'fr' from public.canonical_services where slug = 'balayage' $$,
-  'ops with aal2 can add a synonym');
+select throws_ok($$ insert into public.service_synonyms (canonical_service_id, term, lang)
+                    select id, 'balayage libanais', 'fr' from public.canonical_services where slug = 'balayage' $$,
+  '42501', null, 'no direct table writes, even for ops (no reason code, no admin audit row)');
+select lives_ok($$ select public.admin_add_synonym((select id from public.canonical_services where slug = 'balayage'),
+                                                   'balayage libanais', 'fr', 'zero-result query') $$,
+  'ops with aal2 adds a synonym through the RPC');
 select ok(exists (select 1 from public.categories where slug = 'aesthetics'), 'ops sees unlaunched category');
 set local role postgres;
 select is(

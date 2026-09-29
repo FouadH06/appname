@@ -779,6 +779,41 @@ export type Database = {
           },
         ];
       };
+      business_quality_scores: {
+        Row: {
+          bayes_rating: number | null;
+          business_id: string;
+          components: NonNullable<Json>;
+          computed_at: string;
+          config_version: number;
+          score: number;
+        };
+        Insert: {
+          bayes_rating?: number | null;
+          business_id: string;
+          components: NonNullable<Json>;
+          computed_at?: string;
+          config_version: number;
+          score: number;
+        };
+        Update: {
+          bayes_rating?: number | null;
+          business_id?: string;
+          components?: NonNullable<Json>;
+          computed_at?: string;
+          config_version?: number;
+          score?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'business_quality_scores_business_id_fkey';
+            columns: ['business_id'];
+            isOneToOne: true;
+            referencedRelation: 'businesses';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       business_rating_summary: {
         Row: {
           business_id: string;
@@ -2122,6 +2157,42 @@ export type Database = {
         };
         Relationships: [];
       };
+      ranking_configs: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          params: NonNullable<Json>;
+          published_at: string | null;
+          published_by: string | null;
+          reason: string | null;
+          status: Database['public']['Enums']['config_status'];
+          version: number;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          params: NonNullable<Json>;
+          published_at?: string | null;
+          published_by?: string | null;
+          reason?: string | null;
+          status?: Database['public']['Enums']['config_status'];
+          version: number;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          params?: NonNullable<Json>;
+          published_at?: string | null;
+          published_by?: string | null;
+          reason?: string | null;
+          status?: Database['public']['Enums']['config_status'];
+          version?: number;
+        };
+        Relationships: [];
+      };
       rating_dimensions: {
         Row: {
           category_id: string;
@@ -3266,6 +3337,24 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      admin_add_dispute_message: {
+        Args: {
+          p_body: string;
+          p_dispute_id: string;
+          p_internal?: boolean;
+          p_request_info?: boolean;
+        };
+        Returns: undefined;
+      };
+      admin_add_synonym: {
+        Args: {
+          p_canonical_service_id: string;
+          p_lang: Database['public']['Enums']['synonym_lang'];
+          p_reason: string;
+          p_term: string;
+        };
+        Returns: Json;
+      };
       admin_booking_timing_stats: {
         Args: { p_business_id?: string; p_from?: string; p_to?: string };
         Returns: {
@@ -3293,6 +3382,7 @@ export type Database = {
         };
         Returns: Json;
       };
+      admin_create_ranking_draft: { Args: { p_params: Json; p_reason: string }; Returns: number };
       admin_decide_case: {
         Args: {
           p_case_id: string;
@@ -3314,12 +3404,56 @@ export type Database = {
         };
         Returns: undefined;
       };
+      admin_explain_rank: { Args: { p_business_id: string }; Returns: Json };
+      admin_forgive_reliability: {
+        Args: { p_booking_id: string; p_note?: string; p_reason: string };
+        Returns: Json;
+      };
+      admin_get_audit: {
+        Args: { p_before?: string; p_filters?: Json; p_limit?: number };
+        Returns: Json;
+      };
+      admin_get_business: { Args: { p_business_id: string }; Returns: Json };
       admin_get_case: { Args: { p_case_id: string }; Returns: Json };
+      admin_get_catalog: { Args: Record<PropertyKey, never>; Returns: Json };
+      admin_get_customer: { Args: { p_user_id: string }; Returns: Json };
+      admin_get_dispute: { Args: { p_dispute_id: string }; Returns: Json };
       admin_get_media_case: { Args: { p_case_id: string }; Returns: Json };
+      admin_get_review: { Args: { p_review_id: string }; Returns: Json };
+      admin_list_businesses: {
+        Args: {
+          p_cluster_id?: string;
+          p_limit?: number;
+          p_offset?: number;
+          p_q?: string;
+          p_status?: Database['public']['Enums']['business_status'];
+        };
+        Returns: Json;
+      };
       admin_list_cases: {
         Args: {
           p_state?: string;
           p_subject_type?: Database['public']['Enums']['moderation_subject'];
+        };
+        Returns: Json;
+      };
+      admin_list_disputes: {
+        Args: {
+          p_status?: Database['public']['Enums']['dispute_status'];
+          p_type?: Database['public']['Enums']['dispute_type'];
+        };
+        Returns: Json;
+      };
+      admin_list_ranking_configs: { Args: Record<PropertyKey, never>; Returns: Json };
+      admin_list_reviews: {
+        Args: {
+          p_business_id?: string;
+          p_limit?: number;
+          p_offset?: number;
+          p_q?: string;
+          p_rating_state?: Database['public']['Enums']['rating_state'];
+          p_stars?: number;
+          p_status?: Database['public']['Enums']['review_status'];
         };
         Returns: Json;
       };
@@ -3347,7 +3481,85 @@ export type Database = {
           sent: number;
         }[];
       };
+      admin_overview: { Args: Record<PropertyKey, never>; Returns: Json };
+      admin_publish_ranking: { Args: { p_reason: string; p_version: number }; Returns: undefined };
+      admin_quarantine_review: {
+        Args: { p_note?: string; p_reason: string; p_review_id: string };
+        Returns: undefined;
+      };
       admin_release_case: { Args: { p_case_id: string }; Returns: undefined };
+      admin_remove_review: {
+        Args: { p_note?: string; p_part: string; p_reason: string; p_review_id: string };
+        Returns: undefined;
+      };
+      admin_remove_synonym: {
+        Args: { p_reason: string; p_synonym_id: string };
+        Returns: undefined;
+      };
+      admin_resolve_dispute: {
+        Args: {
+          p_dispute_id: string;
+          p_note?: string;
+          p_outcome: Database['public']['Enums']['dispute_outcome'];
+          p_reason: string;
+        };
+        Returns: Json;
+      };
+      admin_resolve_suggestion: {
+        Args: {
+          p_action: string;
+          p_canonical_service_id?: string;
+          p_new?: Json;
+          p_reason?: string;
+          p_suggestion_id: string;
+        };
+        Returns: string;
+      };
+      admin_restore_review: {
+        Args: { p_note?: string; p_reason: string; p_review_id: string };
+        Returns: undefined;
+      };
+      admin_rollback_ranking: { Args: { p_reason: string; p_version: number }; Returns: undefined };
+      admin_save_area: {
+        Args: { p: Json; p_area_id: string; p_reason: string };
+        Returns: undefined;
+      };
+      admin_save_canonical_service: { Args: { p: Json; p_reason: string }; Returns: string };
+      admin_save_category: { Args: { p: Json; p_reason: string }; Returns: string };
+      admin_save_cluster: {
+        Args: { p: Json; p_cluster_id: string; p_reason: string };
+        Returns: undefined;
+      };
+      admin_save_rating_dimension: { Args: { p: Json; p_reason: string }; Returns: string };
+      admin_search: { Args: { p_q: string }; Returns: Json };
+      admin_search_customers: { Args: { p_q: string }; Returns: Json };
+      admin_set_business_status: {
+        Args: {
+          p_business_id: string;
+          p_note?: string;
+          p_reason: string;
+          p_status: Database['public']['Enums']['business_status'];
+          p_upcoming?: string;
+        };
+        Returns: Json;
+      };
+      admin_set_business_test: {
+        Args: { p_business_id: string; p_is_test: boolean; p_reason: string };
+        Returns: undefined;
+      };
+      admin_set_user_status: {
+        Args: {
+          p_note?: string;
+          p_reason: string;
+          p_status: Database['public']['Enums']['user_status'];
+          p_user_id: string;
+        };
+        Returns: undefined;
+      };
+      admin_verify_business: {
+        Args: { p_business_id: string; p_note?: string; p_reason: string; p_verified: boolean };
+        Returns: undefined;
+      };
       archive_staff: { Args: { p_staff_id: string }; Returns: undefined };
       biz_add_note: {
         Args: {

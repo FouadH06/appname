@@ -152,6 +152,45 @@ async function createImageCase(db: pg.Client, reviewId: string): Promise<string>
   ).rows[0]!.id;
 }
 
+/** A contested no-show on the case booking (test data: set directly, bypassing the state machine). */
+async function createNoShowDispute(
+  db: pg.Client,
+  reviewId: string,
+): Promise<{ id: string; ref: string }> {
+  const b = (
+    await db.query<{ id: string; ref: string; author: string; business: string }>(
+      `select k.id, k.ref, r.author_user_id as author, k.business_id as business
+       from public.reviews r join public.bookings k on k.id = r.booking_id where r.id = $1`,
+      [reviewId],
+    )
+  ).rows[0]!;
+  await db.query('begin');
+  await db.query(`set local session_replication_role = replica`);
+  await db.query(
+    `update public.bookings set status = 'no_show', no_show_at = starts_at + interval '30 minutes', no_show_disputed = true
+     where id = $1`,
+    [b.id],
+  );
+  await db.query(
+    `insert into public.booking_events (booking_id, business_id, event, actor_kind, from_status, to_status)
+     values ($1, $2, 'no_show_marked', 'business', 'confirmed', 'no_show')`,
+    [b.id, b.business],
+  );
+  await db.query('commit');
+  const d = (
+    await db.query<{ id: string }>(
+      `insert into public.disputes (type, booking_id, business_id, customer_user_id, opened_by_user_id, opened_by_kind, due_at)
+       values ('no_show', $1, $2, $3, $3, 'customer', now() + interval '48 hours') returning id`,
+      [b.id, b.business, b.author],
+    )
+  ).rows[0]!;
+  await db.query(
+    `insert into public.dispute_messages (dispute_id, author_user_id, author_kind, body) values ($1, $2, 'customer', 'I was there.')`,
+    [d.id, b.author],
+  );
+  return { id: b.id, ref: b.ref };
+}
+
 const API = 'http://127.0.0.1:54321';
 /** The LOCAL stack's service key (CI exports it; locally read from the CLI). Never a hosted key. */
 function localServiceKey(): string {
@@ -310,6 +349,59 @@ test('admin must enroll TOTP and reach aal2 before anything works', async ({ pag
       [caseId],
     );
     expect(imageDecided.rows[0]).toEqual({ state: 'rejected', audited: 1, told: 1 });
+
+    // ── M11 console (superadmin): overview → dispute resolved in the UI → its audit row in ≤ 3 clicks;
+    //    business paused with a reason; global search; ranking and catalog screens load ──
+    await db.query(
+      `update public.admin_users set role = 'superadmin' where user_id = (select id from auth.users where phone = $1)`,
+      [PHONE.slice(1)],
+    );
+    const nsBooking = await createNoShowDispute(db, reviewId);
+    await page.goto('/');
+    await expect(page.getByTestId('queue-tile')).toHaveCount(4);
+    await page.getByRole('link', { name: 'Disputes', exact: true }).click();
+    await page.getByTestId('disputes-row').filter({ hasText: nsBooking.ref }).click();
+    await expect(page.getByTestId('evidence')).toContainText('no show marked');
+    await page.getByTestId('resolve-dispute').click();
+    const dialog = page.getByRole('dialog', { name: 'Resolve this dispute' });
+    await dialog.getByLabel(/^Overturn/).check();
+    await dialog.getByLabel('Reason code').selectOption('reminder_confirmed');
+    await dialog.getByTestId('confirm-action').click();
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('no show overturned');
+    const resolved = await db.query<{ status: string; audited: number }>(
+      `select b.status::text, (select count(*)::int from audit.admin_actions a where a.action = 'dispute.resolve'
+                                and a.subject_id = d.id) as audited
+       from public.disputes d join public.bookings b on b.id = d.booking_id where d.booking_id = $1`,
+      [nsBooking.id],
+    );
+    expect(resolved.rows[0]).toEqual({ status: 'completed', audited: 1 });
+    // DoD: any admin action traceable within 3 clicks (audit link → row → detail)
+    await page.getByTestId('audit-link').click();
+    await page
+      .getByTestId('audit-row')
+      .filter({ hasText: 'dispute.resolve' })
+      .getByRole('button')
+      .click();
+    await expect(page.getByTestId('audit-detail')).toContainText('Reason: reminder confirmed');
+
+    // business: pause with a reason (upcoming bookings don't block pausing)
+    await page.goto('/businesses');
+    await page.getByLabel('Search businesses').fill('Moderation Salon');
+    await page.getByTestId('businesses-row').first().click();
+    await page.getByTestId('change-status').click();
+    const statusDialog = page.getByRole('dialog');
+    await statusDialog.getByLabel('New status').selectOption('paused');
+    await statusDialog.getByLabel('Reason code').selectOption('owner_request');
+    await statusDialog.getByTestId('confirm-action').click();
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('paused');
+
+    // global search by booking reference; ranking + catalog screens
+    await page.getByTestId('global-search').fill(nsBooking.ref);
+    await expect(page.getByTestId('search-results')).toContainText(`Booking ${nsBooking.ref}`);
+    await page.goto('/ranking');
+    await expect(page.getByTestId('ranking-versions')).toContainText('active');
+    await page.goto('/catalog');
+    await expect(page.getByTestId('services')).toContainText('Haircut');
   } finally {
     await db.end();
   }

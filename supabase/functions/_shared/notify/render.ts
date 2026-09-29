@@ -57,6 +57,86 @@ export function photoReason(code: string, service: string, locale: Locale): stri
   );
 }
 
+type DisputeText = Record<'customer' | 'business', Record<'en' | 'ar', string>>;
+const DISPUTE_RESULTS: Record<string, DisputeText> = {
+  no_show_upheld: {
+    customer: {
+      en: 'we reviewed your request and the no-show stays on this booking.',
+      ar: 'راجعنا طلبك ويبقى الغياب مسجّلًا على هذا الحجز.',
+    },
+    business: {
+      en: 'the no-show you marked stays on the booking.',
+      ar: 'يبقى الغياب الذي سجّلته على الحجز.',
+    },
+  },
+  no_show_overturned: {
+    customer: {
+      en: 'we reviewed your request and removed the no-show. Thanks for your patience.',
+      ar: 'راجعنا طلبك وأزلنا تسجيل الغياب. شكرًا لصبرك.',
+    },
+    business: {
+      en: 'after our review the no-show was removed and the visit counts as completed.',
+      ar: 'بعد المراجعة أُزيل تسجيل الغياب وتُحتسب الزيارة مكتملة.',
+    },
+  },
+  voided: {
+    customer: {
+      en: 'we closed the case without a penalty for either side.',
+      ar: 'أغلقنا الحالة دون أي عقوبة على أي طرف.',
+    },
+    business: {
+      en: 'the case was closed without a penalty for either side.',
+      ar: 'أُغلقت الحالة دون أي عقوبة على أي طرف.',
+    },
+  },
+  review_kept: {
+    customer: {
+      en: 'we reviewed the report and your review stays published.',
+      ar: 'راجعنا البلاغ ويبقى تقييمك منشورًا.',
+    },
+    business: {
+      en: 'after our review the review stays published.',
+      ar: 'بعد المراجعة يبقى التقييم منشورًا.',
+    },
+  },
+  review_text_removed: {
+    customer: {
+      en: "we removed your review's comment after checking the report; your star rating stays.",
+      ar: 'أزلنا تعليق تقييمك بعد مراجعة البلاغ؛ يبقى تقييمك بالنجوم.',
+    },
+    business: {
+      en: "the review's comment was removed; its star rating stays.",
+      ar: 'أُزيل تعليق التقييم؛ ويبقى التقييم بالنجوم.',
+    },
+  },
+  review_removed: {
+    customer: {
+      en: 'we removed your review after checking the report.',
+      ar: 'أزلنا تقييمك بعد مراجعة البلاغ.',
+    },
+    business: {
+      en: 'the review was removed after our review.',
+      ar: 'أُزيل التقييم بعد المراجعة.',
+    },
+  },
+  awaiting_info: {
+    customer: {
+      en: 'we need a bit more information from you. Please reply from your booking page.',
+      ar: 'نحتاج إلى بعض المعلومات الإضافية منك. يرجى الرد من صفحة حجزك.',
+    },
+    business: {
+      en: 'we need a bit more information from you. Please reply from your dashboard.',
+      ar: 'نحتاج إلى بعض المعلومات الإضافية منك. يرجى الرد من لوحة التحكم.',
+    },
+  },
+};
+
+/** Dispute outcome (M11) → a sentence for the customer or the business (never internal notes). */
+export function disputeResult(outcome: string, audience: string, locale: Locale): string {
+  const r = DISPUTE_RESULTS[outcome] ?? DISPUTE_RESULTS.voided!;
+  return r[audience === 'business' ? 'business' : 'customer'][locale === 'ar' ? 'ar' : 'en'];
+}
+
 /** Template variables from an outbox payload. */
 export function formatVars(
   payload: Record<string, unknown>,
@@ -88,6 +168,8 @@ export function formatVars(
     photo_reason: photoReason(str(payload.photo_reason_code), str(payload.service_name), locale),
     // star rating (1–5) of a new review, for the team alert
     rating: typeof payload.rating === 'number' ? String(payload.rating) : str(payload.rating),
+    // dispute outcome or info request (M11), per audience
+    dispute_result: disputeResult(str(payload.dispute_outcome), str(payload.audience), locale),
     dashboard_link: str(payload.dashboard_link),
     business_phone: str(payload.business_phone),
   };

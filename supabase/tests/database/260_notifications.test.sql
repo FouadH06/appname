@@ -45,7 +45,7 @@ grant select, insert on tests.v, tests.ids to service_role;
 -- ═══ enqueue from booking events ═══
 select tests.act_as('recep');
 select tests.manual('a', '71 000 111', tests.at(tests.day(3), '14:00'), true);
-select tests.manual('quiet', '71 000 112', now() + interval '3 days 2 hours', false);
+select tests.manual('quiet', '71 000 112', tests.at(tests.day(4), '12:00'), false);   -- fixed: now()+… collided with 'late' around 21:00
 select tests.manual('soon', '71 000 113', now() + interval '90 minutes', true);
 select tests.manual('today', '71 000 114', now() + interval '5 hours', true);
 select tests.as_postgres();

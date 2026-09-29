@@ -80,6 +80,34 @@ describe('render', () => {
     expect(formatVars({ ...payload, rating: 5 }, 'ar').rating).toBe('5');
   });
 
+  it('dispute messages say the outcome per audience, never internal notes (M11)', () => {
+    const customer = formatVars(
+      { ...payload, dispute_outcome: 'no_show_overturned', audience: 'customer' },
+      'en',
+    );
+    expect(
+      fill(
+        'Update on your {service_name} booking at {business_name} on {date}: {dispute_result} Details are on your booking page.',
+        customer,
+      ),
+    ).toContain('Haircut booking at Fade District on');
+    expect(customer.dispute_result).toBe(
+      'we reviewed your request and removed the no-show. Thanks for your patience.',
+    );
+    expect(
+      formatVars({ ...payload, dispute_outcome: 'no_show_upheld', audience: 'business' }, 'en')
+        .dispute_result,
+    ).toBe('the no-show you marked stays on the booking.');
+    expect(
+      formatVars({ ...payload, dispute_outcome: 'awaiting_info', audience: 'customer' }, 'ar')
+        .dispute_result,
+    ).toContain('معلومات');
+    // unknown outcome → the neutral "closed" sentence, never an empty WhatsApp parameter
+    expect(formatVars({ ...payload, dispute_outcome: 'weird' }, 'en').dispute_result).toBe(
+      'we closed the case without a penalty for either side.',
+    );
+  });
+
   it('leaves no gaps for missing values and gives WhatsApp non-empty parameters', () => {
     const vars = formatVars({ ...payload, reason: '' }, 'en');
     expect(
