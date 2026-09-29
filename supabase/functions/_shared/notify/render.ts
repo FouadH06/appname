@@ -53,6 +53,8 @@ export function formatVars(
     link: str(payload.link),
     business_url: str(payload.business_url),
     review_link: str(payload.review_link),
+    // star rating (1–5) of a new review, for the team alert
+    rating: typeof payload.rating === 'number' ? String(payload.rating) : str(payload.rating),
     dashboard_link: str(payload.dashboard_link),
     business_phone: str(payload.business_phone),
   };

@@ -44,3 +44,6 @@ supabase/.temp/
 Thumbs.db
 .idea/
 *.log
+
+# Python bytecode (scripts/)
+__pycache__/

@@ -30,10 +30,14 @@ Deno.serve(async (req) => {
     store: postgrestModerationStore(url, key),
     classifier: cfg.classifier,
     translator: cfg.translator,
+    autoPublish: cfg.autoPublish,
     limit: 20,
     log: (line) => console.log(line),
   });
-  return new Response(JSON.stringify({ mode: cfg.mode, ...summary }), {
-    headers: { 'Content-Type': 'application/json' },
-  });
+  return new Response(
+    JSON.stringify({ mode: cfg.mode, autoPublish: cfg.autoPublish, ...summary }),
+    {
+      headers: { 'Content-Type': 'application/json' },
+    },
+  );
 });

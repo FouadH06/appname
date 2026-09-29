@@ -1,6 +1,6 @@
 # M9 — Verified reviews, moderation & fraud pre-checks: report
 
-Status: **implemented, awaiting review** · Branch `m9-reviews` (not merged)
+Status: **approved in principle (2026-09-29); follow-up done, merge after green branch CI** · Branch `m9-reviews`
 
 Hosted staging verification stays deferred with M4–M8 (M4 report checklist, now including M9) and
 is mandatory before any real users. Three decisions are needed from you (end of this report): the
@@ -14,7 +14,7 @@ review message copy, the moderation model / cost, and the strictness while no LL
 | Independent moderation | **Stars are published at once** (after the in-transaction fraud pre-check); the **comment waits** for the text pipeline; business replies go through the same pipeline. One predicate decides what counts (`rating_is_counted`: published + active + weight > 0) for the list, the summary and staff stats | Part 4 §1.1, §3 |
 | Fraud pre-check | In the submit transaction: new account without earlier visits (0.3), device shared with another reviewer of the business (0.5 + 0.1 per author, max 0.9); ≥ 0.5 → **quarantined** (not counted, fraud case opened). Nightly job: near-duplicate text across reviewers (pg_trgm > 0.8 → later copy quarantined), weekly review bursts (business signal) | Part 4 §6 |
 | Text pipeline (`moderate` Edge Function) | pgmq queue → rules (phones in Latin/Arabic digits incl. Lebanese formats, emails, handles, links, spam phrases; lira amounts aren't phones) → normalisation + language detection (ar / en / fr / Arabizi / mixed, rough Arabizi→Arabic reading) → classifier → decision matrix: threat / hate / sexual harassment / spam → **reject** (author gets "edit your comment" and may edit within 7 days); insults aimed at a person or classifier unsure (< 0.70) / refused → **human**; personal data only → **published with it removed**; otherwise approve. Every stage recorded; a result is applied only if the text is still exactly what was classified | Part 4 §3 |
-| Classifier | `ClaudeClassifier` on the official Anthropic SDK: model from `LLM_MODEL` (default `claude-opus-5`), structured JSON output, cached system prompt, the review passed as data, server-side `fallbacks: "default"`, refusal/unusable answer → human, network errors → retried by the queue. `HeuristicClassifier` (keywords EN/AR/FR/Arabizi) for local/CI and when no key is set (**strict on hosted**: never publishes a comment on its own) | — |
+| Classifier | `ClaudeClassifier` on the official Anthropic SDK: model from `LLM_MODEL` (default **`claude-sonnet-5`**, pending the eval gate), structured JSON output, cached system prompt, the review passed as data, server-side `fallbacks: "default"`, refusal/unusable answer → human, network errors → retried by the queue. `HeuristicClassifier` (keywords EN/AR/FR/Arabizi) for local/CI and when no key is set. **Auto-publication**: keyword classifier only on the local stack; Claude only after `MODERATION_AUTO_PUBLISH=true` (set once the model passes the gate); otherwise every comment not rejected waits for a moderator | — |
 | Translations | "See translation" on public reviews/replies (English-first UI): cached per text + language, queued to the worker (Claude), polled by the page; edits drop the cache; at most one job per text + language every 10 min | Part 4 §6 |
 | Review request | WhatsApp 2 h after a completed visit, **moved out of quiet hours**; link = review token, or a claim link for a visit the business logged for someone without an account (verify phone → claim → review). "Your comment couldn't be published" message on rejection (pipeline or moderator). Team alert "New review" to owners/managers | Part 4 §2, M7 |
 | C15 review page | `/review/{token}` (phone verification, claim if needed) and `/bookings/{id}/review` ("Leave a review" on completed bookings): visit summary with tier badge, 5 large stars, optional dimensions, optional comment (any language, phone-number hint), post → "Your rating is live. Your comment will appear after a quick check."; status, one edit, delete | Phase 2 C15 |
@@ -37,7 +37,7 @@ review message copy, the moderation model / cost, and the strictness while no LL
 | Layer | Result | What it proves |
 |---|---|---|
 | pgTAP | **713/713** (71 new in `280_reviews`) | Eligibility (not before completion, 30-day window, someone else's visit, members, anonymous sessions); tier + weights frozen; idempotent submit; one per booking; **stars published while the comment is pending, hidden text**; average hidden under 5; worker RPCs service-role only; stale results ignored; approve / reject / human / redacted applied; stage audit; private classifier data; pipeline case; rejected comment → message with edit link, stars still counted; **phone never public**; shared device → quarantine + fraud case; summary counts only counted reviews; page rating; admin needs MFA; dismiss restores, confirm removes, audited; reception can't reply/report; reply moderated then shown; no reviewer phone for the business; report → case / "never came" → dispute; remove text resolves the report; translations only for public text, cached; one edit; delete recomputes; **review request queued after completion**; nightly duplicate detector |
-| Edge unit | **69** (+1 opt-in LLM eval) | Digits, language detection, Arabizi; phones in all formats (not lira amounts), emails/handles/links/spam; redaction; decision matrix; heuristic; **Claude request type-checked against the SDK's own types** (cached system prompt, structured output, `fallbacks: "default"`); refusal → human, bad output → human, network error → retry; config (model default, strict on hosted, no echo translations on hosted); worker records stages, retries temporary errors |
+| Edge unit | **71** (+1 opt-in LLM gate) | Digits, language detection, Arabizi; phones in all formats (not lira amounts), emails/handles/links/spam; redaction; decision matrix; heuristic; **Claude request type-checked against the SDK's own types** (cached system prompt, structured output, `fallbacks: "default"`); refusal → human, bad output → human, network error → retry; config (Sonnet 5 default, `LLM_MODEL` override, auto-publish only local / after `MODERATION_AUTO_PUBLISH`, strict for hosted, custom domains and unknown URLs); strict: rejects still reject, everything else → moderator; new-review alert text with the rating |
 | Moderation eval | 206 labelled + 30 held out (EN 80 · AR 58 · FR 33 · Arabizi 34 · mixed 31) | See below |
 | E2E web (local stack) | **16 passed** (1 new) | **Review link** (claim a business-logged visit) → verify phone → 5 stars + dimension + comment with a phone number (hint shown) → "rating is live" → worker publishes the comment **with the number removed** → business page shows it (tier badge, no number) → manager replies (moderated, appears after the worker) and reports ("under review") |
 | E2E admin | **1 passed** (extended) | Moderator opens the queue → case → claim → approve with reason → text approved, decision audited |
@@ -48,8 +48,8 @@ review message copy, the moderation model / cost, and the strictness while no LL
 | Classifier | Items | Accuracy | Held back: precision / recall | Harmful published | Benign held back |
 |---|---|---|---|---|---|
 | Heuristic, tuned set | 206 | 100 % | 100 % / 100 % | 0 | 0 |
-| **Heuristic, held out** | 30 | 56.7 % | 100 % / **18.8 %** | **13 of 16** | 0 |
-| Claude (`claude-opus-5`) | 236 | not run — needs an API key | | | |
+| **Heuristic, blind held out** | 150 (114 non-English) | 52.0 % | 93.3 % / **16.7 %** | **70 of 84** | 1 |
+| Claude Sonnet 5 → (Opus 5.5 if needed) | 356 | not run — needs your key; **gate: 0 harmful held-out published** | | | |
 
 The keyword lists were tuned on the 206 items (the first run found 19 harmful texts published:
 French threats/hate, group generalisations, Arabic sexual comments without a Latin name, French spam
@@ -74,8 +74,8 @@ projects without a key, and the LLM run is a pre-launch step.
 
 | # | Spec | Change | Why |
 |---|---|---|---|
-| D1 | Part 4 §3 LLM | Claude via the official SDK, default **`claude-opus-5`**, configurable with `LLM_MODEL`; one call per comment/reply, one per translation | Most capable default; **the model/cost choice is yours** (a cheaper model can be set without code changes — run the eval first) |
-| D2 | Part 4 §3 | Without `ANTHROPIC_API_KEY`: keyword classifier; on hosted projects **strict** (it may reject/redact, every other comment waits for a moderator); no translations on hosted | Held-out recall 18.8 % — not safe to auto-publish |
+| D1 | Part 4 §3 LLM | Claude via the official SDK, default **`claude-sonnet-5`** (PO decision), `LLM_MODEL` configurable; `claude-opus-5-5` only if Sonnet fails the gate and Opus materially improves it | Benchmark first; one call per comment/reply, one per translation |
+| D2 | Part 4 §3 | No auto-publication without a validated classifier: keyword classifier strict everywhere except the local stack (explicit rejects still reject; everything else → moderator; stars unaffected); Claude's approvals also → moderator until `MODERATION_AUTO_PUBLISH=true` | Blind held-out: keywords would publish 70 of 84 harmful comments |
 | D3 | Part 4 §2 | Review request 2 h after the visit **respects quiet hours** (22:00 → sent 08:00) | Same rule as reminders (M7 decision) |
 | D4 | Part 4 §1.2 | Business-logged visits without an account get a **claim link** in the review request (verify phone → claim → review, tier `verified_visit`) | Reviews need an account; reuses the M4 claim flow |
 | D5 | C1 / M8 D10 | **Staff ratings still not shown** (computed in `staff_stats`); business average from 5 counted reviews | Keeps the M8 deferral; staff rating rules need their own review |
@@ -94,13 +94,30 @@ projects without a key, and the LLM run is a pre-launch step.
 - The 3 new WhatsApp templates must be submitted to Meta with the others.
 - Reviews on the business page follow its 1-minute cache (a new review can take a minute to appear).
 
-## Decisions needed
+## Decisions (2026-09-29)
 
-1. **Copy** of the 3 new messages (EN + AR, rendered in `docs/notifications/templates.md`):
-   review request, "your comment couldn't be published", team alert "New review".
-2. **Model / cost**: keep `claude-opus-5` or choose another model — ideally after the LLM eval run.
-3. **Until a key is set**: keep strict mode (moderators read every comment on staging), or allow
-   the heuristic to auto-publish?
+1. **Copy approved**; the team alert now shows the rating: "⭐ New 2-star review for Haircut with
+   Karim. Reply from your dashboard." / "⭐ تقييم جديد بـ 2 من 5 نجوم لـ Haircut مع Karim. يمكنك
+   الرد من لوحة التحكم." (the rating travels in the alert payload).
+2. **No LLM key → strict mode** (above, D2).
+3. **Model**: Sonnet 5 default; benchmark with the eval gate before any auto-publication; Opus 5.5 only
+   if Sonnet fails and Opus materially improves. Blind held-out set expanded to **150** (30 + 120 fresh,
+   114 non-English: AR 38 · FR 28 · Arabizi 25 · mixed 23 · EN 36), including benign traps (violent
+   idioms used as praise). You set the key as a Supabase secret; then run
+   `EVAL_LLM=1 ANTHROPIC_API_KEY=… pnpm --filter @app/edge-tests test moderation-eval` (optionally
+   `LLM_MODEL=claude-opus-5-5`) and only then set `MODERATION_AUTO_PUBLISH=true`.
+
+## Approval follow-up: CI failure (run 36531946521, commit 470b69c)
+
+Diagnosed from the run's annotations before any rerun. **Cause:** a race in the new review e2e — after
+the manager's phone code, the test waited with `toHaveURL(/\/biz/)`, which already matches
+`/biz/login`; it then opened the reviews page before sign-in completed, got redirected to login, and
+`needs-reply-count` never appeared. Fast locally, slower on CI (the retry then hit the 30 s code-resend
+limit). **Proof:** delaying Auth's verify call by 3 s reproduced the exact CI error; waiting for `/biz`
+exactly passes even with the delay. While re-running the full suite, the same kind of race showed up
+once in the M7 notifications e2e (reload while the alert-setting save was in flight) — reproduced the
+same way and fixed by waiting for the save response. Local-only captcha timeouts (Cloudflare script
+not loading) were reruns, not code.
 
 ## Suggested manual checks
 

@@ -291,16 +291,17 @@ describe('Claude classifier', () => {
 
 describe('config', () => {
   const make = vi.fn(() => fakeClient(new Error('unused')).client);
-  it('uses Claude (default claude-opus-5) when a key is set, the heuristic otherwise', () => {
+  const LOCAL = 'http://kong:8000';
+  const HOSTED = 'https://abc.supabase.co';
+  it('uses Claude (default claude-sonnet-5, LLM_MODEL overrides) when a key is set', () => {
     const llm = moderationConfigFromEnv((n) => ({ ANTHROPIC_API_KEY: 'k' })[n], make);
     expect(llm.mode).toBe('llm');
-    expect(llm.classifier.name).toBe('claude-opus-5');
+    expect(llm.classifier.name).toBe('claude-sonnet-5');
     const custom = moderationConfigFromEnv(
-      (n) => ({ ANTHROPIC_API_KEY: 'k', LLM_MODEL: 'claude-sonnet-5' })[n],
+      (n) => ({ ANTHROPIC_API_KEY: 'k', LLM_MODEL: 'claude-opus-5-5' })[n],
       make,
     );
-    expect(custom.classifier.name).toBe('claude-sonnet-5');
-    expect(moderationConfigFromEnv(() => undefined, make).mode).toBe('heuristic');
+    expect(custom.classifier.name).toBe('claude-opus-5-5');
     expect(
       moderationConfigFromEnv(
         (n) => ({ ANTHROPIC_API_KEY: 'k', MODERATION_MODE: 'heuristic' })[n],
@@ -308,33 +309,41 @@ describe('config', () => {
       ).mode,
     ).toBe('heuristic');
   });
-  it('hosted without a key: strict heuristic, never publishes a comment on its own', async () => {
-    const hosted = moderationConfigFromEnv(
-      (n) => ({ SUPABASE_URL: 'https://x.supabase.co' })[n],
-      make,
-    );
-    expect(hosted.classifier.name).toBe('heuristic-strict-v1');
-    const run = async (text: string) => {
-      const c = await hosted.classifier.classify({
-        subject: 'review_text',
-        text,
-        arabiziHint: null,
-        langs: ['en'],
-        context: {},
-      });
-      return decide(text, applyRules(text), c).decision;
-    };
-    expect(await run('Great fade, very friendly team, will come back.')).toBe('manual_review');
-    expect(await run('I will kill you all')).toBe('reject');
+
+  it('Claude publishes on its own only after MODERATION_AUTO_PUBLISH=true (post-benchmark)', () => {
+    expect(
+      moderationConfigFromEnv((n) => ({ ANTHROPIC_API_KEY: 'k', SUPABASE_URL: HOSTED })[n], make)
+        .autoPublish,
+    ).toBe(false);
+    expect(
+      moderationConfigFromEnv(
+        (n) => ({ ANTHROPIC_API_KEY: 'k', MODERATION_AUTO_PUBLISH: 'true' })[n],
+        make,
+      ).autoPublish,
+    ).toBe(true);
   });
 
-  it('never echoes "translations" on a hosted project', () => {
-    const hosted = moderationConfigFromEnv(
-      (n) => ({ SUPABASE_URL: 'https://x.supabase.co' })[n],
-      make,
-    );
-    expect(hosted.translator).toBeUndefined();
-    expect(moderationConfigFromEnv(() => undefined, make).translator?.model).toBe('local-echo');
+  it('keyword classifier auto-publishes only on the local stack; anything else is strict', async () => {
+    const local = moderationConfigFromEnv((n) => ({ SUPABASE_URL: LOCAL })[n], make);
+    expect(local).toMatchObject({ mode: 'heuristic', autoPublish: true });
+    expect(local.translator?.model).toBe('local-echo');
+    // hosted, custom domains, or no URL at all: strict
+    for (const url of [HOSTED, 'https://api.platform.com', undefined]) {
+      const c = moderationConfigFromEnv((n) => ({ SUPABASE_URL: url })[n], make);
+      expect(c).toMatchObject({ mode: 'heuristic', autoPublish: false });
+      expect(c.classifier.name).toBe('heuristic-strict-v1');
+      expect(c.translator).toBeUndefined();
+    }
+  });
+
+  it('strict: explicit rejects still reject, everything else goes to a moderator', async () => {
+    const hosted = moderationConfigFromEnv((n) => ({ SUPABASE_URL: HOSTED })[n], make);
+    const run = async (text: string) =>
+      (await moderateText(job(text), hosted.classifier, { autoPublish: hosted.autoPublish }))
+        ?.decision;
+    expect(await run('Great fade, very friendly team, will come back.')).toBe('manual_review');
+    expect(await run('Lovely staff, call me on 71 123 456')).toBe('manual_review');
+    expect(await run('I will kill you all')).toBe('reject');
   });
 });
 
@@ -357,7 +366,12 @@ describe('worker', () => {
   }
 
   it('records every stage and the decision; temporary classifier errors stay queued', async () => {
-    const rec = await moderateText(job('Great fade, call 71 123 456'), new HeuristicClassifier());
+    const off = await moderateText(job('Great fade, call 71 123 456'), new HeuristicClassifier());
+    expect(off).toMatchObject({ decision: 'manual_review', textDisplay: null });
+    expect(off?.reasons[0]).toBe('auto_publish_off'); // safe default
+    const rec = await moderateText(job('Great fade, call 71 123 456'), new HeuristicClassifier(), {
+      autoPublish: true,
+    });
     expect(rec?.decision).toBe('approve_redacted');
     expect(rec?.stages.map((s) => s.stage)).toEqual([
       'text_rules',
@@ -372,13 +386,14 @@ describe('worker', () => {
       job('Also fine and quick', { id: 'b' }),
     ]);
     const flaky = new ClaudeClassifier(fakeClient(new Error('overloaded')).client);
-    const down = await runModeration({ store: s, classifier: flaky });
+    const down = await runModeration({ store: s, classifier: flaky, autoPublish: true });
     expect(down).toMatchObject({ claimed: 2, retry: 2 });
     expect(recorded).toEqual([]);
 
     const up = await runModeration({
       store: s,
       classifier: new HeuristicClassifier(),
+      autoPublish: true,
       translator: {
         model: 't',
         translate: (x) => Promise.resolve({ text: `ar:${x}`, sourceLangs: ['en'] }),

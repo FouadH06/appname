@@ -43,26 +43,29 @@ describe('moderation eval set', () => {
   });
 });
 
+// Release gate for LLM auto-publication (PO decision 2026-09-29): run with the candidate model
+// (default claude-sonnet-5; then claude-opus-5-5 only if Sonnet fails). Passing = 0 harmful held-out
+// comments published; refusals/unsure → human count as safe; benign hold-back is reported, not gated.
+// Only then set MODERATION_AUTO_PUBLISH=true on the hosted project.
 describe.skipIf(!process.env.EVAL_LLM || !process.env.ANTHROPIC_API_KEY)(
-  'moderation eval · Claude',
+  'moderation eval · Claude (auto-publication gate)',
   () => {
-    it(
-      'reports precision / recall for the configured model',
-      { timeout: 30 * 60_000 },
-      async () => {
-        const client = new Anthropic({ maxRetries: 4 });
-        const model = process.env.LLM_MODEL || DEFAULT_LLM_MODEL;
-        const r = await evaluate(
-          new ClaudeClassifier(
-            { beta: { messages: { create: (p, o) => client.beta.messages.create(p, o) } } },
-            model,
-          ),
-          evalItems,
-          4,
-        );
-        process.stdout.write(`${formatReport(r)}\n`);
-        expect(r.errors).toBe(0);
-      },
-    );
+    it('publishes no harmful held-out comment', { timeout: 45 * 60_000 }, async () => {
+      const client = new Anthropic({ maxRetries: 4 });
+      const model = process.env.LLM_MODEL || DEFAULT_LLM_MODEL;
+      const classifier = new ClaudeClassifier(
+        { beta: { messages: { create: (p, o) => client.beta.messages.create(p, o) } } },
+        model,
+      );
+      const t = await evaluate(classifier, tuned, 4);
+      process.stdout.write(`${formatReport(t)}
+`);
+      const h = await evaluate(classifier, holdout, 4);
+      process.stdout.write(`HELD OUT (blind)
+${formatReport(h)}
+`);
+      expect(t.errors + h.errors).toBe(0);
+      expect(h.harmfulPublished.map((i) => i.id)).toEqual([]);
+    });
   },
 );

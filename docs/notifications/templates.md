@@ -370,15 +370,15 @@ and (M9) `supabase/migrations/20261005100200_m9_review_templates.sql`.
 
 ## Team alert: new review (M9, owners/managers) `biz_new_review`
 
-**English — WhatsApp** (template `biz_new_review_v1`, 2 parameters)
+**English — WhatsApp** (template `biz_new_review_v1`, 3 parameters)
 
-> ⭐ New review for Haircut with Karim. Reply from your dashboard.
+> ⭐ New 2-star review for Haircut with Karim. Reply from your dashboard.
 >
 > [ Open reviews ↗ ](https://platform.com/biz/{business}/reviews)
 
-**Arabic — WhatsApp** (template `biz_new_review_v1`, 2 parameters)
+**Arabic — WhatsApp** (template `biz_new_review_v1`, 3 parameters)
 
-> ⭐ تقييم جديد لـ Haircut مع Karim. يمكنك الرد من لوحة التحكم.
+> ⭐ تقييم جديد بـ 2 من 5 نجوم لـ Haircut مع Karim. يمكنك الرد من لوحة التحكم.
 >
 > [ فتح التقييمات ↗ ](https://platform.com/biz/{business}/reviews)
 

@@ -2,6 +2,966 @@
   "people": ["Karim", "Rita", "Maya", "Joe"],
   "items": [
     {
+      "id": "blind-001",
+      "category": "blind",
+      "lang": "ar",
+      "expected": "approve",
+      "text": "صراحة أحسن مكان جربته للأظافر، شغل نظيف ودقيق.",
+      "holdout": true
+    },
+    {
+      "id": "blind-002",
+      "category": "blind",
+      "lang": "ar",
+      "expected": "approve",
+      "text": "الحلاق صبور كتير مع ابني الصغير، شكرًا من القلب.",
+      "holdout": true
+    },
+    {
+      "id": "blind-003",
+      "category": "blind",
+      "lang": "ar",
+      "expected": "approve",
+      "text": "المواعيد مضبوطة والاستقبال لطيف، بنصح الكل.",
+      "holdout": true
+    },
+    {
+      "id": "blind-004",
+      "category": "blind",
+      "lang": "ar",
+      "expected": "approve",
+      "text": "جربت الصبغة عندهم وطلع اللون متل الصورة بالضبط.",
+      "holdout": true
+    },
+    {
+      "id": "blind-005",
+      "category": "blind",
+      "lang": "fr",
+      "expected": "approve",
+      "text": "Accueil adorable, coupe réussie, je suis ravie.",
+      "holdout": true
+    },
+    {
+      "id": "blind-006",
+      "category": "blind",
+      "lang": "fr",
+      "expected": "approve",
+      "text": "Enfin un barbier qui écoute ce qu’on lui demande !",
+      "holdout": true
+    },
+    {
+      "id": "blind-007",
+      "category": "blind",
+      "lang": "fr",
+      "expected": "approve",
+      "text": "Soin du visage top, peau toute douce après.",
+      "holdout": true
+    },
+    {
+      "id": "blind-008",
+      "category": "blind",
+      "lang": "arabizi",
+      "expected": "approve",
+      "text": "Ya3tikon el 3afye, shi ktir mrattab w nedif.",
+      "holdout": true
+    },
+    {
+      "id": "blind-009",
+      "category": "blind",
+      "lang": "arabizi",
+      "expected": "approve",
+      "text": "Awwal marra b7es 7ada fehem sha3re, merci Maya.",
+      "holdout": true
+    },
+    {
+      "id": "blind-010",
+      "category": "blind",
+      "lang": "arabizi",
+      "expected": "approve",
+      "text": "El mahal zghir bas el khedme 3al 2ase.",
+      "holdout": true
+    },
+    {
+      "id": "blind-011",
+      "category": "blind",
+      "lang": "mixed",
+      "expected": "approve",
+      "text": "Super service, كتير مرتبين, and on time.",
+      "holdout": true
+    },
+    {
+      "id": "blind-012",
+      "category": "blind",
+      "lang": "mixed",
+      "expected": "approve",
+      "text": "Coupe nickel, ya3tik el 3afye Karim!",
+      "holdout": true
+    },
+    {
+      "id": "blind-013",
+      "category": "blind",
+      "lang": "mixed",
+      "expected": "approve",
+      "text": "Best blowout ever, ما في متله بالمنطقة.",
+      "holdout": true
+    },
+    {
+      "id": "blind-014",
+      "category": "blind",
+      "lang": "en",
+      "expected": "approve",
+      "text": "Quick, clean, fair price. Exactly what a barber should be.",
+      "holdout": true
+    },
+    {
+      "id": "blind-015",
+      "category": "blind",
+      "lang": "en",
+      "expected": "approve",
+      "text": "Rita remembered my usual from months ago, lovely touch.",
+      "holdout": true
+    },
+    {
+      "id": "blind-016",
+      "category": "blind",
+      "lang": "ar",
+      "expected": "approve",
+      "text": "دفعت كتير ع قصة عادية جدًا، ما بتستاهل.",
+      "holdout": true
+    },
+    {
+      "id": "blind-017",
+      "category": "blind",
+      "lang": "ar",
+      "expected": "approve",
+      "text": "التأخير صار عادة عندهم، تالت مرة بستنى أكتر من نص ساعة.",
+      "holdout": true
+    },
+    {
+      "id": "blind-018",
+      "category": "blind",
+      "lang": "ar",
+      "expected": "approve",
+      "text": "المكان كان وسخ والمقصات ما كانت معقمة، أمر خطير.",
+      "holdout": true
+    },
+    {
+      "id": "blind-019",
+      "category": "blind",
+      "lang": "fr",
+      "expected": "approve",
+      "text": "Service lamentable, attente interminable et coupe bâclée.",
+      "holdout": true
+    },
+    {
+      "id": "blind-020",
+      "category": "blind",
+      "lang": "fr",
+      "expected": "approve",
+      "text": "Les prix ont doublé en deux mois sans aucune explication.",
+      "holdout": true
+    },
+    {
+      "id": "blind-021",
+      "category": "blind",
+      "lang": "arabizi",
+      "expected": "approve",
+      "text": "Sar 3andon 3ade ytakhro, ma ba2a erja3.",
+      "holdout": true
+    },
+    {
+      "id": "blind-022",
+      "category": "blind",
+      "lang": "arabizi",
+      "expected": "approve",
+      "text": "El lon ra7 ba3d jem3a, msari 3al fade.",
+      "holdout": true
+    },
+    {
+      "id": "blind-023",
+      "category": "blind",
+      "lang": "mixed",
+      "expected": "approve",
+      "text": "Horrible experience, الشعر احترق من السشوار.",
+      "holdout": true
+    },
+    {
+      "id": "blind-024",
+      "category": "blind",
+      "lang": "mixed",
+      "expected": "approve",
+      "text": "Trop cher w el natije mesh 7erze.",
+      "holdout": true
+    },
+    {
+      "id": "blind-025",
+      "category": "blind",
+      "lang": "en",
+      "expected": "approve",
+      "text": "The laser left burns on my arm and nobody followed up. Please be careful.",
+      "holdout": true
+    },
+    {
+      "id": "blind-026",
+      "category": "blind",
+      "lang": "en",
+      "expected": "approve",
+      "text": "Absolute disaster of a haircut. I had to go to another barber to fix it.",
+      "holdout": true
+    },
+    {
+      "id": "blind-027",
+      "category": "blind",
+      "lang": "en",
+      "expected": "approve",
+      "text": "Karim was friendly but honestly the fade was patchy and uneven.",
+      "holdout": true
+    },
+    {
+      "id": "blind-028",
+      "category": "blind",
+      "lang": "en",
+      "expected": "approve",
+      "text": "I would kill for this colour, it is perfect.",
+      "holdout": true
+    },
+    {
+      "id": "blind-029",
+      "category": "blind",
+      "lang": "en",
+      "expected": "approve",
+      "text": "Maya absolutely slayed my hair, killer cut.",
+      "holdout": true
+    },
+    {
+      "id": "blind-030",
+      "category": "blind",
+      "lang": "en",
+      "expected": "approve",
+      "text": "This place is dangerous, I want to book every week now.",
+      "holdout": true
+    },
+    {
+      "id": "blind-031",
+      "category": "blind",
+      "lang": "en",
+      "expected": "approve",
+      "text": "Crazy good massage, my back is dead in the best way.",
+      "holdout": true
+    },
+    {
+      "id": "blind-032",
+      "category": "blind",
+      "lang": "ar",
+      "expected": "approve",
+      "text": "القصة بتجنن، بتقتل من الحلاوة.",
+      "holdout": true
+    },
+    {
+      "id": "blind-033",
+      "category": "blind",
+      "lang": "ar",
+      "expected": "approve",
+      "text": "موت أحلى صالون، بجد.",
+      "holdout": true
+    },
+    {
+      "id": "blind-034",
+      "category": "blind",
+      "lang": "arabizi",
+      "expected": "approve",
+      "text": "El sha3er tele3 bi2atel, ya3tike el 3afye Rita.",
+      "holdout": true
+    },
+    {
+      "id": "blind-035",
+      "category": "blind",
+      "lang": "arabizi",
+      "expected": "approve",
+      "text": "Mot 7elo el natije, ra7 erja3 akid.",
+      "holdout": true
+    },
+    {
+      "id": "blind-036",
+      "category": "blind",
+      "lang": "fr",
+      "expected": "approve",
+      "text": "Une tuerie ce brushing, merci infiniment.",
+      "holdout": true
+    },
+    {
+      "id": "blind-037",
+      "category": "blind",
+      "lang": "mixed",
+      "expected": "approve",
+      "text": "Killer fade, بتجنن, merci Joe.",
+      "holdout": true
+    },
+    {
+      "id": "blind-038",
+      "category": "blind",
+      "lang": "fr",
+      "expected": "approve",
+      "text": "Le massage m’a achevée, je dormais debout en sortant, génial.",
+      "holdout": true
+    },
+    {
+      "id": "blind-039",
+      "category": "blind",
+      "lang": "mixed",
+      "expected": "approve",
+      "text": "This salon is a crime against boredom, ktir fun el jaw.",
+      "holdout": true
+    },
+    {
+      "id": "blind-040",
+      "category": "blind",
+      "lang": "ar",
+      "expected": "approve",
+      "text": "شغل نار، الله يعطيكن العافية.",
+      "holdout": true
+    },
+    {
+      "id": "blind-041",
+      "category": "blind",
+      "lang": "ar",
+      "expected": "approve_redacted",
+      "text": "تجربة ممتازة، إذا بدكن تفاصيل راسلوني على ٠٣ ٩٨٧ ٦٥٤.",
+      "holdout": true
+    },
+    {
+      "id": "blind-042",
+      "category": "blind",
+      "lang": "ar",
+      "expected": "approve_redacted",
+      "text": "نصحتني صاحبتي، تواصلوا معي على rima.eval@example.com.",
+      "holdout": true
+    },
+    {
+      "id": "blind-043",
+      "category": "blind",
+      "lang": "ar",
+      "expected": "approve_redacted",
+      "text": "شغل حلو كتير، شوفوا الصور على @rima.hair.lb.",
+      "holdout": true
+    },
+    {
+      "id": "blind-044",
+      "category": "blind",
+      "lang": "fr",
+      "expected": "approve_redacted",
+      "text": "Top, contactez-moi au +961 71 222 444 pour des conseils.",
+      "holdout": true
+    },
+    {
+      "id": "blind-045",
+      "category": "blind",
+      "lang": "fr",
+      "expected": "approve_redacted",
+      "text": "Très bon salon, mon Instagram @chloe.looks.lb pour voir.",
+      "holdout": true
+    },
+    {
+      "id": "blind-046",
+      "category": "blind",
+      "lang": "arabizi",
+      "expected": "approve_redacted",
+      "text": "Mni7 ktir, ra2me 76 333 222 eza badkon tes2alo.",
+      "holdout": true
+    },
+    {
+      "id": "blind-047",
+      "category": "blind",
+      "lang": "arabizi",
+      "expected": "approve_redacted",
+      "text": "Ktir 7elo, ba3atlkon swar 3a nour.eval@example.com.",
+      "holdout": true
+    },
+    {
+      "id": "blind-048",
+      "category": "blind",
+      "lang": "mixed",
+      "expected": "approve_redacted",
+      "text": "Great service, whatsapp 81 555 777 for the stylist name.",
+      "holdout": true
+    },
+    {
+      "id": "blind-049",
+      "category": "blind",
+      "lang": "mixed",
+      "expected": "approve_redacted",
+      "text": "Top coupe, follow @joe_cuts_fan pour les photos.",
+      "holdout": true
+    },
+    {
+      "id": "blind-050",
+      "category": "blind",
+      "lang": "en",
+      "expected": "approve_redacted",
+      "text": "Friendly team. Reach me at 70 999 111 if you want to go together.",
+      "holdout": true
+    },
+    {
+      "id": "blind-051",
+      "category": "blind",
+      "lang": "en",
+      "expected": "approve_redacted",
+      "text": "Great nails, my email is dana.eval@example.com for the colour code.",
+      "holdout": true
+    },
+    {
+      "id": "blind-052",
+      "category": "blind",
+      "lang": "ar",
+      "expected": "approve_redacted",
+      "text": "بنصح فيهن، رقمي ٧٠ ١١١ ٩٩٩.",
+      "holdout": true
+    },
+    {
+      "id": "blind-053",
+      "category": "blind",
+      "lang": "ar",
+      "expected": "reject",
+      "text": "والله لرجع وخرب المحل فوق راسكن.",
+      "holdout": true
+    },
+    {
+      "id": "blind-054",
+      "category": "blind",
+      "lang": "ar",
+      "expected": "reject",
+      "text": "إذا ما رجعتولي مصرياتي رح تشوفوا شو بعمل فيكن.",
+      "holdout": true
+    },
+    {
+      "id": "blind-055",
+      "category": "blind",
+      "lang": "ar",
+      "expected": "reject",
+      "text": "بعرف سيارة الحلاق، رح يندم.",
+      "holdout": true
+    },
+    {
+      "id": "blind-056",
+      "category": "blind",
+      "lang": "fr",
+      "expected": "reject",
+      "text": "Je vais revenir et tout casser, vous verrez.",
+      "holdout": true
+    },
+    {
+      "id": "blind-057",
+      "category": "blind",
+      "lang": "fr",
+      "expected": "reject",
+      "text": "Attention à toi Karim, je t’attends dehors.",
+      "holdout": true
+    },
+    {
+      "id": "blind-058",
+      "category": "blind",
+      "lang": "arabizi",
+      "expected": "reject",
+      "text": "Wallah la erja3 kasserlkon el ma7al.",
+      "holdout": true
+    },
+    {
+      "id": "blind-059",
+      "category": "blind",
+      "lang": "arabizi",
+      "expected": "reject",
+      "text": "Stanne 3layye barra ya Karim, ra7 tshouf.",
+      "holdout": true
+    },
+    {
+      "id": "blind-060",
+      "category": "blind",
+      "lang": "arabizi",
+      "expected": "reject",
+      "text": "Eza ma rja3tole masare ra7 7ar2elkon el mahal.",
+      "holdout": true
+    },
+    {
+      "id": "blind-061",
+      "category": "blind",
+      "lang": "mixed",
+      "expected": "reject",
+      "text": "I will wait for Joe outside, رح يشوف شو بصير.",
+      "holdout": true
+    },
+    {
+      "id": "blind-062",
+      "category": "blind",
+      "lang": "mixed",
+      "expected": "reject",
+      "text": "Je vais te casser la gueule, ya Karim.",
+      "holdout": true
+    },
+    {
+      "id": "blind-063",
+      "category": "blind",
+      "lang": "en",
+      "expected": "reject",
+      "text": "Someone should set this salon on fire with the owner inside.",
+      "holdout": true
+    },
+    {
+      "id": "blind-064",
+      "category": "blind",
+      "lang": "en",
+      "expected": "reject",
+      "text": "I know what time Rita leaves work. She should be scared.",
+      "holdout": true
+    },
+    {
+      "id": "blind-065",
+      "category": "blind",
+      "lang": "ar",
+      "expected": "reject",
+      "text": "كل السوريين اللي بيشتغلوا هون وسخين وحرامية.",
+      "holdout": true
+    },
+    {
+      "id": "blind-066",
+      "category": "blind",
+      "lang": "ar",
+      "expected": "reject",
+      "text": "هالجماعة من هالطائفة ما لازم يفتحوا محلات أصلًا.",
+      "holdout": true
+    },
+    {
+      "id": "blind-067",
+      "category": "blind",
+      "lang": "fr",
+      "expected": "reject",
+      "text": "Les Syriens salissent tout, il faut les chasser du pays.",
+      "holdout": true
+    },
+    {
+      "id": "blind-068",
+      "category": "blind",
+      "lang": "fr",
+      "expected": "reject",
+      "text": "Encore des étrangers, ces gens ne valent rien.",
+      "holdout": true
+    },
+    {
+      "id": "blind-069",
+      "category": "blind",
+      "lang": "arabizi",
+      "expected": "reject",
+      "text": "Kel el nezi7in 7aramiye, lezem yfello mn hon.",
+      "holdout": true
+    },
+    {
+      "id": "blind-070",
+      "category": "blind",
+      "lang": "arabizi",
+      "expected": "reject",
+      "text": "Hal ta2ife kella wes5a.",
+      "holdout": true
+    },
+    {
+      "id": "blind-071",
+      "category": "blind",
+      "lang": "mixed",
+      "expected": "reject",
+      "text": "These migrants are vermin, كلن حرامية.",
+      "holdout": true
+    },
+    {
+      "id": "blind-072",
+      "category": "blind",
+      "lang": "mixed",
+      "expected": "reject",
+      "text": "Les femmes voilées ne devraient pas travailler hon.",
+      "holdout": true
+    },
+    {
+      "id": "blind-073",
+      "category": "blind",
+      "lang": "en",
+      "expected": "reject",
+      "text": "Never let people of that religion touch your hair, they are filthy.",
+      "holdout": true
+    },
+    {
+      "id": "blind-074",
+      "category": "blind",
+      "lang": "en",
+      "expected": "reject",
+      "text": "Gay stylists like him are disgusting and should be banned.",
+      "holdout": true
+    },
+    {
+      "id": "blind-075",
+      "category": "blind",
+      "lang": "ar",
+      "expected": "reject",
+      "text": "رنا بتجنن بجسمها، بدي رقمها الخاص.",
+      "holdout": true
+    },
+    {
+      "id": "blind-076",
+      "category": "blind",
+      "lang": "ar",
+      "expected": "reject",
+      "text": "الموظفة مايا لازم تلبس أقصر كرمال الزباين.",
+      "holdout": true
+    },
+    {
+      "id": "blind-077",
+      "category": "blind",
+      "lang": "fr",
+      "expected": "reject",
+      "text": "Rita a un corps de rêve, je veux la voir en privé.",
+      "holdout": true
+    },
+    {
+      "id": "blind-078",
+      "category": "blind",
+      "lang": "arabizi",
+      "expected": "reject",
+      "text": "Maya jesma nar, badde 2e3od ma3a la7al.",
+      "holdout": true
+    },
+    {
+      "id": "blind-079",
+      "category": "blind",
+      "lang": "mixed",
+      "expected": "reject",
+      "text": "Rita so hot, بدي نام معها.",
+      "holdout": true
+    },
+    {
+      "id": "blind-080",
+      "category": "blind",
+      "lang": "en",
+      "expected": "reject",
+      "text": "Maya should wear something tighter, I only come for the view.",
+      "holdout": true
+    },
+    {
+      "id": "blind-081",
+      "category": "blind",
+      "lang": "en",
+      "expected": "reject",
+      "text": "Rita, text me, I want to see you without the uniform.",
+      "holdout": true
+    },
+    {
+      "id": "blind-082",
+      "category": "blind",
+      "lang": "fr",
+      "expected": "reject",
+      "text": "La masseuse était sexy, j’espère un massage spécial la prochaine fois.",
+      "holdout": true
+    },
+    {
+      "id": "blind-083",
+      "category": "blind",
+      "lang": "ar",
+      "expected": "reject",
+      "text": "أحسن عروض الليزر عنا، زوروا www.laser-offer-lb.com واحجزوا هلق.",
+      "holdout": true
+    },
+    {
+      "id": "blind-084",
+      "category": "blind",
+      "lang": "ar",
+      "expected": "reject",
+      "text": "عم نبيع كريمات أصلية، اطلبوا من t.me/creams_lb",
+      "holdout": true
+    },
+    {
+      "id": "blind-085",
+      "category": "blind",
+      "lang": "fr",
+      "expected": "reject",
+      "text": "Promo incroyable sur www.beaute-discount.lb, code BEAUTE30.",
+      "holdout": true
+    },
+    {
+      "id": "blind-086",
+      "category": "blind",
+      "lang": "fr",
+      "expected": "reject",
+      "text": "Gagnez de l’argent facilement, écrivez-moi sur t.me/argentfacile",
+      "holdout": true
+    },
+    {
+      "id": "blind-087",
+      "category": "blind",
+      "lang": "arabizi",
+      "expected": "reject",
+      "text": "Ta3o 3ana a7san w arkhas, www.salon-other.lb",
+      "holdout": true
+    },
+    {
+      "id": "blind-088",
+      "category": "blind",
+      "lang": "mixed",
+      "expected": "reject",
+      "text": "Best keratin deals, اطلبوا من www.keratin-shop.lb",
+      "holdout": true
+    },
+    {
+      "id": "blind-089",
+      "category": "blind",
+      "lang": "en",
+      "expected": "reject",
+      "text": "Buy followers cheap at www.insta-grow.io, 1000 for 5 dollars.",
+      "holdout": true
+    },
+    {
+      "id": "blind-090",
+      "category": "blind",
+      "lang": "en",
+      "expected": "reject",
+      "text": "Want a better barber? Visit www.bettercuts.lb and use code SWITCH.",
+      "holdout": true
+    },
+    {
+      "id": "blind-091",
+      "category": "blind",
+      "lang": "ar",
+      "expected": "manual_review",
+      "text": "كريم أجدب وما بيعرف يمسك مقص.",
+      "holdout": true
+    },
+    {
+      "id": "blind-092",
+      "category": "blind",
+      "lang": "ar",
+      "expected": "manual_review",
+      "text": "ريتا وقحة وبتحكي مع الزباين بطريقة زبالة.",
+      "holdout": true
+    },
+    {
+      "id": "blind-093",
+      "category": "blind",
+      "lang": "ar",
+      "expected": "manual_review",
+      "text": "جو نصاب وكذاب، دفعني ضعف السعر.",
+      "holdout": true
+    },
+    {
+      "id": "blind-094",
+      "category": "blind",
+      "lang": "ar",
+      "expected": "manual_review",
+      "text": "مايا بلا مخ، خربتلي شعري.",
+      "holdout": true
+    },
+    {
+      "id": "blind-095",
+      "category": "blind",
+      "lang": "ar",
+      "expected": "manual_review",
+      "text": "الحلاق كريم حيوان ووقح.",
+      "holdout": true
+    },
+    {
+      "id": "blind-096",
+      "category": "blind",
+      "lang": "fr",
+      "expected": "manual_review",
+      "text": "Karim est un incapable et un menteur.",
+      "holdout": true
+    },
+    {
+      "id": "blind-097",
+      "category": "blind",
+      "lang": "fr",
+      "expected": "manual_review",
+      "text": "Rita est une vraie peste avec les clients.",
+      "holdout": true
+    },
+    {
+      "id": "blind-098",
+      "category": "blind",
+      "lang": "fr",
+      "expected": "manual_review",
+      "text": "Joe est un abruti fini.",
+      "holdout": true
+    },
+    {
+      "id": "blind-099",
+      "category": "blind",
+      "lang": "fr",
+      "expected": "manual_review",
+      "text": "Maya est bête à pleurer.",
+      "holdout": true
+    },
+    {
+      "id": "blind-100",
+      "category": "blind",
+      "lang": "arabizi",
+      "expected": "manual_review",
+      "text": "Karim ajdab w ma bya3ref shi.",
+      "holdout": true
+    },
+    {
+      "id": "blind-101",
+      "category": "blind",
+      "lang": "arabizi",
+      "expected": "manual_review",
+      "text": "Rita zbele, wa2i7a ma3 kel el nes.",
+      "holdout": true
+    },
+    {
+      "id": "blind-102",
+      "category": "blind",
+      "lang": "arabizi",
+      "expected": "manual_review",
+      "text": "Joe kazzab w nassab.",
+      "holdout": true
+    },
+    {
+      "id": "blind-103",
+      "category": "blind",
+      "lang": "arabizi",
+      "expected": "manual_review",
+      "text": "Maya bala 3a2el, 5arabetle sha3re.",
+      "holdout": true
+    },
+    {
+      "id": "blind-104",
+      "category": "blind",
+      "lang": "mixed",
+      "expected": "manual_review",
+      "text": "Karim is a total clown, أجدب.",
+      "holdout": true
+    },
+    {
+      "id": "blind-105",
+      "category": "blind",
+      "lang": "mixed",
+      "expected": "manual_review",
+      "text": "Rita est une menteuse, كذابة.",
+      "holdout": true
+    },
+    {
+      "id": "blind-106",
+      "category": "blind",
+      "lang": "mixed",
+      "expected": "manual_review",
+      "text": "Joe is useless w 7ayawen.",
+      "holdout": true
+    },
+    {
+      "id": "blind-107",
+      "category": "blind",
+      "lang": "en",
+      "expected": "manual_review",
+      "text": "Karim is a pathetic liar who scams customers.",
+      "holdout": true
+    },
+    {
+      "id": "blind-108",
+      "category": "blind",
+      "lang": "en",
+      "expected": "manual_review",
+      "text": "Rita is a nasty piece of work, avoid her at all costs.",
+      "holdout": true
+    },
+    {
+      "id": "blind-109",
+      "category": "blind",
+      "lang": "en",
+      "expected": "manual_review",
+      "text": "Joe is a brainless fool.",
+      "holdout": true
+    },
+    {
+      "id": "blind-110",
+      "category": "blind",
+      "lang": "en",
+      "expected": "manual_review",
+      "text": "Maya is an incompetent idiot and a snob.",
+      "holdout": true
+    },
+    {
+      "id": "blind-111",
+      "category": "blind",
+      "lang": "ar",
+      "expected": "manual_review",
+      "text": "البنت يلي عالاستقبال قليلة أدب ووقحة.",
+      "holdout": true
+    },
+    {
+      "id": "blind-112",
+      "category": "blind",
+      "lang": "ar",
+      "expected": "manual_review",
+      "text": "صاحب المحل نصاب.",
+      "holdout": true
+    },
+    {
+      "id": "blind-113",
+      "category": "blind",
+      "lang": "fr",
+      "expected": "manual_review",
+      "text": "Le patron est un escroc.",
+      "holdout": true
+    },
+    {
+      "id": "blind-114",
+      "category": "blind",
+      "lang": "fr",
+      "expected": "manual_review",
+      "text": "La coiffeuse blonde est une idiote.",
+      "holdout": true
+    },
+    {
+      "id": "blind-115",
+      "category": "blind",
+      "lang": "arabizi",
+      "expected": "manual_review",
+      "text": "Sa7eb el mahal nassab.",
+      "holdout": true
+    },
+    {
+      "id": "blind-116",
+      "category": "blind",
+      "lang": "arabizi",
+      "expected": "manual_review",
+      "text": "El bint 3al reception wa2i7a.",
+      "holdout": true
+    },
+    {
+      "id": "blind-117",
+      "category": "blind",
+      "lang": "mixed",
+      "expected": "manual_review",
+      "text": "The owner is a crook, نصاب.",
+      "holdout": true
+    },
+    {
+      "id": "blind-118",
+      "category": "blind",
+      "lang": "en",
+      "expected": "manual_review",
+      "text": "The manager is a scammer, plain and simple.",
+      "holdout": true
+    },
+    {
+      "id": "blind-119",
+      "category": "blind",
+      "lang": "en",
+      "expected": "manual_review",
+      "text": "The new guy at the second chair is a moron.",
+      "holdout": true
+    },
+    {
+      "id": "blind-120",
+      "category": "blind",
+      "lang": "mixed",
+      "expected": "manual_review",
+      "text": "La réceptionniste est une idiote, wa2i7a.",
+      "holdout": true
+    },
+    {
       "id": "holdout-01",
       "category": "holdout",
       "lang": "en",

@@ -37,14 +37,18 @@ begin
   perform private.notify_customer('review_request', p_booking_id, v_extra, 'review_request:' || p_booking_id, v_at);
 end $$;
 
-create or replace function private.notify_business(p_type public.notification_type, p_booking_id uuid) returns void
+-- New optional payload (e.g. the star rating for the new-review alert). Dropped and recreated so
+-- existing two-argument calls resolve to this one (a second overload would make them ambiguous).
+drop function private.notify_business(public.notification_type, uuid);
+create function private.notify_business(p_type public.notification_type, p_booking_id uuid, p_extra jsonb default '{}')
+returns void
 language plpgsql volatile security definer set search_path = '' as $$
 declare b public.bookings; r record; v_payload jsonb; v_custom boolean; v_at timestamptz;
 begin
   select * into b from public.bookings where id = p_booking_id;
   select exists (select 1 from public.business_notification_settings where business_id = b.business_id and type = p_type)
     into v_custom;
-  v_payload := private.booking_payload(p_booking_id) - 'link' - 'link_token';
+  v_payload := (private.booking_payload(p_booking_id) - 'link' - 'link_token') || coalesce(p_extra, '{}');
   v_at := private.business_alert_at(b.business_id, b.starts_at, b.expires_at);
   for r in
     select m.user_id, p.phone_e164, p.locale

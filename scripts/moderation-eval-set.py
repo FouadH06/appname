@@ -9,6 +9,7 @@ Languages: en, ar (Lebanese + MSA), fr, arabizi, mixed. Team first names in cont
 Invented examples written for this set; no real people or businesses.
 Run: python scripts/moderation-eval-set.py
 """
+import importlib.util
 import json
 from pathlib import Path
 
@@ -285,7 +286,14 @@ HOLDOUT = [
     ('manual_review', 'ar', 'الحلاق كريم نصاب.'),
 ]
 
+_spec = importlib.util.spec_from_file_location('blind', Path(__file__).with_name('moderation-eval-blind.py'))
+_blind = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(_blind)
+
 items = []
+for i, (expected, lang, text) in enumerate(_blind.BLIND, 1):
+    items.append({'id': f'blind-{i:03d}', 'category': 'blind', 'lang': lang, 'expected': expected, 'text': text,
+                  'holdout': True})
 for i, (expected, lang, text) in enumerate(HOLDOUT, 1):
     items.append({'id': f'holdout-{i:02d}', 'category': 'holdout', 'lang': lang, 'expected': expected, 'text': text,
                   'holdout': True})
@@ -294,6 +302,7 @@ for cat, (expected, rows) in S.items():
         items.append({'id': f'{cat}-{i:02d}', 'category': cat, 'lang': lang, 'expected': expected, 'text': text})
 
 assert len([i for i in items if not i.get('holdout')]) >= 200, len(items)
+assert len([i for i in items if i.get('holdout')]) >= 150, len(items)
 assert len({i['text'] for i in items}) == len(items), 'duplicate texts'
 out = ROOT / 'packages/edge-tests/eval/moderation-set.json'
 out.parent.mkdir(parents=True, exist_ok=True)

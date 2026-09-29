@@ -48,11 +48,14 @@ WebCrypto, so it is unit-tested under Node in `packages/edge-tests`.
   classifier → decision matrix (`decide.ts`), and records every stage (`moderation_record`, applied
   only if the text is unchanged). Unsure cases open a moderation case for admins (A2/A3).
 - Classifier: `ClaudeClassifier` (official `@anthropic-ai/sdk`, model `LLM_MODEL`, default
-  `claude-opus-5`, structured JSON output, cached system prompt, server-side `fallbacks: "default"`;
+  `claude-sonnet-5`, structured JSON output, cached system prompt, server-side `fallbacks: "default"`;
   a refusal or unusable answer → human; network errors → retried by the queue). Without
-  `ANTHROPIC_API_KEY`: `HeuristicClassifier` (keywords) — on a hosted project in strict mode, so no
-  comment is published without either the LLM or a moderator.
-- Quality: `packages/edge-tests/eval/` — 206 labelled reviews + 30 held out; `EVAL_LLM=1
+  `ANTHROPIC_API_KEY`: `HeuristicClassifier` (keywords), strict outside the local stack.
+- **Auto-publication** (no moderator): keyword classifier only on the local stack; Claude only with
+  `MODERATION_AUTO_PUBLISH=true`, set after the model passes the eval gate. Otherwise every comment
+  that isn't rejected waits for a moderator (star ratings are unaffected).
+- Quality: `packages/edge-tests/eval/` — 206 labelled reviews + 150 blind held out; gate = 0 harmful held-out
+  comments published; `EVAL_LLM=1
 ANTHROPIC_API_KEY=… pnpm --filter @app/edge-tests test moderation-eval` scores the LLM.
 - Translations: `request_translation` (cached per text + language) → queue `translate` → Claude.
 

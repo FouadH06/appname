@@ -112,7 +112,8 @@ test('review link → stars live → comment moderated → public page → busin
     await page.evaluate(() => localStorage.clear());
     await page.goto('/biz/login');
     await verifyPhone(page, '70 000 014');
-    await expect(page).toHaveURL(/\/biz/);
+    // signed in = redirected to the business list (/biz/login also matches a loose /\/biz/)
+    await expect(page).toHaveURL(/\/biz$/, { timeout: 30_000 });
     await addMemberByPhone(b.businessId, '96170000014', 'manager');
     await page.goto(`/biz/${b.businessId}/reviews`);
     await expect(page.getByTestId('needs-reply-count')).toHaveText('1');

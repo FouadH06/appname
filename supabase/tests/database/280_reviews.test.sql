@@ -95,7 +95,8 @@ select tests.as_postgres();
 select results_eq($$ select trust_tier::text, base_weight from public.reviews where id in (tests.rv('v1'), tests.rv('v2')) order by base_weight desc $$,
                   $$ values ('verified_booking', 1.00::numeric(3,2)), ('verified_visit', 0.50::numeric(3,2)) $$, 'tier weights 1.0 / 0.5, frozen at creation');
 select throws_ok($$ update public.reviews set trust_tier = 'verified_booking' where id = tests.rv('v2') $$, 'P0001', 'IMMUTABLE_FIELD', 'tier cannot change');
-select ok(exists (select 1 from public.notifications where type = 'biz_new_review' and booking_id = tests.id('v1')), 'team alert for the new review');
+select is((select payload ->> 'rating' from public.notifications where type = 'biz_new_review' and booking_id = tests.id('v1') limit 1), '5',
+  'team alert for the new review carries its star rating');
 
 select tests.as_anon();
 select is((select r ->> 'text' from jsonb_array_elements(public.get_business_reviews(tests.id('biz'))) r where r ->> 'id' = tests.rv('v1')::text),

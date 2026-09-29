@@ -272,7 +272,12 @@ export interface ClaudeResponse {
   content: { type: string; text?: string }[];
 }
 
-export const DEFAULT_LLM_MODEL = 'claude-opus-5';
+/**
+ * Candidate production model (PO decision 2026-09-29): Sonnet 5, confirmed only if it meets the
+ * safety target on the blind held-out eval (0 harmful comments auto-published); otherwise
+ * benchmark Opus 5.5 (`claude-opus-5-5`). Always overridable with LLM_MODEL.
+ */
+export const DEFAULT_LLM_MODEL = 'claude-sonnet-5';
 const FALLBACK_BETA = 'server-side-fallback-2026-07-01';
 
 const CLASSIFY_SCHEMA = {

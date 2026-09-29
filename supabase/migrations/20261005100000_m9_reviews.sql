@@ -369,7 +369,7 @@ begin
     update public.reviews set rating_state = 'active', status = 'published', published_at = now(), fraud_checked_at = now()
      where id = r.id;
     perform private.recompute_rating_summary(r.business_id);
-    perform private.notify_business('biz_new_review', r.booking_id);
+    perform private.notify_business('biz_new_review', r.booking_id, jsonb_build_object('rating', r.overall));
   end if;
 end $$;
 

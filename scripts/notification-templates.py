@@ -107,8 +107,8 @@ T_M9 = {
         "تقييمك لـ {business_name} منشور، لكن تعليقك لم يُنشر بصيغته الحالية. يمكنك تعديله خلال 7 أيام.",
         ['review_edit'], 'review_edit', True),
     'biz_new_review': (
-        "⭐ New review for {service_name} with {staff_name}. Reply from your dashboard.",
-        "⭐ تقييم جديد لـ {service_name} مع {staff_name}. يمكنك الرد من لوحة التحكم.",
+        "⭐ New {rating}-star review for {service_name} with {staff_name}. Reply from your dashboard.",
+        "⭐ تقييم جديد بـ {rating} من 5 نجوم لـ {service_name} مع {staff_name}. يمكنك الرد من لوحة التحكم.",
         ['reviews'], None, False),
 }
 

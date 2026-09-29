@@ -17,6 +17,7 @@ import type {
 export async function moderateText(
   job: ModerationJob,
   classifier: TextClassifier,
+  { autoPublish = false }: { autoPublish?: boolean } = {},
 ): Promise<ModerationRecord | null> {
   const stages: StageResult[] = [];
   const rules = applyRules(job.text);
@@ -55,7 +56,17 @@ export async function moderateText(
       : {},
   });
 
-  const d = decide(job.text, rules, c, job.config);
+  let d = decide(job.text, rules, c, job.config);
+  // auto-publication off (hosted without a validated classifier): anything the matrix would
+  // publish waits for a moderator; rejects and human hand-offs are unchanged
+  if (!autoPublish && (d.decision === 'approve' || d.decision === 'approve_redacted')) {
+    d = {
+      ...d,
+      decision: 'manual_review',
+      textDisplay: null,
+      reasons: ['auto_publish_off', ...d.reasons],
+    };
+  }
   stages.push({
     stage: 'decision',
     outcome: d.decision === 'approve' ? 'pass' : d.decision === 'reject' ? 'fail' : 'flag',
@@ -88,6 +99,8 @@ export interface WorkerDeps {
   store: ModerationStore;
   classifier: TextClassifier;
   translator?: Translator;
+  /** false = never publish a comment without a moderator (see moderationConfigFromEnv) */
+  autoPublish: boolean;
   limit?: number;
   log?: (line: string) => void;
 }
@@ -105,7 +118,7 @@ export async function runModeration(deps: WorkerDeps): Promise<WorkerSummary> {
   summary.claimed = jobs.length;
   for (const job of jobs) {
     try {
-      const rec = await moderateText(job, deps.classifier);
+      const rec = await moderateText(job, deps.classifier, { autoPublish: deps.autoPublish });
       if (!rec) {
         summary.retry += 1; // stays in the queue; visible again after the timeout
         continue;

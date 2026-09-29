@@ -28,6 +28,7 @@ const sample = {
   business_url: `${web}/fade-district`,
   dashboard_path: 'b1d2/bookings',
   review_token: 'Rv7Tq2mZ9w',
+  rating: 2,
   review_link: `${web}/review/Rv7Tq2mZ9w`,
 };
 const withReason = new Set(['request_declined', 'booking_cancelled_by_business']);
