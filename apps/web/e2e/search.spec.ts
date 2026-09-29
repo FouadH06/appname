@@ -25,8 +25,14 @@ test('find, filter and land on a business through search', async ({ page }) => {
     await expect(page.getByTestId('search-box')).toHaveAttribute('data-ready', 'true', {
       timeout: 30_000,
     });
-    await page.getByTestId('search-input').fill(name.split(' ').pop()!);
-    await page.getByTestId('suggestion-business').filter({ hasText: name }).click();
+    // retype until the suggestion shows (a dev server may reload the page after an on-demand compile)
+    const suggestion = page.getByTestId('suggestion-business').filter({ hasText: name });
+    await expect(async () => {
+      await page.getByTestId('search-input').fill('');
+      await page.getByTestId('search-input').fill(name.split(' ').pop()!);
+      await expect(suggestion).toBeVisible({ timeout: 5_000 });
+    }).toPass({ timeout: 45_000 });
+    await suggestion.click();
     await expect(page).toHaveURL(new RegExp(`/${slug}$`), { timeout: 30_000 });
   });
 

@@ -47,7 +47,7 @@ transaction.
 
 | Scale | Documents | search p50 / p95 | suggest p95 | home p95 | search + date window p95 |
 |---|---|---|---|---|---|
-| Launch (~100 businesses) | 111 | 17.9 / **33.5 ms** | 7.3 ms | 11.3 ms | 35.5 ms |
+| Launch (~100 businesses) | 105 | 15.4 / **29.6 ms** | 7.3 ms | 4.0 ms | 30.9 ms |
 | Headroom (~1,000) | 1,044 | 20.1 / **27.3 ms** | 10.2 ms | 20.0 ms | 193.4 ms |
 
 Target: search p95 < 300 ms — met at both scales, including the worst case (date + time window).
@@ -87,4 +87,6 @@ debugger); "available today" is empty after closing time in the dataset (correct
 - Found and fixed during the gate: business suggestions returned the first five matches by id rather than the
   best five (`DISTINCT ON` ordering) → now "name contains the text" first, then similarity; Supabase's
   safe-update guard rejected WHERE-less UPDATE/DELETE in the search core and score recompute via the API
-  (pgTAP doesn't go through the API) → explicit `where true`.
+  (pgTAP doesn't go through the API) → explicit `where true`; the CI plpgsql lint can't see temp tables →
+  `search_core` is now one CTE query (no temp tables per request), `refresh_search_document` carries services as
+  jsonb, and `compute_quality_scores` uses unlogged scratch tables under an advisory lock.

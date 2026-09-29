@@ -147,7 +147,7 @@ create function private.refresh_search_document(p_location_id uuid) returns void
 language plpgsql volatile security definer set search_path = '' as $$
 declare
   l public.business_locations; b public.businesses; v_cluster uuid; v_cats uuid[]; v_canon uuid[]; v_terms text;
-  v_prices jsonb; v_next timestamptz; v_area_terms text; v_name_key text; s record;
+  v_prices jsonb; v_next timestamptz; v_area_terms text; v_name_key text; s record; v_svcs jsonb;
 begin
   select * into l from public.business_locations where id = p_location_id;
   select * into b from public.businesses where id = l.business_id;
@@ -160,30 +160,25 @@ begin
 
   -- publicly bookable services here: active, bookable online (or priced "on consultation"), with at
   -- least one active, publicly bookable staff member at this location
-  if to_regclass('pg_temp.sd_services') is null then
-    create temp table sd_services (id uuid, name text, canonical uuid, category uuid, price_type text,
-      price_min numeric, price_max numeric, duration int, online boolean) on commit drop;
-  else
-    truncate sd_services;
-  end if;
-  insert into pg_temp.sd_services
-  select sv.id, sv.name, sv.canonical_service_id, cs.category_id, sv.price_type::text, sv.price_min, sv.price_max, sv.duration_min,
-         sv.is_online_bookable and sv.price_type <> 'on_consultation'
+  select coalesce(jsonb_agg(jsonb_build_object('id', sv.id, 'name', sv.name, 'canonical', sv.canonical_service_id,
+           'category', cs.category_id, 'price_type', sv.price_type, 'price_min', sv.price_min, 'price_max', sv.price_max,
+           'duration', sv.duration_min, 'online', sv.is_online_bookable and sv.price_type <> 'on_consultation')), '[]')
+    into v_svcs
   from public.services sv join public.canonical_services cs on cs.id = sv.canonical_service_id
   where sv.business_id = b.id and sv.status = 'active' and (sv.is_online_bookable or sv.price_type = 'on_consultation')
     and exists (select 1 from public.staff_services ss join public.staff_members st on st.id = ss.staff_id
                 join public.staff_locations sl on sl.staff_id = st.id and sl.location_id = l.id
                 where ss.service_id = sv.id and st.status = 'active' and st.publicly_bookable);
 
-  select coalesce(array_agg(distinct canonical), '{}') into v_canon from pg_temp.sd_services;
+  select coalesce(array_agg(distinct canonical), '{}') into v_canon from jsonb_to_recordset(v_svcs) as x(id uuid, name text, canonical uuid, category uuid, price_type text, price_min numeric, price_max numeric, duration int, online boolean);
   -- categories: the business's own + each offered service's category, with their parents
   select coalesce(array_agg(distinct x), '{}') into v_cats from (
     select c.id as x from public.categories c
-    where c.id in (select b.primary_category_id union select category from pg_temp.sd_services)
+    where c.id in (select b.primary_category_id union select category from jsonb_to_recordset(v_svcs) as x(id uuid, name text, canonical uuid, category uuid, price_type text, price_min numeric, price_max numeric, duration int, online boolean))
     union select c.parent_id from public.categories c
-    where c.parent_id is not null and c.id in (select b.primary_category_id union select category from pg_temp.sd_services)) q;
+    where c.parent_id is not null and c.id in (select b.primary_category_id union select category from jsonb_to_recordset(v_svcs) as x(id uuid, name text, canonical uuid, category uuid, price_type text, price_min numeric, price_max numeric, duration int, online boolean))) q;
   select string_agg(distinct t, ' ') into v_terms from (
-    select private.search_key(name) as t from pg_temp.sd_services
+    select private.search_key(name) as t from jsonb_to_recordset(v_svcs) as x(id uuid, name text, canonical uuid, category uuid, price_type text, price_min numeric, price_max numeric, duration int, online boolean)
     union select private.search_key(cs.name_en) from public.canonical_services cs where cs.id = any (v_canon)
     union select private.search_key(cs.name_ar) from public.canonical_services cs where cs.id = any (v_canon)
     union select private.search_key(coalesce(cs.name_fr, '')) from public.canonical_services cs where cs.id = any (v_canon)
@@ -197,7 +192,7 @@ begin
 
   -- cheapest service per canonical, with its next public slot (computed here, not at query time)
   v_prices := '{}';
-  for s in select distinct on (canonical) * from pg_temp.sd_services
+  for s in select distinct on (canonical) * from jsonb_to_recordset(v_svcs) as x(id uuid, name text, canonical uuid, category uuid, price_type text, price_min numeric, price_max numeric, duration int, online boolean)
            order by canonical, online desc, coalesce(price_min, 1e9), duration loop
     v_next := case when s.online then public.get_next_available(l.id, s.id) end;
     v_prices := v_prices || jsonb_build_object(s.canonical, jsonb_build_object(
@@ -255,12 +250,29 @@ language sql volatile security definer set search_path = '' as $$
 $$;
 
 -- ═══ Quality scores (Part 5 §3), set-based, deterministic ═════════════════
+-- scratch space for compute_quality_scores (unlogged; truncated per run under an advisory lock)
+create unlogged table private.qs_biz (business_id uuid primary key, root_id uuid, cluster_id uuid, published_at timestamptz, description text);
+create unlogged table private.qs_rev (id uuid primary key, business_id uuid, overall smallint, trust_tier public.trust_tier,
+                                      visit_at timestamptz, w numeric);
+create index on private.qs_rev (business_id);
+create unlogged table private.qs_prior (root_id uuid, cluster_id uuid, m numeric);
+create unlogged table private.qs (business_id uuid primary key, root_id uuid, cluster_id uuid, published_at timestamptz,
+  bayes_overall numeric, bayes_dims numeric, bayes_recent numeric, prior_mean numeric, weight_sum numeric, volume_n bigint,
+  volume_pct numeric, cancel_rate numeric, expire_rate numeric, overturn_rate numeric, completeness_items int,
+  accept_min numeric, reply_rate numeric);
+create unlogged table private.qs_out (business_id uuid primary key, root_id uuid, cluster_id uuid, published_at timestamptz,
+  bayes_overall numeric, bayes_dims numeric, bayes_recent numeric, prior_mean numeric, weight_sum numeric, volume_n bigint,
+  volume_pct numeric, cancel_rate numeric, expire_rate numeric, overturn_rate numeric, completeness_items int,
+  accept_min numeric, reply_rate numeric, c_rating numeric, c_volume numeric, c_recent numeric, c_reliability numeric,
+  c_completeness numeric, c_responsiveness numeric, bayes_blended numeric, score numeric);
+
 create function private.compute_quality_scores(p_version int default null) returns int
 language plpgsql volatile security definer set search_path = '' as $$
 declare
   cfg jsonb; v_ver int; c_prior numeric; half numeric; recent_days int; cap numeric; ov_share numeric; dim_share numeric;
   vol_days int; vol_sources text[]; v_w jsonb; v_lb jsonb; v_n int;
 begin
+  perform pg_advisory_xact_lock(hashtext('compute_quality_scores'));   -- nightly job vs publish: one at a time
   select version, params into v_ver, cfg from public.ranking_configs
    where (p_version is null and status = 'active') or version = p_version;
   if v_ver is null then perform private.raise_code('NOT_FOUND'); end if;
@@ -276,8 +288,8 @@ begin
   v_lb := cfg -> 'labels';
 
   -- scope: live, non-test businesses with their root category and cluster
-  if to_regclass('pg_temp.qs_biz') is not null then drop table pg_temp.qs_biz; end if;
-  create temp table qs_biz on commit drop as
+  truncate private.qs_biz;
+  insert into private.qs_biz
   select b.id as business_id, coalesce(c.parent_id, c.id) as root_id,
          (select ca.cluster_id from public.business_locations l join public.cluster_areas ca on ca.area_id = l.area_id
           join public.clusters cl on cl.id = ca.cluster_id where l.business_id = b.id order by l.created_at, cl.sort limit 1) as cluster_id,
@@ -286,46 +298,46 @@ begin
   where b.status = 'live' and not b.is_test;
 
   -- 1–2. counted reviews, decayed weights, Verified Visit cap
-  if to_regclass('pg_temp.qs_rev') is not null then drop table pg_temp.qs_rev; end if;
-  create temp table qs_rev on commit drop as
+  truncate private.qs_rev;
+  insert into private.qs_rev
   select r.id, r.business_id, r.overall, r.trust_tier, r.visit_at,
          r.base_weight * r.fraud_multiplier * power(0.5, extract(epoch from (now() - r.visit_at)) / 86400.0 / half) as w
-  from public.reviews r join qs_biz q on q.business_id = r.business_id
+  from public.reviews r join private.qs_biz q on q.business_id = r.business_id
   where private.rating_is_counted(r);
-  update qs_rev v set w = v.w * x.f
+  update private.qs_rev v set w = v.w * x.f
   from (select business_id,
                case when sum(w) filter (where trust_tier = 'verified_visit') > cap / (1 - cap) * coalesce(sum(w) filter (where trust_tier = 'verified_booking'), 0)
                     then cap / (1 - cap) * coalesce(sum(w) filter (where trust_tier = 'verified_booking'), 0)
                          / nullif(sum(w) filter (where trust_tier = 'verified_visit'), 0)
                     else 1 end as f
-        from qs_rev group by business_id) x
+        from private.qs_rev group by business_id) x
   where x.business_id = v.business_id and v.trust_tier = 'verified_visit';
 
   -- 3. prior mean per root category × cluster (fallback: platform mean, then 4.0)
-  if to_regclass('pg_temp.qs_prior') is not null then drop table pg_temp.qs_prior; end if;
-  create temp table qs_prior on commit drop as
+  truncate private.qs_prior;
+  insert into private.qs_prior
   select q.root_id, q.cluster_id, sum(v.w * v.overall) / nullif(sum(v.w), 0) as m
-  from qs_rev v join qs_biz q on q.business_id = v.business_id group by q.root_id, q.cluster_id;
+  from private.qs_rev v join private.qs_biz q on q.business_id = v.business_id group by q.root_id, q.cluster_id;
 
-  if to_regclass('pg_temp.qs') is not null then drop table pg_temp.qs; end if;
-  create temp table qs on commit drop as
-  with glob as (select coalesce(sum(w * overall) / nullif(sum(w), 0), 4.0) as m from qs_rev),
+  truncate private.qs;
+  insert into private.qs
+  with glob as (select coalesce(sum(w * overall) / nullif(sum(w), 0), 4.0) as m from private.qs_rev),
   prior as (select q.business_id, coalesce(p.m, (select m from glob)) as m
-            from qs_biz q left join qs_prior p on p.root_id = q.root_id and p.cluster_id is not distinct from q.cluster_id),
-  ov as (select business_id, sum(w * overall) as sw_r, sum(w) as sw from qs_rev group by business_id),
-  rec as (select business_id, sum(w * overall) as sw_r, sum(w) as sw from qs_rev
+            from private.qs_biz q left join private.qs_prior p on p.root_id = q.root_id and p.cluster_id is not distinct from q.cluster_id),
+  ov as (select business_id, sum(w * overall) as sw_r, sum(w) as sw from private.qs_rev group by business_id),
+  rec as (select business_id, sum(w * overall) as sw_r, sum(w) as sw from private.qs_rev
           where visit_at > now() - make_interval(days => recent_days) group by business_id),
   -- dimensions: Bayesian per dimension with the same prior strength, then averaged
   dimv as (select v.business_id, d.key, avg(rr.score) as avg_score, count(*) as n,
                   sum(v.w * rr.score) as sw_r, sum(v.w) as sw
-           from qs_rev v join public.review_ratings rr on rr.review_id = v.id
+           from private.qs_rev v join public.review_ratings rr on rr.review_id = v.id
            join public.rating_dimensions d on d.id = rr.dimension_id group by v.business_id, d.key),
   dim as (select x.business_id, avg((c_prior * p.m + x.sw_r) / (c_prior + x.sw)) as bayes
           from dimv x join prior p on p.business_id = x.business_id group by x.business_id),
   vol as (select q.business_id, q.root_id, q.cluster_id,
                  (select count(*) from public.bookings k where k.business_id = q.business_id and k.status = 'completed'
                     and k.starts_at > now() - make_interval(days => vol_days) and k.source::text = any (vol_sources)) as n
-          from qs_biz q),
+          from private.qs_biz q),
   volp as (select business_id, n, case when n = 0 then 0 else cume_dist() over (partition by root_id, cluster_id order by ln(1 + n))::numeric end as pct
            from vol),
   rel as (select q.business_id,
@@ -337,7 +349,7 @@ begin
                  coalesce((select count(*) filter (where d.outcome = 'no_show_overturned')::numeric
                                   / nullif((select count(*) from public.bookings k where k.business_id = q.business_id and k.no_show_at > now() - interval '90 days'), 0)
                            from public.disputes d where d.business_id = q.business_id and d.type = 'no_show' and d.created_at > now() - interval '90 days'), 0) as overturn_rate
-          from qs_biz q),
+          from private.qs_biz q),
   comp as (select q.business_id,
                  (exists (select 1 from public.business_media m where m.business_id = q.business_id and m.kind = 'cover' and m.state = 'approved'))::int
                + ((select count(*) from public.business_media m where m.business_id = q.business_id and m.kind = 'portfolio' and m.state = 'approved') >= 5)::int
@@ -348,7 +360,7 @@ begin
                             where s.business_id = q.business_id and s.status = 'active'), 0) >= 0.8)::int
                + (exists (select 1 from public.staff_members st where st.business_id = q.business_id and st.status = 'active'
                           and st.publicly_bookable and st.photo_media_id is not null))::int as items
-          from qs_biz q),
+          from private.qs_biz q),
   resp as (select q.business_id,
                   (select (percentile_cont(0.5) within group (order by extract(epoch from (a.created_at - r.created_at)) / 60))::numeric
                    from public.booking_events r join public.booking_events a on a.booking_id = r.booking_id and a.event = 'accepted'
@@ -357,7 +369,7 @@ begin
                                         and rp.created_at <= v.published_at + interval '7 days'))::int)
                    from public.reviews v where v.business_id = q.business_id and v.status = 'published'
                      and v.published_at > now() - interval '90 days') as reply_rate
-           from qs_biz q)
+           from private.qs_biz q)
   select q.business_id, q.root_id, q.cluster_id, q.published_at,
          (coalesce(c_prior * p.m + ov.sw_r, c_prior * p.m)) / (c_prior + coalesce(ov.sw, 0)) as bayes_overall,
          dim.bayes as bayes_dims,
@@ -367,15 +379,15 @@ begin
          rel.cancel_rate, rel.expire_rate, rel.overturn_rate,
          comp.items as completeness_items,
          resp.accept_min, resp.reply_rate
-  from qs_biz q join prior p on p.business_id = q.business_id
+  from private.qs_biz q join prior p on p.business_id = q.business_id
   left join ov on ov.business_id = q.business_id left join rec on rec.business_id = q.business_id
   left join dim on dim.business_id = q.business_id join volp on volp.business_id = q.business_id
   join rel on rel.business_id = q.business_id join comp on comp.business_id = q.business_id
   join resp on resp.business_id = q.business_id;
 
   -- 4–9. components (0..1) and the weighted score (weights sum to 100)
-  if to_regclass('pg_temp.qs_out') is not null then drop table pg_temp.qs_out; end if;
-  create temp table qs_out on commit drop as
+  truncate private.qs_out;
+  insert into private.qs_out
   select x.*, round((
       (v_w ->> 'rating')::numeric * c_rating + (v_w ->> 'volume')::numeric * c_volume + (v_w ->> 'recent')::numeric * c_recent
     + (v_w ->> 'reliability')::numeric * c_reliability + (v_w ->> 'completeness')::numeric * c_completeness
@@ -390,7 +402,7 @@ begin
            s.completeness_items / 6.0 as c_completeness,
            (coalesce(greatest(0, least(1, 1 - (s.accept_min - 60) / (24 * 60 - 60))), 0.5) + coalesce(s.reply_rate, 0.5)) / 2 as c_responsiveness,
            case when s.bayes_dims is null then s.bayes_overall else ov_share * s.bayes_overall + dim_share * s.bayes_dims end as bayes_blended
-    from qs s) x;
+    from private.qs s) x;
 
   insert into public.business_quality_scores as t (business_id, config_version, score, bayes_rating, components, computed_at)
   select business_id, v_ver, score, round(bayes_blended, 3),
@@ -404,10 +416,10 @@ begin
                                         'no_show_overturn_rate', round(overturn_rate, 3), 'completeness_items', completeness_items,
                                         'median_accept_minutes', round(accept_min::numeric, 1), 'reply_rate', round(reply_rate, 3))),
          now()
-  from qs_out
+  from private.qs_out
   on conflict (business_id) do update set config_version = excluded.config_version, score = excluded.score,
     bayes_rating = excluded.bayes_rating, components = excluded.components, computed_at = excluded.computed_at;
-  delete from public.business_quality_scores where business_id not in (select business_id from qs_biz);
+  delete from public.business_quality_scores where business_id not in (select business_id from private.qs_biz);
   insert into public.business_quality_score_history (business_id, day, config_version, score, components)
   select business_id, current_date, v_ver, score, components from public.business_quality_scores where config_version = v_ver
   on conflict (business_id, day, config_version) do update set score = excluded.score, components = excluded.components;
@@ -418,9 +430,9 @@ begin
   select business_id, case when r < 0.8 then 1 when r < 1.1 then 2 when r < 1.4 then 3 else 4 end, round(r, 3)
   from (
     select s.business_id, avg(s.price_min / nullif(m.med, 0)) as r
-    from public.services s join qs_biz q on q.business_id = s.business_id
+    from public.services s join private.qs_biz q on q.business_id = s.business_id
     join (select s2.canonical_service_id, q2.cluster_id, (percentile_cont(0.5) within group (order by s2.price_min))::numeric as med
-          from public.services s2 join qs_biz q2 on q2.business_id = s2.business_id
+          from public.services s2 join private.qs_biz q2 on q2.business_id = s2.business_id
           where s2.status = 'active' and s2.price_type in ('fixed', 'from') and s2.price_min > 0
           group by s2.canonical_service_id, q2.cluster_id) m
       on m.canonical_service_id = s.canonical_service_id and m.cluster_id is not distinct from q.cluster_id
@@ -431,18 +443,18 @@ begin
   -- labels (display rules; available_today is computed at query time)
   delete from public.business_labels where true;
   insert into public.business_labels (business_id, label, config_version)
-  select o.business_id, 'top_rated'::public.discovery_label, v_ver from qs_out o
+  select o.business_id, 'top_rated'::public.discovery_label, v_ver from private.qs_out o
   join public.business_rating_summary s on s.business_id = o.business_id
   where s.display_rating >= (v_lb #>> '{top_rated,min_display_rating}')::numeric
     and s.review_count >= (v_lb #>> '{top_rated,min_reviews}')::int
     and o.business_id in (select business_id from (select business_id,
-                            percent_rank() over (partition by root_id, cluster_id order by score) as pr from qs_out) z
+                            percent_rank() over (partition by root_id, cluster_id order by score) as pr from private.qs_out) z
                           where pr >= 1 - (v_lb #>> '{top_rated,top_quality_pct}')::numeric / 100)
   union all
   select v.business_id, l.label::public.discovery_label, v_ver
   from (values ('top_cleanliness'), ('great_punctuality'), ('best_value')) l(label)
   cross join lateral (
-    select v.business_id from qs_rev v join public.review_ratings rr on rr.review_id = v.id
+    select v.business_id from private.qs_rev v join public.review_ratings rr on rr.review_id = v.id
     join public.rating_dimensions d on d.id = rr.dimension_id and d.key = v_lb #>> array[l.label, 'dimension']
     group by v.business_id
     having avg(rr.score) >= (v_lb #>> array[l.label, 'min_avg'])::numeric
@@ -453,17 +465,17 @@ begin
     select q.business_id, n, percent_rank() over (partition by q.cluster_id order by n) as pr from (
       select q.business_id, q.cluster_id, (select count(*) from public.bookings k where k.business_id = q.business_id and k.status = 'completed'
                     and k.starts_at > now() - make_interval(days => (v_lb #>> '{popular_near_you,window_days}')::int)) as n
-      from qs_biz q) q) z
+      from private.qs_biz q) q) z
   where n > 0 and pr >= 1 - (v_lb #>> '{popular_near_you,top_bookings_pct}')::numeric / 100
   union all
-  select business_id, 'new'::public.discovery_label, v_ver from qs_biz
+  select business_id, 'new'::public.discovery_label, v_ver from private.qs_biz
   where published_at > now() - make_interval(days => (v_lb #>> '{new,max_days_live}')::int);
 
   -- every document picks up the new score, price level and labels
   insert into private.search_refresh_queue (location_id)
-  select l.id from public.business_locations l join qs_biz q on q.business_id = l.business_id
+  select l.id from public.business_locations l join private.qs_biz q on q.business_id = l.business_id
   on conflict (location_id) do update set requested_at = excluded.requested_at;
-  select count(*) into v_n from qs_out;
+  select count(*) into v_n from private.qs_out;
   return v_n;
 end $$;
 
@@ -558,87 +570,88 @@ begin
                   then extensions.st_setsrid(extensions.st_makepoint(p_lng, p_lat), 4326)::extensions.geography
                   when v_area is not null then (select centroid from public.areas where id = v_area) end;
 
-  if to_regclass('pg_temp.sc') is not null then drop table pg_temp.sc; end if;
-  create temp table sc on commit drop as
-  select d.*,
-         case when v_point is not null then extensions.st_distance(d.geo, v_point) / 1000.0 end as km,
-         case when cardinality(v_services) > 0 then
-           (select v from jsonb_each(d.service_prices) e(k, v) where k::uuid = any (v_services)
-            order by (v ->> 'next') is null, (v ->> 'min')::numeric nulls last limit 1) end as svc
-  from public.search_documents d
-  where (p_cluster_id is null or v_area is not null or d.cluster_id = p_cluster_id)
-    and (v_area is null or d.area_id = v_area)
-    -- text gate: matched service or category, or the business name
-    and (coalesce(it ->> 'key', '') = '' and cardinality(v_services) = 0 and cardinality(v_cats) = 0
-         or (cardinality(v_services) > 0 and d.canonical_service_ids && v_services)
-         or (cardinality(v_cats) > 0 and d.category_ids && v_cats)
-         or (v_rest is not null and cardinality(v_services) = 0 and cardinality(v_cats) = 0
-             and (d.name_key like '%' || v_rest || '%' or (length(v_rest) >= 3 and d.name_key operator(extensions.%) v_rest)
-                  or d.tsv @@ plainto_tsquery('simple', v_rest))))
-    and (f ->> 'audience' is null or d.audience::text in (f ->> 'audience', 'everyone'))
-    and (f -> 'price_levels' is null or d.price_level = any (array(select jsonb_array_elements_text(f -> 'price_levels'))::smallint[]))
-    and (f ->> 'min_rating' is null or d.display_rating >= (f ->> 'min_rating')::numeric)
-    and (f ->> 'max_km' is null or v_point is null or extensions.st_dwithin(d.geo, v_point, (f ->> 'max_km')::numeric * 1000))
-    and (coalesce((f ->> 'available_today')::boolean, false) = false or d.next_available_at < v_end_today)
-    and (coalesce((f ->> 'new_only')::boolean, false) = false or 'new' = any (d.labels));
-  -- a service-specific query shows that service's next slot; "available today" then means that service
-  if cardinality(v_services) > 0 and coalesce((f ->> 'available_today')::boolean, false) then
-    delete from sc where (svc ->> 'next') is null or (svc ->> 'next')::timestamptz >= v_end_today;
-  end if;
-
-  alter table sc add column avail numeric, add column personal numeric, add column rank_score numeric;
-  update sc set avail = case
-      when coalesce((svc ->> 'next')::timestamptz, next_available_at) < v_end_today then 1
-      when coalesce((svc ->> 'next')::timestamptz, next_available_at) < v_end_today + interval '2 days' then 0.5 else 0 end,
-    personal = case when v_uid is not null and exists (select 1 from public.bookings k where k.customer_user_id = v_uid
-                      and k.business_id = sc.business_id and k.status = 'completed') then 0.7 else 0 end
-  where true;   -- API requests run with safeupdate: every UPDATE/DELETE needs a WHERE
-
-  -- date / time window: the availability engine runs for at most the top 40 candidates (bounded cost)
-  if v_date is not null then
-    delete from sc where location_id not in (
-      select location_id from sc order by quality_score desc, location_id limit 40);
-    delete from sc where not exists (
-      select 1 from public.get_available_slots(sc.location_id,
-               coalesce((svc ->> 'service_id')::uuid, (select (v ->> 'service_id')::uuid from jsonb_each(sc.service_prices) e(k, v)
-                                                       where (v ->> 'next') is not null limit 1)),
-               null, v_date, v_date) s
-      where (s.slot_start at time zone 'Asia/Beirut')::time between v_from and v_to);
-    update sc set avail = 1 where true;
-  end if;
-
-  update sc set rank_score =
-      (cfg #>> '{query,quality}')::numeric * quality_score / 100
-    + (cfg #>> '{query,proximity}')::numeric * case when km is null then 0 else exp(-km / (cfg #>> '{query,proximity_scale_km}')::numeric) end
-    + (cfg #>> '{query,availability}')::numeric * avail
-    + (cfg #>> '{query,personal}')::numeric * personal
-    + (cfg #>> '{query,new_boost}')::numeric
-      * greatest(0, 1 - extract(epoch from (now() - coalesce(published_at, now() - interval '10 years'))) / 86400.0
-                        / (cfg #>> '{query,new_boost_days}')::numeric)
-  where true;
-
-  select count(*) into v_total from sc;
-  select coalesce(jsonb_agg(card order by ord), '[]') into v_rows from (
-    select row_number() over (order by
-             case p_sort when 'nearest' then coalesce(km, 1e9) when 'price' then coalesce((svc ->> 'min')::numeric, price_level * 1000, 1e9)
-                         when 'soonest' then extract(epoch from coalesce((svc ->> 'next')::timestamptz, next_available_at, now() + interval '10 years'))
+  -- one statement (no temp tables): candidates → service-specific availability → bounded date/time check
+  -- → score → order; cards are built only for the requested page
+  with base as (
+    select d.*,
+           case when v_point is not null then extensions.st_distance(d.geo, v_point) / 1000.0 end as km,
+           case when cardinality(v_services) > 0 then
+             (select v from jsonb_each(d.service_prices) e(k, v) where k::uuid = any (v_services)
+              order by (v ->> 'next') is null, (v ->> 'min')::numeric nulls last limit 1) end as svc
+    from public.search_documents d
+    where (p_cluster_id is null or v_area is not null or d.cluster_id = p_cluster_id)
+      and (v_area is null or d.area_id = v_area)
+      -- text gate: matched service or category, or the business name
+      and (coalesce(it ->> 'key', '') = '' and cardinality(v_services) = 0 and cardinality(v_cats) = 0
+           or (cardinality(v_services) > 0 and d.canonical_service_ids && v_services)
+           or (cardinality(v_cats) > 0 and d.category_ids && v_cats)
+           or (v_rest is not null and cardinality(v_services) = 0 and cardinality(v_cats) = 0
+               and (d.name_key like '%' || v_rest || '%' or (length(v_rest) >= 3 and d.name_key operator(extensions.%) v_rest)
+                    or d.tsv @@ plainto_tsquery('simple', v_rest))))
+      and (f ->> 'audience' is null or d.audience::text in (f ->> 'audience', 'everyone'))
+      and (f -> 'price_levels' is null or d.price_level = any (array(select jsonb_array_elements_text(f -> 'price_levels'))::smallint[]))
+      and (f ->> 'min_rating' is null or d.display_rating >= (f ->> 'min_rating')::numeric)
+      and (f ->> 'max_km' is null or v_point is null or extensions.st_dwithin(d.geo, v_point, (f ->> 'max_km')::numeric * 1000))
+      and (coalesce((f ->> 'available_today')::boolean, false) = false or d.next_available_at < v_end_today)
+      and (coalesce((f ->> 'new_only')::boolean, false) = false or 'new' = any (d.labels))
+  ), avail as (
+    select b.*,
+           case when coalesce((b.svc ->> 'next')::timestamptz, b.next_available_at) < v_end_today then 1
+                when coalesce((b.svc ->> 'next')::timestamptz, b.next_available_at) < v_end_today + interval '2 days' then 0.5
+                else 0 end::numeric as avail0,
+           case when v_uid is not null and exists (select 1 from public.bookings k where k.customer_user_id = v_uid
+                  and k.business_id = b.business_id and k.status = 'completed') then 0.7 else 0 end::numeric as personal
+    from base b
+    -- a service-specific query shows that service's next slot; "available today" then means that service
+    where not (cardinality(v_services) > 0 and coalesce((f ->> 'available_today')::boolean, false)
+               and ((b.svc ->> 'next') is null or (b.svc ->> 'next')::timestamptz >= v_end_today))
+  ), dated as (
+    -- date / time window: the availability engine runs for at most the top 40 candidates (bounded cost)
+    select a.* from avail a
+    where v_date is null
+       or (a.location_id in (select location_id from avail order by quality_score desc, location_id limit 40)
+           and exists (select 1 from public.get_available_slots(a.location_id,
+                         coalesce((a.svc ->> 'service_id')::uuid, (select (v ->> 'service_id')::uuid from jsonb_each(a.service_prices) e(k, v)
+                                                                   where (v ->> 'next') is not null limit 1)),
+                         null, v_date, v_date) s
+                       where (s.slot_start at time zone 'Asia/Beirut')::time between v_from and v_to))
+  ), scored as (
+    select x.*,
+           (cfg #>> '{query,quality}')::numeric * x.quality_score / 100
+         + (cfg #>> '{query,proximity}')::numeric * case when x.km is null then 0 else exp(-x.km / (cfg #>> '{query,proximity_scale_km}')::numeric) end
+         + (cfg #>> '{query,availability}')::numeric * x.avail
+         + (cfg #>> '{query,personal}')::numeric * x.personal
+         + (cfg #>> '{query,new_boost}')::numeric
+           * greatest(0, 1 - extract(epoch from (now() - coalesce(x.published_at, now() - interval '10 years'))) / 86400.0
+                             / (cfg #>> '{query,new_boost_days}')::numeric) as rank_score
+    from (select d.*, case when v_date is not null then 1::numeric else d.avail0 end as avail from dated d) x
+  ), ordered as (
+    select s.*, row_number() over (order by
+             case p_sort when 'nearest' then coalesce(s.km, 1e9) when 'price' then coalesce((s.svc ->> 'min')::numeric, s.price_level * 1000, 1e9)
+                         when 'soonest' then extract(epoch from coalesce((s.svc ->> 'next')::timestamptz, s.next_available_at, now() + interval '10 years'))
                          else 0 end,
-             case when p_sort = 'rating' then -coalesce(display_rating, 0) else 0 end,
-             case when p_sort = 'rating' then -review_count else 0 end,
-             rank_score desc, quality_score desc, name, location_id) as ord,
-           jsonb_build_object(
-             'location_id', location_id, 'business_id', business_id, 'slug', business_slug, 'name', name,
-             'area', (select a.name_en from public.areas a where a.id = sc.area_id),
-             'cluster_id', cluster_id, 'km', round(km::numeric, 1), 'display_rating', display_rating, 'review_count', review_count,
-             'price_level', price_level, 'cover_path', cover_path, 'next_available_at', next_available_at,
-             'labels', to_jsonb(array(select l from unnest(v_prio) with ordinality p(l, o)
-                                      where l = any (sc.labels::text[]) or (l = 'available_today' and sc.avail = 1)
-                                      order by o limit coalesce((cfg #>> '{labels,max_per_card}')::int, 2))),
-             'service', svc)
-           || case when p_debug then jsonb_build_object('debug', jsonb_build_object(
-                'rank_score', round(rank_score, 4), 'quality_score', quality_score, 'km', round(km::numeric, 2),
-                'availability_fit', avail, 'personal', personal, 'published_at', published_at)) else '{}' end as card
-    from sc order by ord offset greatest(coalesce(p_offset, 0), 0) limit v_limit) z;
+             case when p_sort = 'rating' then -coalesce(s.display_rating, 0) else 0 end,
+             case when p_sort = 'rating' then -s.review_count else 0 end,
+             s.rank_score desc, s.quality_score desc, s.name, s.location_id) as ord
+    from scored s
+  )
+  select (select count(*)::int from ordered),
+         coalesce((select jsonb_agg(
+             jsonb_build_object(
+               'location_id', o.location_id, 'business_id', o.business_id, 'slug', o.business_slug, 'name', o.name,
+               'area', (select a.name_en from public.areas a where a.id = o.area_id),
+               'cluster_id', o.cluster_id, 'km', round(o.km::numeric, 1), 'display_rating', o.display_rating, 'review_count', o.review_count,
+               'price_level', o.price_level, 'cover_path', o.cover_path, 'next_available_at', o.next_available_at,
+               'labels', to_jsonb(array(select l from unnest(v_prio) with ordinality p(l, n)
+                                        where l = any (o.labels::text[]) or (l = 'available_today' and o.avail = 1)
+                                        order by n limit coalesce((cfg #>> '{labels,max_per_card}')::int, 2))),
+               'service', o.svc)
+             || case when p_debug then jsonb_build_object('debug', jsonb_build_object(
+                  'rank_score', round(o.rank_score::numeric, 4), 'quality_score', o.quality_score, 'km', round(o.km::numeric, 2),
+                  'availability_fit', o.avail, 'personal', o.personal, 'published_at', o.published_at)) else '{}' end
+             order by o.ord)
+           from ordered o where o.ord > greatest(coalesce(p_offset, 0), 0) and o.ord <= greatest(coalesce(p_offset, 0), 0) + v_limit), '[]')
+    into v_total, v_rows;
 
   return jsonb_build_object(
     'total', v_total, 'results', v_rows,
