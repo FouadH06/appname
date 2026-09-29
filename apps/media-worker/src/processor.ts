@@ -41,21 +41,29 @@ export type HeifDecoder = (heic: Buffer) => Promise<Buffer>;
  * binary isn't installed — HEIC is then rejected as UNSUPPORTED_FORMAT and the client converts it.
  */
 export async function heifDecoderFromEnv(
-  bin = process.env.HEIF_DEC ?? 'heif-dec',
+  candidates = process.env.HEIF_DEC ? [process.env.HEIF_DEC] : ['heif-dec', 'heif-convert'],
 ): Promise<HeifDecoder | null> {
   const run = promisify(execFile);
-  try {
-    await run(bin, ['--version'], { timeout: 5000 });
-  } catch {
-    return null;
+  let bin: string | null = null;
+  for (const c of candidates) {
+    try {
+      await run(c, ['--version'], { timeout: 5000 });
+      bin = c;
+    } catch (e) {
+      // only a missing binary counts as "no decoder" (some libheif tools exit non-zero on --version)
+      if ((e as NodeJS.ErrnoException).code !== 'ENOENT') bin = c;
+    }
+    if (bin) break;
   }
+  if (!bin) return null;
+  const decoder = bin;
   return async (heic) => {
     const id = randomUUID();
     const src = join(tmpdir(), `${id}.heic`);
     const dst = join(tmpdir(), `${id}.png`);
     try {
       await writeFile(src, heic);
-      await run(bin, [src, dst], { timeout: 60_000 });
+      await run(decoder, [src, dst], { timeout: 60_000 });
       return await readFile(dst);
     } finally {
       await Promise.all([rm(src, { force: true }), rm(dst, { force: true })]);

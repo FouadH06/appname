@@ -30,8 +30,12 @@ jobs:
       - name: libheif (HEVC encode + decode) and exiftool
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq libheif-examples libheif-plugin-libde265 libheif-plugin-x265 libimage-exiftool-perl
-          heif-dec --version; heif-enc --version | head -1; exiftool -ver
+          bash scripts/ci-annotate.sh "libheif install" sudo apt-get install -y -qq libheif-examples libimage-exiftool-perl
+          # HEVC plugins are separate packages on newer Ubuntu (libheif >= 1.17); older ones bundle them
+          sudo apt-get install -y -qq libheif-plugin-libde265 libheif-plugin-x265 || true
+          dec=$(command -v heif-dec || command -v heif-convert || true)
+          echo "::notice title=libheif tools::decoder=${dec:-none} encoder=$(command -v heif-enc || echo none) exiftool=$(exiftool -ver) libheif=$(dpkg -s libheif1 2>/dev/null | sed -n 's/^Version: //p')"
+          [ -n "$dec" ] && command -v heif-enc
       - name: Corpus (200 JPEG/PNG/WebP) + 40 HEIC from upright JPEGs
         working-directory: apps/media-worker
         run: |
