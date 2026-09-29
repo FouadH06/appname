@@ -47,3 +47,7 @@ Thumbs.db
 
 # Python bytecode (scripts/)
 __pycache__/
+
+# M10 image benchmark: generated corpus and dumped outputs (regenerate with bench/corpus.ts)
+apps/media-worker/bench/corpus/
+apps/media-worker/bench/out/

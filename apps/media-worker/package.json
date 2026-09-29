@@ -1,0 +1,25 @@
+{
+  "name": "@app/media-worker",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "ExternalImageProcessor (M10): transform-only worker — decode, strip metadata, WebP derivatives, sha256, pHash, blurhash",
+  "scripts": {
+    "start": "node --experimental-strip-types src/main.ts",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "bench:corpus": "node --experimental-strip-types bench/corpus.ts",
+    "bench": "node --experimental-strip-types bench/run.ts"
+  },
+  "dependencies": {
+    "blurhash": "^2.0.5",
+    "sharp": "0.35.5"
+  },
+  "devDependencies": {
+    "@app/eslint-config": "workspace:*",
+    "@app/tsconfig": "workspace:*",
+    "@types/node": "^24.19.0",
+    "vitest": "^5.0.2"
+  }
+}

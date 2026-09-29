@@ -1,0 +1,2428 @@
+{
+  "summary": {
+    "candidate": "external (Node + sharp/libvips)",
+    "label": "windows-dev",
+    "env": {
+      "platform": "win32",
+      "arch": "x64",
+      "cpus": 12,
+      "cpu": "Intel(R) Core(TM) i7-8700 CPU @ 3.20GHz",
+      "memGB": 16,
+      "node": "v25.2.1",
+      "vips": "8.18.7",
+      "heifInput": [".avif"]
+    },
+    "corpus": {
+      "files": 200,
+      "eligible": 195,
+      "decodeOk": 195,
+      "decodeRate": 1,
+      "tooLargeRejected": 5,
+      "byFormat": {
+        "jpg": 120,
+        "png": 35,
+        "webp": 40
+      }
+    },
+    "metadataLeaks": 0,
+    "orientationOrBoundsErrors": 0,
+    "latencyMs": {
+      "corpus": {
+        "p50": 478,
+        "p95": 1298,
+        "max": 2049
+      },
+      "sequential500": {
+        "p50": 471,
+        "p95": 1279,
+        "max": 2054,
+        "failures": 0
+      },
+      "concurrent20x5": {
+        "p50": 2355,
+        "p95": 2801,
+        "max": 3148,
+        "failures": 0
+      }
+    },
+    "peakRssMB": 496,
+    "pass": {
+      "decode100": true,
+      "zeroLeaks": true,
+      "p95Under8s": true,
+      "noFailures": true
+    }
+  },
+  "perFile": [
+    {
+      "f": "000-640x480-o1.jpg",
+      "bytes": 82438,
+      "ms": 113,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 320x240 7KB", "card 640x480 33KB", "full 640x480 33KB"],
+      "leaks": []
+    },
+    {
+      "f": "001-1080x1350-o1.jpg",
+      "bytes": 361773,
+      "ms": 265,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 256x320 9KB", "card 640x800 31KB", "full 1080x1350 126KB"],
+      "leaks": []
+    },
+    {
+      "f": "002-1200x1600-o6.jpg",
+      "bytes": 465459,
+      "ms": 317,
+      "input": {
+        "exif": true,
+        "orientation": 6,
+        "gps": true
+      },
+      "out": ["thumb 320x240 9KB", "card 800x600 28KB", "full 1600x1200 149KB"],
+      "leaks": []
+    },
+    {
+      "f": "003-1536x2048-o3.png",
+      "bytes": 8759533,
+      "ms": 950,
+      "input": {
+        "exif": true,
+        "orientation": 3,
+        "gps": true
+      },
+      "out": ["thumb 240x320 9KB", "card 600x800 27KB", "full 1536x2048 240KB"],
+      "leaks": []
+    },
+    {
+      "f": "004-2048x1536-o8.webp",
+      "bytes": 879326,
+      "ms": 763,
+      "input": {
+        "exif": true,
+        "orientation": 8,
+        "gps": true
+      },
+      "out": ["thumb 240x320 7KB", "card 600x800 22KB", "full 1536x2048 171KB"],
+      "leaks": []
+    },
+    {
+      "f": "005-3024x4032-o1.jpg",
+      "bytes": 2681860,
+      "ms": 629,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 240x320 9KB", "card 600x800 26KB", "full 1536x2048 85KB"],
+      "leaks": []
+    },
+    {
+      "f": "006-4032x3024-o1.jpg",
+      "bytes": 2620530,
+      "ms": 632,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 320x240 7KB", "card 800x600 21KB", "full 2048x1536 68KB"],
+      "leaks": []
+    },
+    {
+      "f": "007-3000x4000-o6.jpg",
+      "bytes": 2644411,
+      "ms": 638,
+      "input": {
+        "exif": true,
+        "orientation": 6,
+        "gps": true
+      },
+      "out": ["thumb 320x240 9KB", "card 800x600 27KB", "full 2048x1536 89KB"],
+      "leaks": []
+    },
+    {
+      "f": "008-4000x3000-o3.png",
+      "bytes": 8213900,
+      "ms": 517,
+      "input": {
+        "exif": false,
+        "orientation": 1,
+        "gps": false
+      },
+      "out": ["thumb 320x240 7KB", "card 800x600 21KB", "full 2000x1500 64KB"],
+      "leaks": []
+    },
+    {
+      "f": "009-4624x3472-o8.webp",
+      "bytes": 4252368,
+      "ms": 1518,
+      "input": {
+        "exif": true,
+        "orientation": 8,
+        "gps": true
+      },
+      "out": ["thumb 240x320 7KB", "card 601x800 21KB", "full 1538x2048 62KB"],
+      "leaks": []
+    },
+    {
+      "f": "010-6000x4000-o1.jpg",
+      "bytes": 5027869,
+      "ms": 906,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 320x213 6KB", "card 800x533 19KB", "full 2048x1365 53KB"],
+      "leaks": []
+    },
+    {
+      "f": "011-8000x1500-o1.jpg",
+      "bytes": 2475556,
+      "ms": 290,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 320x60 2KB", "card 800x150 6KB", "full 2048x384 15KB"],
+      "leaks": []
+    },
+    {
+      "f": "012-12000x2000-o6.jpg",
+      "bytes": 4863515,
+      "ms": 411,
+      "input": {
+        "exif": true,
+        "orientation": 6,
+        "gps": true
+      },
+      "out": ["thumb 53x320 2KB", "card 133x800 5KB", "full 341x2048 13KB"],
+      "leaks": []
+    },
+    {
+      "f": "013-720x1280-o3.png",
+      "bytes": 2569618,
+      "ms": 275,
+      "input": {
+        "exif": true,
+        "orientation": 3,
+        "gps": true
+      },
+      "out": ["thumb 180x320 9KB", "card 450x800 28KB", "full 720x1280 91KB"],
+      "leaks": []
+    },
+    {
+      "f": "014-640x480-o8.webp",
+      "bytes": 85254,
+      "ms": 126,
+      "input": {
+        "exif": true,
+        "orientation": 8,
+        "gps": true
+      },
+      "out": ["thumb 240x320 7KB", "card 480x640 31KB", "full 480x640 31KB"],
+      "leaks": []
+    },
+    {
+      "f": "015-1080x1350-o1.jpg",
+      "bytes": 360883,
+      "ms": 264,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 256x320 9KB", "card 640x800 30KB", "full 1080x1350 126KB"],
+      "leaks": []
+    },
+    {
+      "f": "016-1200x1600-o1.jpg",
+      "bytes": 467209,
+      "ms": 315,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 240x320 9KB", "card 600x800 28KB", "full 1200x1600 162KB"],
+      "leaks": []
+    },
+    {
+      "f": "017-1536x2048-o6.jpg",
+      "bytes": 742609,
+      "ms": 449,
+      "input": {
+        "exif": true,
+        "orientation": 6,
+        "gps": true
+      },
+      "out": ["thumb 320x240 9KB", "card 800x600 27KB", "full 2048x1536 247KB"],
+      "leaks": []
+    },
+    {
+      "f": "018-2048x1536-o3.png",
+      "bytes": 8752628,
+      "ms": 659,
+      "input": {
+        "exif": true,
+        "orientation": 3,
+        "gps": true
+      },
+      "out": ["thumb 320x240 7KB", "card 800x600 23KB", "full 2048x1536 196KB"],
+      "leaks": []
+    },
+    {
+      "f": "019-3024x4032-o8.webp",
+      "bytes": 3295272,
+      "ms": 1239,
+      "input": {
+        "exif": true,
+        "orientation": 8,
+        "gps": true
+      },
+      "out": ["thumb 320x240 9KB", "card 800x600 27KB", "full 2048x1536 83KB"],
+      "leaks": []
+    },
+    {
+      "f": "020-4032x3024-o1.jpg",
+      "bytes": 2618458,
+      "ms": 610,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 320x240 7KB", "card 800x600 21KB", "full 2048x1536 67KB"],
+      "leaks": []
+    },
+    {
+      "f": "021-3000x4000-o1.jpg",
+      "bytes": 2642949,
+      "ms": 620,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 240x320 9KB", "card 600x800 26KB", "full 1536x2048 82KB"],
+      "leaks": []
+    },
+    {
+      "f": "022-4000x3000-o6.jpg",
+      "bytes": 2594430,
+      "ms": 625,
+      "input": {
+        "exif": true,
+        "orientation": 6,
+        "gps": true
+      },
+      "out": ["thumb 240x320 7KB", "card 600x800 21KB", "full 1536x2048 69KB"],
+      "leaks": []
+    },
+    {
+      "f": "023-4624x3472-o3.png",
+      "bytes": 11005830,
+      "ms": 560,
+      "input": {
+        "exif": false,
+        "orientation": 1,
+        "gps": false
+      },
+      "out": ["thumb 320x240 7KB", "card 800x601 21KB", "full 2048x1538 61KB"],
+      "leaks": []
+    },
+    {
+      "f": "024-6000x4000-o8.webp",
+      "bytes": 5255526,
+      "ms": 1754,
+      "input": {
+        "exif": true,
+        "orientation": 8,
+        "gps": true
+      },
+      "out": ["thumb 213x320 6KB", "card 533x800 19KB", "full 1365x2048 56KB"],
+      "leaks": []
+    },
+    {
+      "f": "025-8000x1500-o1.jpg",
+      "bytes": 2479917,
+      "ms": 287,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 320x60 2KB", "card 800x150 6KB", "full 2048x384 15KB"],
+      "leaks": []
+    },
+    {
+      "f": "026-12000x2000-o1.jpg",
+      "bytes": 4864335,
+      "ms": 396,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 320x53 2KB", "card 800x133 5KB", "full 2048x341 13KB"],
+      "leaks": []
+    },
+    {
+      "f": "027-720x1280-o6.jpg",
+      "bytes": 241092,
+      "ms": 184,
+      "input": {
+        "exif": true,
+        "orientation": 6,
+        "gps": true
+      },
+      "out": ["thumb 320x180 9KB", "card 800x450 28KB", "full 1280x720 90KB"],
+      "leaks": []
+    },
+    {
+      "f": "028-640x480-o3.png",
+      "bytes": 857628,
+      "ms": 126,
+      "input": {
+        "exif": true,
+        "orientation": 3,
+        "gps": true
+      },
+      "out": ["thumb 320x240 7KB", "card 640x480 32KB", "full 640x480 32KB"],
+      "leaks": []
+    },
+    {
+      "f": "029-1080x1350-o8.webp",
+      "bytes": 381368,
+      "ms": 351,
+      "input": {
+        "exif": true,
+        "orientation": 8,
+        "gps": true
+      },
+      "out": ["thumb 320x256 9KB", "card 800x640 30KB", "full 1350x1080 118KB"],
+      "leaks": []
+    },
+    {
+      "f": "030-1200x1600-o1.jpg",
+      "bytes": 468071,
+      "ms": 307,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 240x320 9KB", "card 600x800 28KB", "full 1200x1600 162KB"],
+      "leaks": []
+    },
+    {
+      "f": "031-1536x2048-o1.jpg",
+      "bytes": 743071,
+      "ms": 431,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 240x320 9KB", "card 600x800 28KB", "full 1536x2048 232KB"],
+      "leaks": []
+    },
+    {
+      "f": "032-2048x1536-o6.jpg",
+      "bytes": 718651,
+      "ms": 433,
+      "input": {
+        "exif": true,
+        "orientation": 6,
+        "gps": true
+      },
+      "out": ["thumb 240x320 7KB", "card 600x800 22KB", "full 1536x2048 207KB"],
+      "leaks": []
+    },
+    {
+      "f": "033-3024x4032-o3.png",
+      "bytes": 8404460,
+      "ms": 492,
+      "input": {
+        "exif": false,
+        "orientation": 1,
+        "gps": false
+      },
+      "out": ["thumb 240x320 9KB", "card 600x800 26KB", "full 1512x2016 79KB"],
+      "leaks": []
+    },
+    {
+      "f": "034-4032x3024-o8.webp",
+      "bytes": 3222920,
+      "ms": 1211,
+      "input": {
+        "exif": true,
+        "orientation": 8,
+        "gps": true
+      },
+      "out": ["thumb 240x320 7KB", "card 600x800 21KB", "full 1536x2048 68KB"],
+      "leaks": []
+    },
+    {
+      "f": "035-3000x4000-o1.jpg",
+      "bytes": 2644113,
+      "ms": 611,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 240x320 9KB", "card 600x800 26KB", "full 1536x2048 83KB"],
+      "leaks": []
+    },
+    {
+      "f": "036-4000x3000-o1.jpg",
+      "bytes": 2579928,
+      "ms": 606,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 320x240 7KB", "card 800x600 21KB", "full 2048x1536 66KB"],
+      "leaks": []
+    },
+    {
+      "f": "037-4624x3472-o6.jpg",
+      "bytes": 3418363,
+      "ms": 726,
+      "input": {
+        "exif": true,
+        "orientation": 6,
+        "gps": true
+      },
+      "out": ["thumb 240x320 7KB", "card 601x800 21KB", "full 1538x2048 65KB"],
+      "leaks": []
+    },
+    {
+      "f": "038-6000x4000-o3.png",
+      "bytes": 16512529,
+      "expected": "TOO_LARGE",
+      "got": "TOO_LARGE"
+    },
+    {
+      "f": "039-8000x1500-o8.webp",
+      "bytes": 3177352,
+      "ms": 977,
+      "input": {
+        "exif": true,
+        "orientation": 8,
+        "gps": true
+      },
+      "out": ["thumb 60x320 2KB", "card 150x800 6KB", "full 384x2048 16KB"],
+      "leaks": []
+    },
+    {
+      "f": "040-12000x2000-o1.jpg",
+      "bytes": 4866285,
+      "ms": 400,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 320x53 2KB", "card 800x133 5KB", "full 2048x341 13KB"],
+      "leaks": []
+    },
+    {
+      "f": "041-720x1280-o1.jpg",
+      "bytes": 241445,
+      "ms": 179,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 180x320 9KB", "card 450x800 28KB", "full 720x1280 92KB"],
+      "leaks": []
+    },
+    {
+      "f": "042-640x480-o6.jpg",
+      "bytes": 82456,
+      "ms": 102,
+      "input": {
+        "exif": true,
+        "orientation": 6,
+        "gps": true
+      },
+      "out": ["thumb 240x320 7KB", "card 480x640 34KB", "full 480x640 34KB"],
+      "leaks": []
+    },
+    {
+      "f": "043-1080x1350-o3.png",
+      "bytes": 4055764,
+      "ms": 368,
+      "input": {
+        "exif": true,
+        "orientation": 3,
+        "gps": true
+      },
+      "out": ["thumb 256x320 9KB", "card 640x800 30KB", "full 1080x1350 119KB"],
+      "leaks": []
+    },
+    {
+      "f": "044-1200x1600-o8.webp",
+      "bytes": 508734,
+      "ms": 412,
+      "input": {
+        "exif": true,
+        "orientation": 8,
+        "gps": true
+      },
+      "out": ["thumb 320x240 9KB", "card 800x600 28KB", "full 1600x1200 144KB"],
+      "leaks": []
+    },
+    {
+      "f": "045-1536x2048-o1.jpg",
+      "bytes": 740820,
+      "ms": 438,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 240x320 9KB", "card 600x800 27KB", "full 1536x2048 220KB"],
+      "leaks": []
+    },
+    {
+      "f": "046-2048x1536-o1.jpg",
+      "bytes": 716963,
+      "ms": 441,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 320x240 7KB", "card 800x600 22KB", "full 2048x1536 213KB"],
+      "leaks": []
+    },
+    {
+      "f": "047-3024x4032-o6.jpg",
+      "bytes": 2680310,
+      "ms": 632,
+      "input": {
+        "exif": true,
+        "orientation": 6,
+        "gps": true
+      },
+      "out": ["thumb 320x240 9KB", "card 800x600 27KB", "full 2048x1536 82KB"],
+      "leaks": []
+    },
+    {
+      "f": "048-4032x3024-o3.png",
+      "bytes": 8418092,
+      "ms": 479,
+      "input": {
+        "exif": false,
+        "orientation": 1,
+        "gps": false
+      },
+      "out": ["thumb 320x240 7KB", "card 800x600 21KB", "full 2016x1512 63KB"],
+      "leaks": []
+    },
+    {
+      "f": "049-3000x4000-o8.webp",
+      "bytes": 3274714,
+      "ms": 1242,
+      "input": {
+        "exif": true,
+        "orientation": 8,
+        "gps": true
+      },
+      "out": ["thumb 320x240 9KB", "card 800x600 27KB", "full 2048x1536 82KB"],
+      "leaks": []
+    },
+    {
+      "f": "050-4000x3000-o1.jpg",
+      "bytes": 2581804,
+      "ms": 606,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 320x240 7KB", "card 800x600 21KB", "full 2048x1536 70KB"],
+      "leaks": []
+    },
+    {
+      "f": "051-4624x3472-o1.jpg",
+      "bytes": 3419022,
+      "ms": 712,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 320x240 7KB", "card 800x601 21KB", "full 2048x1538 62KB"],
+      "leaks": []
+    },
+    {
+      "f": "052-6000x4000-o6.jpg",
+      "bytes": 5029534,
+      "ms": 892,
+      "input": {
+        "exif": true,
+        "orientation": 6,
+        "gps": true
+      },
+      "out": ["thumb 213x320 6KB", "card 533x800 19KB", "full 1365x2048 55KB"],
+      "leaks": []
+    },
+    {
+      "f": "053-8000x1500-o3.png",
+      "bytes": 8313336,
+      "ms": 283,
+      "input": {
+        "exif": false,
+        "orientation": 1,
+        "gps": false
+      },
+      "out": ["thumb 320x60 2KB", "card 800x150 6KB", "full 2048x384 16KB"],
+      "leaks": []
+    },
+    {
+      "f": "054-12000x2000-o8.webp",
+      "bytes": 5639346,
+      "ms": 1605,
+      "input": {
+        "exif": true,
+        "orientation": 8,
+        "gps": true
+      },
+      "out": ["thumb 53x320 2KB", "card 133x800 5KB", "full 341x2048 13KB"],
+      "leaks": []
+    },
+    {
+      "f": "055-720x1280-o1.jpg",
+      "bytes": 241597,
+      "ms": 179,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 180x320 9KB", "card 450x800 28KB", "full 720x1280 93KB"],
+      "leaks": []
+    },
+    {
+      "f": "056-640x480-o1.jpg",
+      "bytes": 82743,
+      "ms": 98,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 320x240 7KB", "card 640x480 34KB", "full 640x480 34KB"],
+      "leaks": []
+    },
+    {
+      "f": "057-1080x1350-o6.jpg",
+      "bytes": 361476,
+      "ms": 258,
+      "input": {
+        "exif": true,
+        "orientation": 6,
+        "gps": true
+      },
+      "out": ["thumb 320x256 9KB", "card 800x640 30KB", "full 1350x1080 123KB"],
+      "leaks": []
+    },
+    {
+      "f": "058-1200x1600-o3.png",
+      "bytes": 5358203,
+      "ms": 451,
+      "input": {
+        "exif": true,
+        "orientation": 3,
+        "gps": true
+      },
+      "out": ["thumb 240x320 9KB", "card 600x800 28KB", "full 1200x1600 153KB"],
+      "leaks": []
+    },
+    {
+      "f": "059-1536x2048-o8.webp",
+      "bytes": 837296,
+      "ms": 596,
+      "input": {
+        "exif": true,
+        "orientation": 8,
+        "gps": true
+      },
+      "out": ["thumb 320x240 9KB", "card 800x600 27KB", "full 2048x1536 182KB"],
+      "leaks": []
+    },
+    {
+      "f": "060-2048x1536-o1.jpg",
+      "bytes": 719985,
+      "ms": 422,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 320x240 7KB", "card 800x600 23KB", "full 2048x1536 217KB"],
+      "leaks": []
+    },
+    {
+      "f": "061-3024x4032-o1.jpg",
+      "bytes": 2688976,
+      "ms": 615,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 240x320 9KB", "card 600x800 27KB", "full 1536x2048 85KB"],
+      "leaks": []
+    },
+    {
+      "f": "062-4032x3024-o6.jpg",
+      "bytes": 2621133,
+      "ms": 642,
+      "input": {
+        "exif": true,
+        "orientation": 6,
+        "gps": true
+      },
+      "out": ["thumb 240x320 7KB", "card 600x800 21KB", "full 1536x2048 66KB"],
+      "leaks": []
+    },
+    {
+      "f": "063-3000x4000-o3.png",
+      "bytes": 8300911,
+      "ms": 495,
+      "input": {
+        "exif": false,
+        "orientation": 1,
+        "gps": false
+      },
+      "out": ["thumb 240x320 9KB", "card 600x800 26KB", "full 1500x2000 80KB"],
+      "leaks": []
+    },
+    {
+      "f": "064-4000x3000-o8.webp",
+      "bytes": 2918196,
+      "ms": 1127,
+      "input": {
+        "exif": true,
+        "orientation": 8,
+        "gps": true
+      },
+      "out": ["thumb 240x320 7KB", "card 600x800 21KB", "full 1536x2048 64KB"],
+      "leaks": []
+    },
+    {
+      "f": "065-4624x3472-o1.jpg",
+      "bytes": 3414753,
+      "ms": 720,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 320x240 7KB", "card 800x601 21KB", "full 2048x1538 65KB"],
+      "leaks": []
+    },
+    {
+      "f": "066-6000x4000-o1.jpg",
+      "bytes": 5023455,
+      "ms": 889,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 320x213 6KB", "card 800x533 19KB", "full 2048x1365 55KB"],
+      "leaks": []
+    },
+    {
+      "f": "067-8000x1500-o6.jpg",
+      "bytes": 2476893,
+      "ms": 293,
+      "input": {
+        "exif": true,
+        "orientation": 6,
+        "gps": true
+      },
+      "out": ["thumb 60x320 2KB", "card 150x800 6KB", "full 384x2048 15KB"],
+      "leaks": []
+    },
+    {
+      "f": "068-12000x2000-o3.png",
+      "bytes": 16522408,
+      "expected": "TOO_LARGE",
+      "got": "TOO_LARGE"
+    },
+    {
+      "f": "069-720x1280-o8.webp",
+      "bytes": 251294,
+      "ms": 243,
+      "input": {
+        "exif": true,
+        "orientation": 8,
+        "gps": true
+      },
+      "out": ["thumb 320x180 9KB", "card 800x450 27KB", "full 1280x720 98KB"],
+      "leaks": []
+    },
+    {
+      "f": "070-640x480-o1.jpg",
+      "bytes": 83011,
+      "ms": 102,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 320x240 7KB", "card 640x480 33KB", "full 640x480 33KB"],
+      "leaks": []
+    },
+    {
+      "f": "071-1080x1350-o1.jpg",
+      "bytes": 360616,
+      "ms": 254,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 256x320 9KB", "card 640x800 30KB", "full 1080x1350 126KB"],
+      "leaks": []
+    },
+    {
+      "f": "072-1200x1600-o6.jpg",
+      "bytes": 467823,
+      "ms": 304,
+      "input": {
+        "exif": true,
+        "orientation": 6,
+        "gps": true
+      },
+      "out": ["thumb 320x240 9KB", "card 800x600 29KB", "full 1600x1200 162KB"],
+      "leaks": []
+    },
+    {
+      "f": "073-1536x2048-o3.png",
+      "bytes": 8769198,
+      "ms": 666,
+      "input": {
+        "exif": true,
+        "orientation": 3,
+        "gps": true
+      },
+      "out": ["thumb 240x320 9KB", "card 600x800 27KB", "full 1536x2048 201KB"],
+      "leaks": []
+    },
+    {
+      "f": "074-2048x1536-o8.webp",
+      "bytes": 878440,
+      "ms": 605,
+      "input": {
+        "exif": true,
+        "orientation": 8,
+        "gps": true
+      },
+      "out": ["thumb 240x320 7KB", "card 600x800 22KB", "full 1536x2048 181KB"],
+      "leaks": []
+    },
+    {
+      "f": "075-3024x4032-o1.jpg",
+      "bytes": 2682623,
+      "ms": 614,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 240x320 9KB", "card 600x800 27KB", "full 1536x2048 88KB"],
+      "leaks": []
+    },
+    {
+      "f": "076-4032x3024-o1.jpg",
+      "bytes": 2620944,
+      "ms": 607,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 320x240 7KB", "card 800x600 21KB", "full 2048x1536 67KB"],
+      "leaks": []
+    },
+    {
+      "f": "077-3000x4000-o6.jpg",
+      "bytes": 2650730,
+      "ms": 616,
+      "input": {
+        "exif": true,
+        "orientation": 6,
+        "gps": true
+      },
+      "out": ["thumb 320x240 9KB", "card 800x600 27KB", "full 2048x1536 85KB"],
+      "leaks": []
+    },
+    {
+      "f": "078-4000x3000-o3.png",
+      "bytes": 8264313,
+      "ms": 468,
+      "input": {
+        "exif": false,
+        "orientation": 1,
+        "gps": false
+      },
+      "out": ["thumb 320x240 7KB", "card 800x600 21KB", "full 2000x1500 61KB"],
+      "leaks": []
+    },
+    {
+      "f": "079-4624x3472-o8.webp",
+      "bytes": 4336632,
+      "ms": 1515,
+      "input": {
+        "exif": true,
+        "orientation": 8,
+        "gps": true
+      },
+      "out": ["thumb 240x320 7KB", "card 601x800 21KB", "full 1538x2048 64KB"],
+      "leaks": []
+    },
+    {
+      "f": "080-6000x4000-o1.jpg",
+      "bytes": 5021579,
+      "ms": 923,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 320x213 6KB", "card 800x533 19KB", "full 2048x1365 55KB"],
+      "leaks": []
+    },
+    {
+      "f": "081-8000x1500-o1.jpg",
+      "bytes": 2485286,
+      "ms": 283,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 320x60 2KB", "card 800x150 6KB", "full 2048x384 15KB"],
+      "leaks": []
+    },
+    {
+      "f": "082-12000x2000-o6.jpg",
+      "bytes": 4853740,
+      "ms": 401,
+      "input": {
+        "exif": true,
+        "orientation": 6,
+        "gps": true
+      },
+      "out": ["thumb 53x320 2KB", "card 133x800 5KB", "full 341x2048 13KB"],
+      "leaks": []
+    },
+    {
+      "f": "083-720x1280-o3.png",
+      "bytes": 2572711,
+      "ms": 262,
+      "input": {
+        "exif": true,
+        "orientation": 3,
+        "gps": true
+      },
+      "out": ["thumb 180x320 9KB", "card 450x800 28KB", "full 720x1280 90KB"],
+      "leaks": []
+    },
+    {
+      "f": "084-640x480-o8.webp",
+      "bytes": 81876,
+      "ms": 122,
+      "input": {
+        "exif": true,
+        "orientation": 8,
+        "gps": true
+      },
+      "out": ["thumb 240x320 8KB", "card 480x640 33KB", "full 480x640 33KB"],
+      "leaks": []
+    },
+    {
+      "f": "085-1080x1350-o1.jpg",
+      "bytes": 361111,
+      "ms": 258,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 256x320 9KB", "card 640x800 31KB", "full 1080x1350 126KB"],
+      "leaks": []
+    },
+    {
+      "f": "086-1200x1600-o1.jpg",
+      "bytes": 467528,
+      "ms": 299,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 240x320 9KB", "card 600x800 28KB", "full 1200x1600 162KB"],
+      "leaks": []
+    },
+    {
+      "f": "087-1536x2048-o6.jpg",
+      "bytes": 742580,
+      "ms": 435,
+      "input": {
+        "exif": true,
+        "orientation": 6,
+        "gps": true
+      },
+      "out": ["thumb 320x240 9KB", "card 800x600 27KB", "full 2048x1536 233KB"],
+      "leaks": []
+    },
+    {
+      "f": "088-2048x1536-o3.png",
+      "bytes": 8783226,
+      "ms": 647,
+      "input": {
+        "exif": true,
+        "orientation": 3,
+        "gps": true
+      },
+      "out": ["thumb 320x240 7KB", "card 800x600 22KB", "full 2048x1536 190KB"],
+      "leaks": []
+    },
+    {
+      "f": "089-3024x4032-o8.webp",
+      "bytes": 3367768,
+      "ms": 1253,
+      "input": {
+        "exif": true,
+        "orientation": 8,
+        "gps": true
+      },
+      "out": ["thumb 320x240 9KB", "card 800x600 27KB", "full 2048x1536 82KB"],
+      "leaks": []
+    },
+    {
+      "f": "090-4032x3024-o1.jpg",
+      "bytes": 2612059,
+      "ms": 604,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 320x240 7KB", "card 800x600 20KB", "full 2048x1536 62KB"],
+      "leaks": []
+    },
+    {
+      "f": "091-3000x4000-o1.jpg",
+      "bytes": 2646989,
+      "ms": 609,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 240x320 9KB", "card 600x800 27KB", "full 1536x2048 84KB"],
+      "leaks": []
+    },
+    {
+      "f": "092-4000x3000-o6.jpg",
+      "bytes": 2582195,
+      "ms": 612,
+      "input": {
+        "exif": true,
+        "orientation": 6,
+        "gps": true
+      },
+      "out": ["thumb 240x320 7KB", "card 600x800 21KB", "full 1536x2048 67KB"],
+      "leaks": []
+    },
+    {
+      "f": "093-4624x3472-o3.png",
+      "bytes": 11038280,
+      "ms": 547,
+      "input": {
+        "exif": false,
+        "orientation": 1,
+        "gps": false
+      },
+      "out": ["thumb 320x240 7KB", "card 800x601 21KB", "full 2048x1538 64KB"],
+      "leaks": []
+    },
+    {
+      "f": "094-6000x4000-o8.webp",
+      "bytes": 6364656,
+      "ms": 2049,
+      "input": {
+        "exif": true,
+        "orientation": 8,
+        "gps": true
+      },
+      "out": ["thumb 213x320 6KB", "card 533x800 19KB", "full 1365x2048 53KB"],
+      "leaks": []
+    },
+    {
+      "f": "095-8000x1500-o1.jpg",
+      "bytes": 2476668,
+      "ms": 279,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 320x60 2KB", "card 800x150 6KB", "full 2048x384 15KB"],
+      "leaks": []
+    },
+    {
+      "f": "096-12000x2000-o1.jpg",
+      "bytes": 4859488,
+      "ms": 399,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 320x53 2KB", "card 800x133 5KB", "full 2048x341 13KB"],
+      "leaks": []
+    },
+    {
+      "f": "097-720x1280-o6.jpg",
+      "bytes": 241599,
+      "ms": 195,
+      "input": {
+        "exif": true,
+        "orientation": 6,
+        "gps": true
+      },
+      "out": ["thumb 320x180 9KB", "card 800x450 28KB", "full 1280x720 93KB"],
+      "leaks": []
+    },
+    {
+      "f": "098-640x480-o3.png",
+      "bytes": 860233,
+      "ms": 129,
+      "input": {
+        "exif": true,
+        "orientation": 3,
+        "gps": true
+      },
+      "out": ["thumb 320x240 7KB", "card 640x480 32KB", "full 640x480 32KB"],
+      "leaks": []
+    },
+    {
+      "f": "099-1080x1350-o8.webp",
+      "bytes": 391600,
+      "ms": 355,
+      "input": {
+        "exif": true,
+        "orientation": 8,
+        "gps": true
+      },
+      "out": ["thumb 320x256 9KB", "card 800x640 29KB", "full 1350x1080 115KB"],
+      "leaks": []
+    },
+    {
+      "f": "100-1200x1600-o1.jpg",
+      "bytes": 468993,
+      "ms": 298,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 240x320 9KB", "card 600x800 29KB", "full 1200x1600 163KB"],
+      "leaks": []
+    },
+    {
+      "f": "101-1536x2048-o1.jpg",
+      "bytes": 742500,
+      "ms": 435,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 240x320 9KB", "card 600x800 27KB", "full 1536x2048 239KB"],
+      "leaks": []
+    },
+    {
+      "f": "102-2048x1536-o6.jpg",
+      "bytes": 720007,
+      "ms": 430,
+      "input": {
+        "exif": true,
+        "orientation": 6,
+        "gps": true
+      },
+      "out": ["thumb 240x320 7KB", "card 600x800 22KB", "full 1536x2048 218KB"],
+      "leaks": []
+    },
+    {
+      "f": "103-3024x4032-o3.png",
+      "bytes": 8396993,
+      "ms": 505,
+      "input": {
+        "exif": false,
+        "orientation": 1,
+        "gps": false
+      },
+      "out": ["thumb 240x320 9KB", "card 600x800 26KB", "full 1512x2016 79KB"],
+      "leaks": []
+    },
+    {
+      "f": "104-4032x3024-o8.webp",
+      "bytes": 3234664,
+      "ms": 1206,
+      "input": {
+        "exif": true,
+        "orientation": 8,
+        "gps": true
+      },
+      "out": ["thumb 240x320 7KB", "card 600x800 21KB", "full 1536x2048 67KB"],
+      "leaks": []
+    },
+    {
+      "f": "105-3000x4000-o1.jpg",
+      "bytes": 2650011,
+      "ms": 610,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 240x320 9KB", "card 600x800 26KB", "full 1536x2048 89KB"],
+      "leaks": []
+    },
+    {
+      "f": "106-4000x3000-o1.jpg",
+      "bytes": 2585952,
+      "ms": 614,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 320x240 7KB", "card 800x600 21KB", "full 2048x1536 66KB"],
+      "leaks": []
+    },
+    {
+      "f": "107-4624x3472-o6.jpg",
+      "bytes": 3422851,
+      "ms": 722,
+      "input": {
+        "exif": true,
+        "orientation": 6,
+        "gps": true
+      },
+      "out": ["thumb 240x320 7KB", "card 601x800 21KB", "full 1538x2048 63KB"],
+      "leaks": []
+    },
+    {
+      "f": "108-6000x4000-o3.png",
+      "bytes": 16529940,
+      "expected": "TOO_LARGE",
+      "got": "TOO_LARGE"
+    },
+    {
+      "f": "109-8000x1500-o8.webp",
+      "bytes": 3211476,
+      "ms": 980,
+      "input": {
+        "exif": true,
+        "orientation": 8,
+        "gps": true
+      },
+      "out": ["thumb 60x320 2KB", "card 150x800 6KB", "full 384x2048 16KB"],
+      "leaks": []
+    },
+    {
+      "f": "110-12000x2000-o1.jpg",
+      "bytes": 4862773,
+      "ms": 395,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 320x53 2KB", "card 800x133 5KB", "full 2048x341 13KB"],
+      "leaks": []
+    },
+    {
+      "f": "111-720x1280-o1.jpg",
+      "bytes": 241710,
+      "ms": 179,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 180x320 9KB", "card 450x800 28KB", "full 720x1280 94KB"],
+      "leaks": []
+    },
+    {
+      "f": "112-640x480-o6.jpg",
+      "bytes": 82624,
+      "ms": 101,
+      "input": {
+        "exif": true,
+        "orientation": 6,
+        "gps": true
+      },
+      "out": ["thumb 240x320 7KB", "card 480x640 34KB", "full 480x640 34KB"],
+      "leaks": []
+    },
+    {
+      "f": "113-1080x1350-o3.png",
+      "bytes": 4066471,
+      "ms": 378,
+      "input": {
+        "exif": true,
+        "orientation": 3,
+        "gps": true
+      },
+      "out": ["thumb 256x320 9KB", "card 640x800 29KB", "full 1080x1350 119KB"],
+      "leaks": []
+    },
+    {
+      "f": "114-1200x1600-o8.webp",
+      "bytes": 504408,
+      "ms": 409,
+      "input": {
+        "exif": true,
+        "orientation": 8,
+        "gps": true
+      },
+      "out": ["thumb 320x240 9KB", "card 800x600 29KB", "full 1600x1200 143KB"],
+      "leaks": []
+    },
+    {
+      "f": "115-1536x2048-o1.jpg",
+      "bytes": 739774,
+      "ms": 427,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 240x320 9KB", "card 600x800 27KB", "full 1536x2048 222KB"],
+      "leaks": []
+    },
+    {
+      "f": "116-2048x1536-o1.jpg",
+      "bytes": 718809,
+      "ms": 421,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 320x240 7KB", "card 800x600 22KB", "full 2048x1536 207KB"],
+      "leaks": []
+    },
+    {
+      "f": "117-3024x4032-o6.jpg",
+      "bytes": 2679247,
+      "ms": 627,
+      "input": {
+        "exif": true,
+        "orientation": 6,
+        "gps": true
+      },
+      "out": ["thumb 320x240 9KB", "card 800x600 26KB", "full 2048x1536 86KB"],
+      "leaks": []
+    },
+    {
+      "f": "118-4032x3024-o3.png",
+      "bytes": 8399321,
+      "ms": 489,
+      "input": {
+        "exif": false,
+        "orientation": 1,
+        "gps": false
+      },
+      "out": ["thumb 320x240 7KB", "card 800x600 21KB", "full 2016x1512 65KB"],
+      "leaks": []
+    },
+    {
+      "f": "119-3000x4000-o8.webp",
+      "bytes": 3268592,
+      "ms": 1262,
+      "input": {
+        "exif": true,
+        "orientation": 8,
+        "gps": true
+      },
+      "out": ["thumb 320x240 9KB", "card 800x600 27KB", "full 2048x1536 84KB"],
+      "leaks": []
+    },
+    {
+      "f": "120-4000x3000-o1.jpg",
+      "bytes": 2589954,
+      "ms": 605,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 320x240 7KB", "card 800x600 22KB", "full 2048x1536 66KB"],
+      "leaks": []
+    },
+    {
+      "f": "121-4624x3472-o1.jpg",
+      "bytes": 3406950,
+      "ms": 717,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 320x240 7KB", "card 800x601 21KB", "full 2048x1538 62KB"],
+      "leaks": []
+    },
+    {
+      "f": "122-6000x4000-o6.jpg",
+      "bytes": 5029498,
+      "ms": 897,
+      "input": {
+        "exif": true,
+        "orientation": 6,
+        "gps": true
+      },
+      "out": ["thumb 213x320 6KB", "card 533x800 19KB", "full 1365x2048 56KB"],
+      "leaks": []
+    },
+    {
+      "f": "123-8000x1500-o3.png",
+      "bytes": 8225735,
+      "ms": 281,
+      "input": {
+        "exif": false,
+        "orientation": 1,
+        "gps": false
+      },
+      "out": ["thumb 320x60 2KB", "card 800x150 5KB", "full 2048x384 15KB"],
+      "leaks": []
+    },
+    {
+      "f": "124-12000x2000-o8.webp",
+      "bytes": 6185966,
+      "ms": 1816,
+      "input": {
+        "exif": true,
+        "orientation": 8,
+        "gps": true
+      },
+      "out": ["thumb 53x320 2KB", "card 133x800 5KB", "full 341x2048 13KB"],
+      "leaks": []
+    },
+    {
+      "f": "125-720x1280-o1.jpg",
+      "bytes": 240879,
+      "ms": 179,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 180x320 9KB", "card 450x800 28KB", "full 720x1280 94KB"],
+      "leaks": []
+    },
+    {
+      "f": "126-640x480-o1.jpg",
+      "bytes": 82521,
+      "ms": 98,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 320x240 7KB", "card 640x480 33KB", "full 640x480 33KB"],
+      "leaks": []
+    },
+    {
+      "f": "127-1080x1350-o6.jpg",
+      "bytes": 362405,
+      "ms": 259,
+      "input": {
+        "exif": true,
+        "orientation": 6,
+        "gps": true
+      },
+      "out": ["thumb 320x256 9KB", "card 800x640 31KB", "full 1350x1080 126KB"],
+      "leaks": []
+    },
+    {
+      "f": "128-1200x1600-o3.png",
+      "bytes": 5340646,
+      "ms": 452,
+      "input": {
+        "exif": true,
+        "orientation": 3,
+        "gps": true
+      },
+      "out": ["thumb 240x320 9KB", "card 600x800 28KB", "full 1200x1600 154KB"],
+      "leaks": []
+    },
+    {
+      "f": "129-1536x2048-o8.webp",
+      "bytes": 835360,
+      "ms": 597,
+      "input": {
+        "exif": true,
+        "orientation": 8,
+        "gps": true
+      },
+      "out": ["thumb 320x240 9KB", "card 800x600 28KB", "full 2048x1536 187KB"],
+      "leaks": []
+    },
+    {
+      "f": "130-2048x1536-o1.jpg",
+      "bytes": 716818,
+      "ms": 419,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 320x240 7KB", "card 800x600 22KB", "full 2048x1536 208KB"],
+      "leaks": []
+    },
+    {
+      "f": "131-3024x4032-o1.jpg",
+      "bytes": 2682484,
+      "ms": 616,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 240x320 9KB", "card 600x800 27KB", "full 1536x2048 88KB"],
+      "leaks": []
+    },
+    {
+      "f": "132-4032x3024-o6.jpg",
+      "bytes": 2627561,
+      "ms": 616,
+      "input": {
+        "exif": true,
+        "orientation": 6,
+        "gps": true
+      },
+      "out": ["thumb 240x320 7KB", "card 600x800 21KB", "full 1536x2048 68KB"],
+      "leaks": []
+    },
+    {
+      "f": "133-3000x4000-o3.png",
+      "bytes": 8304967,
+      "ms": 486,
+      "input": {
+        "exif": false,
+        "orientation": 1,
+        "gps": false
+      },
+      "out": ["thumb 240x320 9KB", "card 600x800 27KB", "full 1500x2000 84KB"],
+      "leaks": []
+    },
+    {
+      "f": "134-4000x3000-o8.webp",
+      "bytes": 3255824,
+      "ms": 1242,
+      "input": {
+        "exif": true,
+        "orientation": 8,
+        "gps": true
+      },
+      "out": ["thumb 240x320 7KB", "card 600x800 21KB", "full 1536x2048 68KB"],
+      "leaks": []
+    },
+    {
+      "f": "135-4624x3472-o1.jpg",
+      "bytes": 3412100,
+      "ms": 717,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 320x240 7KB", "card 800x601 21KB", "full 2048x1538 65KB"],
+      "leaks": []
+    },
+    {
+      "f": "136-6000x4000-o1.jpg",
+      "bytes": 5024645,
+      "ms": 894,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 320x213 6KB", "card 800x533 19KB", "full 2048x1365 55KB"],
+      "leaks": []
+    },
+    {
+      "f": "137-8000x1500-o6.jpg",
+      "bytes": 2483107,
+      "ms": 297,
+      "input": {
+        "exif": true,
+        "orientation": 6,
+        "gps": true
+      },
+      "out": ["thumb 60x320 2KB", "card 150x800 6KB", "full 384x2048 15KB"],
+      "leaks": []
+    },
+    {
+      "f": "138-12000x2000-o3.png",
+      "bytes": 16546695,
+      "expected": "TOO_LARGE",
+      "got": "TOO_LARGE"
+    },
+    {
+      "f": "139-720x1280-o8.webp",
+      "bytes": 251766,
+      "ms": 275,
+      "input": {
+        "exif": true,
+        "orientation": 8,
+        "gps": true
+      },
+      "out": ["thumb 320x180 9KB", "card 800x450 27KB", "full 1280x720 91KB"],
+      "leaks": []
+    },
+    {
+      "f": "140-640x480-o1.jpg",
+      "bytes": 82530,
+      "ms": 100,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 320x240 7KB", "card 640x480 33KB", "full 640x480 33KB"],
+      "leaks": []
+    },
+    {
+      "f": "141-1080x1350-o1.jpg",
+      "bytes": 362115,
+      "ms": 253,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 256x320 9KB", "card 640x800 31KB", "full 1080x1350 125KB"],
+      "leaks": []
+    },
+    {
+      "f": "142-1200x1600-o6.jpg",
+      "bytes": 466576,
+      "ms": 305,
+      "input": {
+        "exif": true,
+        "orientation": 6,
+        "gps": true
+      },
+      "out": ["thumb 320x240 9KB", "card 800x600 28KB", "full 1600x1200 159KB"],
+      "leaks": []
+    },
+    {
+      "f": "143-1536x2048-o3.png",
+      "bytes": 8738458,
+      "ms": 687,
+      "input": {
+        "exif": true,
+        "orientation": 3,
+        "gps": true
+      },
+      "out": ["thumb 240x320 9KB", "card 600x800 27KB", "full 1536x2048 217KB"],
+      "leaks": []
+    },
+    {
+      "f": "144-2048x1536-o8.webp",
+      "bytes": 824384,
+      "ms": 633,
+      "input": {
+        "exif": true,
+        "orientation": 8,
+        "gps": true
+      },
+      "out": ["thumb 240x320 7KB", "card 600x800 22KB", "full 1536x2048 177KB"],
+      "leaks": []
+    },
+    {
+      "f": "145-3024x4032-o1.jpg",
+      "bytes": 2681299,
+      "ms": 627,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 240x320 9KB", "card 600x800 27KB", "full 1536x2048 81KB"],
+      "leaks": []
+    },
+    {
+      "f": "146-4032x3024-o1.jpg",
+      "bytes": 2612285,
+      "ms": 628,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 320x240 7KB", "card 800x600 21KB", "full 2048x1536 63KB"],
+      "leaks": []
+    },
+    {
+      "f": "147-3000x4000-o6.jpg",
+      "bytes": 2641923,
+      "ms": 626,
+      "input": {
+        "exif": true,
+        "orientation": 6,
+        "gps": true
+      },
+      "out": ["thumb 320x240 9KB", "card 800x600 26KB", "full 2048x1536 82KB"],
+      "leaks": []
+    },
+    {
+      "f": "148-4000x3000-o3.png",
+      "bytes": 8297397,
+      "ms": 478,
+      "input": {
+        "exif": false,
+        "orientation": 1,
+        "gps": false
+      },
+      "out": ["thumb 320x240 7KB", "card 800x600 21KB", "full 2000x1500 64KB"],
+      "leaks": []
+    },
+    {
+      "f": "149-4624x3472-o8.webp",
+      "bytes": 3866914,
+      "ms": 1403,
+      "input": {
+        "exif": true,
+        "orientation": 8,
+        "gps": true
+      },
+      "out": ["thumb 240x320 7KB", "card 601x800 21KB", "full 1538x2048 62KB"],
+      "leaks": []
+    },
+    {
+      "f": "150-6000x4000-o1.jpg",
+      "bytes": 5030535,
+      "ms": 890,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 320x213 6KB", "card 800x533 19KB", "full 2048x1365 56KB"],
+      "leaks": []
+    },
+    {
+      "f": "151-8000x1500-o1.jpg",
+      "bytes": 2472294,
+      "ms": 281,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 320x60 2KB", "card 800x150 6KB", "full 2048x384 14KB"],
+      "leaks": []
+    },
+    {
+      "f": "152-12000x2000-o6.jpg",
+      "bytes": 4857082,
+      "ms": 417,
+      "input": {
+        "exif": true,
+        "orientation": 6,
+        "gps": true
+      },
+      "out": ["thumb 53x320 2KB", "card 133x800 5KB", "full 341x2048 13KB"],
+      "leaks": []
+    },
+    {
+      "f": "153-720x1280-o3.png",
+      "bytes": 2569903,
+      "ms": 278,
+      "input": {
+        "exif": true,
+        "orientation": 3,
+        "gps": true
+      },
+      "out": ["thumb 180x320 9KB", "card 450x800 28KB", "full 720x1280 90KB"],
+      "leaks": []
+    },
+    {
+      "f": "154-640x480-o8.webp",
+      "bytes": 86224,
+      "ms": 129,
+      "input": {
+        "exif": true,
+        "orientation": 8,
+        "gps": true
+      },
+      "out": ["thumb 240x320 7KB", "card 480x640 31KB", "full 480x640 31KB"],
+      "leaks": []
+    },
+    {
+      "f": "155-1080x1350-o1.jpg",
+      "bytes": 361592,
+      "ms": 255,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 256x320 9KB", "card 640x800 31KB", "full 1080x1350 127KB"],
+      "leaks": []
+    },
+    {
+      "f": "156-1200x1600-o1.jpg",
+      "bytes": 467692,
+      "ms": 299,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 240x320 9KB", "card 600x800 29KB", "full 1200x1600 163KB"],
+      "leaks": []
+    },
+    {
+      "f": "157-1536x2048-o6.jpg",
+      "bytes": 741010,
+      "ms": 447,
+      "input": {
+        "exif": true,
+        "orientation": 6,
+        "gps": true
+      },
+      "out": ["thumb 320x240 9KB", "card 800x600 27KB", "full 2048x1536 230KB"],
+      "leaks": []
+    },
+    {
+      "f": "158-2048x1536-o3.png",
+      "bytes": 8763887,
+      "ms": 737,
+      "input": {
+        "exif": true,
+        "orientation": 3,
+        "gps": true
+      },
+      "out": ["thumb 320x240 7KB", "card 800x600 23KB", "full 2048x1536 218KB"],
+      "leaks": []
+    },
+    {
+      "f": "159-3024x4032-o8.webp",
+      "bytes": 3321938,
+      "ms": 1253,
+      "input": {
+        "exif": true,
+        "orientation": 8,
+        "gps": true
+      },
+      "out": ["thumb 320x240 9KB", "card 800x600 26KB", "full 2048x1536 81KB"],
+      "leaks": []
+    },
+    {
+      "f": "160-4032x3024-o1.jpg",
+      "bytes": 2615184,
+      "ms": 608,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 320x240 7KB", "card 800x600 21KB", "full 2048x1536 65KB"],
+      "leaks": []
+    },
+    {
+      "f": "161-3000x4000-o1.jpg",
+      "bytes": 2645290,
+      "ms": 634,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 240x320 9KB", "card 600x800 26KB", "full 1536x2048 88KB"],
+      "leaks": []
+    },
+    {
+      "f": "162-4000x3000-o6.jpg",
+      "bytes": 2581601,
+      "ms": 618,
+      "input": {
+        "exif": true,
+        "orientation": 6,
+        "gps": true
+      },
+      "out": ["thumb 240x320 7KB", "card 600x800 21KB", "full 1536x2048 66KB"],
+      "leaks": []
+    },
+    {
+      "f": "163-4624x3472-o3.png",
+      "bytes": 11108888,
+      "ms": 581,
+      "input": {
+        "exif": false,
+        "orientation": 1,
+        "gps": false
+      },
+      "out": ["thumb 320x240 7KB", "card 800x601 22KB", "full 2048x1538 65KB"],
+      "leaks": []
+    },
+    {
+      "f": "164-6000x4000-o8.webp",
+      "bytes": 6332068,
+      "ms": 2034,
+      "input": {
+        "exif": true,
+        "orientation": 8,
+        "gps": true
+      },
+      "out": ["thumb 213x320 6KB", "card 533x800 19KB", "full 1365x2048 55KB"],
+      "leaks": []
+    },
+    {
+      "f": "165-8000x1500-o1.jpg",
+      "bytes": 2475087,
+      "ms": 277,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 320x60 2KB", "card 800x150 6KB", "full 2048x384 15KB"],
+      "leaks": []
+    },
+    {
+      "f": "166-12000x2000-o1.jpg",
+      "bytes": 4863782,
+      "ms": 396,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 320x53 2KB", "card 800x133 5KB", "full 2048x341 13KB"],
+      "leaks": []
+    },
+    {
+      "f": "167-720x1280-o6.jpg",
+      "bytes": 241912,
+      "ms": 183,
+      "input": {
+        "exif": true,
+        "orientation": 6,
+        "gps": true
+      },
+      "out": ["thumb 320x180 9KB", "card 800x450 28KB", "full 1280x720 94KB"],
+      "leaks": []
+    },
+    {
+      "f": "168-640x480-o3.png",
+      "bytes": 860132,
+      "ms": 129,
+      "input": {
+        "exif": true,
+        "orientation": 3,
+        "gps": true
+      },
+      "out": ["thumb 320x240 7KB", "card 640x480 32KB", "full 640x480 32KB"],
+      "leaks": []
+    },
+    {
+      "f": "169-1080x1350-o8.webp",
+      "bytes": 387104,
+      "ms": 347,
+      "input": {
+        "exif": true,
+        "orientation": 8,
+        "gps": true
+      },
+      "out": ["thumb 320x256 9KB", "card 800x640 29KB", "full 1350x1080 114KB"],
+      "leaks": []
+    },
+    {
+      "f": "170-1200x1600-o1.jpg",
+      "bytes": 466596,
+      "ms": 303,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 240x320 9KB", "card 600x800 28KB", "full 1200x1600 162KB"],
+      "leaks": []
+    },
+    {
+      "f": "171-1536x2048-o1.jpg",
+      "bytes": 744325,
+      "ms": 437,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 240x320 9KB", "card 600x800 28KB", "full 1536x2048 227KB"],
+      "leaks": []
+    },
+    {
+      "f": "172-2048x1536-o6.jpg",
+      "bytes": 717453,
+      "ms": 452,
+      "input": {
+        "exif": true,
+        "orientation": 6,
+        "gps": true
+      },
+      "out": ["thumb 240x320 7KB", "card 600x800 22KB", "full 1536x2048 218KB"],
+      "leaks": []
+    },
+    {
+      "f": "173-3024x4032-o3.png",
+      "bytes": 8420568,
+      "ms": 492,
+      "input": {
+        "exif": false,
+        "orientation": 1,
+        "gps": false
+      },
+      "out": ["thumb 240x320 9KB", "card 600x800 27KB", "full 1512x2016 80KB"],
+      "leaks": []
+    },
+    {
+      "f": "174-4032x3024-o8.webp",
+      "bytes": 3301240,
+      "ms": 1241,
+      "input": {
+        "exif": true,
+        "orientation": 8,
+        "gps": true
+      },
+      "out": ["thumb 240x320 7KB", "card 600x800 21KB", "full 1536x2048 68KB"],
+      "leaks": []
+    },
+    {
+      "f": "175-3000x4000-o1.jpg",
+      "bytes": 2638147,
+      "ms": 604,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 240x320 9KB", "card 600x800 26KB", "full 1536x2048 81KB"],
+      "leaks": []
+    },
+    {
+      "f": "176-4000x3000-o1.jpg",
+      "bytes": 2579985,
+      "ms": 603,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 320x240 7KB", "card 800x600 21KB", "full 2048x1536 63KB"],
+      "leaks": []
+    },
+    {
+      "f": "177-4624x3472-o6.jpg",
+      "bytes": 3407047,
+      "ms": 723,
+      "input": {
+        "exif": true,
+        "orientation": 6,
+        "gps": true
+      },
+      "out": ["thumb 240x320 7KB", "card 601x800 21KB", "full 1538x2048 63KB"],
+      "leaks": []
+    },
+    {
+      "f": "178-6000x4000-o3.png",
+      "bytes": 16579830,
+      "expected": "TOO_LARGE",
+      "got": "TOO_LARGE"
+    },
+    {
+      "f": "179-8000x1500-o8.webp",
+      "bytes": 3219774,
+      "ms": 996,
+      "input": {
+        "exif": true,
+        "orientation": 8,
+        "gps": true
+      },
+      "out": ["thumb 60x320 2KB", "card 150x800 6KB", "full 384x2048 15KB"],
+      "leaks": []
+    },
+    {
+      "f": "180-12000x2000-o1.jpg",
+      "bytes": 4864925,
+      "ms": 398,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 320x53 2KB", "card 800x133 5KB", "full 2048x341 13KB"],
+      "leaks": []
+    },
+    {
+      "f": "181-720x1280-o1.jpg",
+      "bytes": 242574,
+      "ms": 185,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 180x320 9KB", "card 450x800 28KB", "full 720x1280 100KB"],
+      "leaks": []
+    },
+    {
+      "f": "182-640x480-o6.jpg",
+      "bytes": 82526,
+      "ms": 106,
+      "input": {
+        "exif": true,
+        "orientation": 6,
+        "gps": true
+      },
+      "out": ["thumb 240x320 7KB", "card 480x640 33KB", "full 480x640 33KB"],
+      "leaks": []
+    },
+    {
+      "f": "183-1080x1350-o3.png",
+      "bytes": 4063835,
+      "ms": 406,
+      "input": {
+        "exif": true,
+        "orientation": 3,
+        "gps": true
+      },
+      "out": ["thumb 256x320 9KB", "card 640x800 30KB", "full 1080x1350 120KB"],
+      "leaks": []
+    },
+    {
+      "f": "184-1200x1600-o8.webp",
+      "bytes": 506784,
+      "ms": 427,
+      "input": {
+        "exif": true,
+        "orientation": 8,
+        "gps": true
+      },
+      "out": ["thumb 320x240 9KB", "card 800x600 28KB", "full 1600x1200 138KB"],
+      "leaks": []
+    },
+    {
+      "f": "185-1536x2048-o1.jpg",
+      "bytes": 740287,
+      "ms": 427,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 240x320 9KB", "card 600x800 27KB", "full 1536x2048 220KB"],
+      "leaks": []
+    },
+    {
+      "f": "186-2048x1536-o1.jpg",
+      "bytes": 718278,
+      "ms": 421,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 320x240 7KB", "card 800x600 22KB", "full 2048x1536 207KB"],
+      "leaks": []
+    },
+    {
+      "f": "187-3024x4032-o6.jpg",
+      "bytes": 2683400,
+      "ms": 621,
+      "input": {
+        "exif": true,
+        "orientation": 6,
+        "gps": true
+      },
+      "out": ["thumb 320x240 9KB", "card 800x600 26KB", "full 2048x1536 83KB"],
+      "leaks": []
+    },
+    {
+      "f": "188-4032x3024-o3.png",
+      "bytes": 8393197,
+      "ms": 493,
+      "input": {
+        "exif": false,
+        "orientation": 1,
+        "gps": false
+      },
+      "out": ["thumb 320x240 7KB", "card 800x600 22KB", "full 2016x1512 65KB"],
+      "leaks": []
+    },
+    {
+      "f": "189-3000x4000-o8.webp",
+      "bytes": 3204916,
+      "ms": 1298,
+      "input": {
+        "exif": true,
+        "orientation": 8,
+        "gps": true
+      },
+      "out": ["thumb 320x240 9KB", "card 800x600 26KB", "full 2048x1536 81KB"],
+      "leaks": []
+    },
+    {
+      "f": "190-4000x3000-o1.jpg",
+      "bytes": 2580261,
+      "ms": 665,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 320x240 7KB", "card 800x600 21KB", "full 2048x1536 64KB"],
+      "leaks": []
+    },
+    {
+      "f": "191-4624x3472-o1.jpg",
+      "bytes": 3415334,
+      "ms": 734,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 320x240 7KB", "card 800x601 21KB", "full 2048x1538 63KB"],
+      "leaks": []
+    },
+    {
+      "f": "192-6000x4000-o6.jpg",
+      "bytes": 5012758,
+      "ms": 1006,
+      "input": {
+        "exif": true,
+        "orientation": 6,
+        "gps": true
+      },
+      "out": ["thumb 213x320 6KB", "card 533x800 18KB", "full 1365x2048 52KB"],
+      "leaks": []
+    },
+    {
+      "f": "193-8000x1500-o3.png",
+      "bytes": 8209118,
+      "ms": 290,
+      "input": {
+        "exif": false,
+        "orientation": 1,
+        "gps": false
+      },
+      "out": ["thumb 320x60 2KB", "card 800x150 6KB", "full 2048x384 14KB"],
+      "leaks": []
+    },
+    {
+      "f": "194-12000x2000-o8.webp",
+      "bytes": 5514904,
+      "ms": 1574,
+      "input": {
+        "exif": true,
+        "orientation": 8,
+        "gps": true
+      },
+      "out": ["thumb 53x320 2KB", "card 133x800 5KB", "full 341x2048 13KB"],
+      "leaks": []
+    },
+    {
+      "f": "195-720x1280-o1.jpg",
+      "bytes": 242306,
+      "ms": 180,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 180x320 9KB", "card 450x800 28KB", "full 720x1280 98KB"],
+      "leaks": []
+    },
+    {
+      "f": "196-640x480-o1.jpg",
+      "bytes": 82828,
+      "ms": 98,
+      "input": {
+        "exif": true,
+        "orientation": 1,
+        "gps": true
+      },
+      "out": ["thumb 320x240 7KB", "card 640x480 32KB", "full 640x480 32KB"],
+      "leaks": []
+    },
+    {
+      "f": "197-1080x1350-o6.jpg",
+      "bytes": 362011,
+      "ms": 258,
+      "input": {
+        "exif": true,
+        "orientation": 6,
+        "gps": true
+      },
+      "out": ["thumb 320x256 9KB", "card 800x640 30KB", "full 1350x1080 125KB"],
+      "leaks": []
+    },
+    {
+      "f": "198-1200x1600-o3.png",
+      "bytes": 5340109,
+      "ms": 452,
+      "input": {
+        "exif": true,
+        "orientation": 3,
+        "gps": true
+      },
+      "out": ["thumb 240x320 9KB", "card 600x800 28KB", "full 1200x1600 150KB"],
+      "leaks": []
+    },
+    {
+      "f": "199-1536x2048-o8.webp",
+      "bytes": 834074,
+      "ms": 610,
+      "input": {
+        "exif": true,
+        "orientation": 8,
+        "gps": true
+      },
+      "out": ["thumb 320x240 9KB", "card 800x600 28KB", "full 2048x1536 228KB"],
+      "leaks": []
+    }
+  ]
+}
