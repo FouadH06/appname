@@ -112,6 +112,11 @@ jobs:
             } > "apps/$app/.env.local"
           done
           echo 'NEXT_PUBLIC_ENABLE_LAB=true' >> apps/web/.env.local
+          {
+            echo "EXPO_PUBLIC_SUPABASE_URL=$API_URL"
+            echo "EXPO_PUBLIC_SUPABASE_ANON_KEY=$PUBLISHABLE_KEY"
+            echo "EXPO_PUBLIC_WEB_URL=http://127.0.0.1:3000"
+          } > apps/mobile/.env.local
       - run: pnpm --filter @app/web exec playwright install --with-deps chromium
       - run: pnpm turbo run build --filter=@app/web --filter=@app/admin
       - name: Web e2e
@@ -123,6 +128,11 @@ jobs:
         env:
           E2E_AUTH: '1'
         run: pnpm --filter @app/admin test:e2e
+      # M13 customer app: its web build (same Expo code) against the stack; /captcha comes from the web app
+      - name: App e2e
+        env:
+          E2E_AUTH: '1'
+        run: pnpm --filter @app/mobile test:e2e
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
@@ -130,4 +140,6 @@ jobs:
           path: |
             apps/web/playwright-report
             apps/admin/playwright-report
+            apps/mobile/playwright-report
+            apps/mobile/test-results
           retention-days: 7

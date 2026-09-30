@@ -1,6 +1,13 @@
 import type { Fetch } from '../otp/types.ts';
-import { LogSms, LogWhatsApp, TwilioTextSender, WhatsAppCloudSender } from './channels.ts';
-import type { SmsSender, WhatsAppSender } from './types.ts';
+import {
+  ExpoPushSender,
+  LogPush,
+  LogSms,
+  LogWhatsApp,
+  TwilioTextSender,
+  WhatsAppCloudSender,
+} from './channels.ts';
+import type { PushSender, SmsSender, WhatsAppSender } from './types.ts';
 
 export type Env = (name: string) => string | undefined;
 
@@ -8,6 +15,7 @@ export interface NotifyConfig {
   mode: 'live' | 'log';
   whatsapp?: WhatsAppSender;
   sms?: SmsSender;
+  push?: PushSender;
 }
 
 /**
@@ -17,9 +25,11 @@ export interface NotifyConfig {
  */
 export function notifyConfigFromEnv(env: Env, fetchFn: Fetch = fetch): NotifyConfig {
   const mode = (env('NOTIFY_PROVIDER_MODE') ?? env('OTP_PROVIDER_MODE')) === 'log' ? 'log' : 'live';
-  if (mode === 'log') return { mode, whatsapp: new LogWhatsApp(), sms: new LogSms() };
+  if (mode === 'log')
+    return { mode, whatsapp: new LogWhatsApp(), sms: new LogSms(), push: new LogPush() };
 
-  const cfg: NotifyConfig = { mode };
+  // Expo push needs no credentials; EXPO_ACCESS_TOKEN is used when push security is enabled on the project
+  const cfg: NotifyConfig = { mode, push: new ExpoPushSender(env('EXPO_ACCESS_TOKEN'), fetchFn) };
   const token = env('WHATSAPP_ACCESS_TOKEN');
   const number = env('WHATSAPP_PHONE_NUMBER_ID');
   if (token && number) {

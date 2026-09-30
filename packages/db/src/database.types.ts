@@ -1633,6 +1633,32 @@ export type Database = {
           },
         ];
       };
+      favorite_businesses: {
+        Row: {
+          business_id: string;
+          created_at: string;
+          user_id: string;
+        };
+        Insert: {
+          business_id: string;
+          created_at?: string;
+          user_id: string;
+        };
+        Update: {
+          business_id?: string;
+          created_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'favorite_businesses_business_id_fkey';
+            columns: ['business_id'];
+            isOneToOne: false;
+            referencedRelation: 'businesses';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       location_closures: {
         Row: {
           business_id: string;
@@ -4330,6 +4356,7 @@ export type Database = {
         Args: { p_before?: string; p_limit?: number; p_scope?: string };
         Returns: Json;
       };
+      get_my_favorites: { Args: Record<PropertyKey, never>; Returns: Json };
       get_my_next_booking_at: { Args: { p_business_id: string }; Returns: Json };
       get_my_notification_preferences: {
         Args: Record<PropertyKey, never>;
@@ -4355,9 +4382,12 @@ export type Database = {
         Args: { p_location_id: string; p_service_id: string; p_staff_id?: string };
         Returns: string;
       };
+      get_public_business_slugs: { Args: Record<PropertyKey, never>; Returns: string[] };
+      get_rebook_suggestions: { Args: { p_limit?: number }; Returns: Json };
       get_result: { Args: { p_review_media_id: string }; Returns: Json };
       get_review_context: { Args: { p_booking_id: string }; Returns: Json };
       get_staff_options: { Args: { p_location_id: string; p_service_id: string }; Returns: Json };
+      get_unread_notification_count: { Args: Record<PropertyKey, never>; Returns: number };
       invite_member: {
         Args: {
           p_business_id: string;
@@ -4367,6 +4397,7 @@ export type Database = {
         };
         Returns: Json;
       };
+      is_favorite_business: { Args: { p_business_id: string }; Returns: boolean };
       lat: {
         Args: { l: Database['public']['Tables']['business_locations']['Row'] };
         Returns: number;
@@ -4613,6 +4644,7 @@ export type Database = {
         }[];
       };
       publish_business: { Args: { p_business_id: string }; Returns: Json };
+      push_tokens_invalid: { Args: { p_tokens: string[] }; Returns: number };
       reassign_booking_item: {
         Args: { p_item_id: string; p_new_staff_id: string; p_notify?: boolean };
         Returns: {
@@ -4663,6 +4695,7 @@ export type Database = {
         };
         Returns: Json;
       };
+      register_push_token: { Args: { p_platform: string; p_token: string }; Returns: undefined };
       release_hold: { Args: { p_booking_id: string; p_hold_token: string }; Returns: undefined };
       remove_business_media: { Args: { p_media_id: string }; Returns: string };
       reorder_business_media: {
@@ -4832,6 +4865,7 @@ export type Database = {
         };
         Returns: Json;
       };
+      toggle_favorite_business: { Args: { p_business_id: string }; Returns: Json };
       transfer_ownership: {
         Args: { p_business_id: string; p_new_owner_user_id: string };
         Returns: undefined;
@@ -4900,6 +4934,7 @@ export type Database = {
         };
       };
       unfeature_result: { Args: { p_review_media_id: string }; Returns: undefined };
+      unregister_push_token: { Args: { p_token: string }; Returns: undefined };
       update_booking_note: {
         Args: { p_booking_id: string; p_internal_note: string };
         Returns: {

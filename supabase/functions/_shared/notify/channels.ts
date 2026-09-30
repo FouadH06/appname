@@ -1,6 +1,14 @@
 import { errorText, post } from '../otp/channels.ts';
 import type { Fetch } from '../otp/types.ts';
-import type { SendResult, SmsSender, TemplateButton, WhatsAppSender } from './types.ts';
+import type {
+  PushMessage,
+  PushResult,
+  PushSender,
+  SendResult,
+  SmsSender,
+  TemplateButton,
+  WhatsAppSender,
+} from './types.ts';
 
 // Providers for booking messages. Same accounts as the OTP channels (M4), different message kinds:
 // utility templates with quick-reply buttons, session text replies, and plain SMS.
@@ -177,5 +185,109 @@ export class LogSms implements SmsSender {
   sendText(to: string, text: string) {
     this.logFn(`[notify:sms] ${to} ${text}`);
     return Promise.resolve<SendResult>({ ok: true, messageId: logId('sms') });
+  }
+}
+
+// ─── Expo push (M13) ───────────────────────────────────────────────────────
+// One request for all of the recipient's devices. DeviceNotRegistered tickets are reported back so the
+// tokens get disabled; the message counts as sent when at least one device accepted it.
+interface ExpoTicket {
+  status: 'ok' | 'error';
+  id?: string;
+  message?: string;
+  details?: { error?: string };
+}
+
+export class ExpoPushSender implements PushSender {
+  readonly provider = 'expo';
+  constructor(
+    private readonly accessToken: string | undefined,
+    private readonly fetchFn: Fetch = fetch,
+  ) {}
+
+  async send(tokens: string[], m: PushMessage): Promise<PushResult> {
+    if (!tokens.length)
+      return {
+        ok: false,
+        messageId: null,
+        error: 'no push token',
+        retryable: false,
+        invalidTokens: [],
+      };
+    let res: Response;
+    try {
+      res = await this.fetchFn('https://exp.host/--/api/v2/push/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          ...(this.accessToken ? { Authorization: `Bearer ${this.accessToken}` } : {}),
+        },
+        body: JSON.stringify(
+          tokens.map((to) => ({
+            to,
+            title: m.title,
+            body: m.body,
+            sound: 'default',
+            data: { path: m.path },
+          })),
+        ),
+      });
+    } catch (e) {
+      return {
+        ok: false,
+        messageId: null,
+        error: errorText(e),
+        retryable: true,
+        invalidTokens: [],
+      };
+    }
+    if (!res.ok) {
+      return {
+        ok: false,
+        messageId: null,
+        error: `expo ${res.status}`,
+        retryable: res.status >= 500 || res.status === 429,
+        invalidTokens: [],
+      };
+    }
+    const tickets = ((await res.json()) as { data?: ExpoTicket[] }).data ?? [];
+    const invalidTokens = tickets
+      .map((t, i) =>
+        t.status === 'error' && t.details?.error === 'DeviceNotRegistered' ? tokens[i] : null,
+      )
+      .filter((t): t is string => !!t);
+    const okTicket = tickets.find((t) => t.status === 'ok');
+    if (okTicket)
+      return {
+        ok: true,
+        messageId: okTicket.id ?? null,
+        error: null,
+        retryable: false,
+        invalidTokens,
+      };
+    const err = tickets.find((t) => t.status === 'error');
+    return {
+      ok: false,
+      messageId: null,
+      error: err?.details?.error ?? err?.message ?? 'expo: no ticket',
+      retryable: !invalidTokens.length && err?.details?.error !== 'InvalidCredentials',
+      invalidTokens,
+    };
+  }
+}
+
+export class LogPush implements PushSender {
+  readonly provider = 'log';
+  constructor(private readonly logFn: (line: string) => void = console.log) {}
+  send(tokens: string[], m: PushMessage) {
+    this.logFn(`[notify:push] ${tokens.length} device(s) ${m.title} — ${m.body} → ${m.path}`);
+    return Promise.resolve<PushResult>({
+      ok: true,
+      messageId: logId('push'),
+      error: null,
+      retryable: false,
+      invalidTokens: [],
+    });
   }
 }

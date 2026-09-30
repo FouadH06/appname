@@ -4,7 +4,7 @@
 import type { SendResult } from '../otp/types.ts';
 
 export type { SendResult };
-export type NotifyChannel = 'whatsapp' | 'sms';
+export type NotifyChannel = 'whatsapp' | 'sms' | 'push';
 export type Locale = 'en' | 'ar' | 'fr';
 
 export interface Template {
@@ -30,6 +30,10 @@ export interface Claimed {
   payload: Record<string, unknown>;
   channels: NotifyChannel[];
   templates: Partial<Record<NotifyChannel, Template>>;
+  /** active Expo push tokens of the recipient (M13; empty for web-only customers) */
+  push_tokens?: string[];
+  /** also send a push alongside the channels (dispute outcomes; first attempt only, best effort) */
+  also_push?: boolean;
 }
 
 export type Outcome = 'sent' | 'retry' | 'failed';
@@ -45,6 +49,8 @@ export interface NotifyStore {
     error: string | null,
   ): Promise<void>;
   finish(id: string, outcome: Outcome, error: string | null): Promise<void>;
+  /** tokens the push provider reported as no longer registered (M13) */
+  disablePushTokens?(tokens: string[]): Promise<void>;
 }
 
 /** A WhatsApp template button: quick reply (payload comes back to our webhook) or URL suffix. */
@@ -68,4 +74,23 @@ export interface WhatsAppSender {
 export interface SmsSender {
   readonly provider: string;
   sendText(to: string, text: string): Promise<SendResult>;
+}
+
+/** Push message (M13): title + body, and a path the app opens (the same path as the web route). */
+export interface PushMessage {
+  title: string;
+  body: string;
+  path: string;
+}
+export interface PushResult {
+  ok: boolean;
+  messageId: string | null;
+  error: string | null;
+  retryable: boolean;
+  /** tokens the provider says are gone (uninstalled app, revoked permission) */
+  invalidTokens: string[];
+}
+export interface PushSender {
+  readonly provider: string;
+  send(tokens: string[], message: PushMessage): Promise<PushResult>;
 }

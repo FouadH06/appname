@@ -2,6 +2,7 @@ import { createHmac } from 'node:crypto';
 import { describe, expect, it, vi } from 'vitest';
 import { handleWhatsAppWebhook } from '../../../supabase/functions/_shared/handlers.ts';
 import {
+  ExpoPushSender,
   LogSms,
   LogWhatsApp,
   TwilioTextSender,
@@ -16,6 +17,7 @@ import {
   templateButtons,
   fill,
   formatVars,
+  pushPath,
   replyText,
   whatsappParams,
 } from '../../../supabase/functions/_shared/notify/render.ts';
@@ -438,5 +440,164 @@ describe('WhatsApp webhook buttons', () => {
     });
     expect(res.status).toBe(403);
     expect(onButton).not.toHaveBeenCalled();
+  });
+});
+
+describe('push (M13)', () => {
+  it('sends a review request by push with the message text and a deep-link path; disables dead devices', async () => {
+    const store = fakeStore([
+      row({
+        type: 'review_request',
+        channels: ['push'],
+        push_tokens: ['ExponentPushToken[a]', 'ExponentPushToken[b]'],
+        payload: { ...payload, review_link: 'https://platform.com/review/rtok' },
+        templates: {
+          whatsapp: tpl({
+            type: 'review_request',
+            body: 'How was your {service_name} at {business_name}?',
+          }),
+        },
+      }),
+    ]);
+    const disabled: string[][] = [];
+    const push = {
+      provider: 'expo',
+      send: vi.fn(async () => ({
+        ok: true,
+        messageId: 't-1',
+        error: null,
+        retryable: false,
+        invalidTokens: ['ExponentPushToken[b]'],
+      })),
+    };
+    const r = await runDispatch({
+      store: {
+        ...store,
+        disablePushTokens: async (t: string[]) => void disabled.push(t),
+      } as unknown as NotifyStore,
+      push,
+      mode: 'live',
+    });
+    expect(r.sent).toBe(1);
+    expect(push.send).toHaveBeenCalledWith(['ExponentPushToken[a]', 'ExponentPushToken[b]'], {
+      title: 'Fade District',
+      body: 'How was your Haircut at Fade District?',
+      path: '/review/rtok',
+    });
+    expect(disabled).toEqual([['ExponentPushToken[b]']]);
+    expect(store.attempts[0]).toMatchObject({ channel: 'push', provider: 'expo', ok: true });
+  });
+
+  it('dispute outcome: WhatsApp and a push; a WhatsApp retry does not repeat the push', async () => {
+    const push = {
+      provider: 'expo',
+      send: vi.fn(async () => ({
+        ok: true,
+        messageId: 't-2',
+        error: null,
+        retryable: false,
+        invalidTokens: [],
+      })),
+    };
+    const whatsapp = {
+      provider: 'meta',
+      sendTemplate: vi.fn(async () => ({ ok: true as const, messageId: 'wa-1' })),
+    };
+    const dispute = {
+      type: 'dispute_update',
+      channels: ['whatsapp' as const],
+      also_push: true,
+      push_tokens: ['ExponentPushToken[a]'],
+      templates: { whatsapp: tpl({ type: 'dispute_update', body: 'Update on your report' }) },
+    };
+    const first = fakeStore([row({ ...dispute, attempts: 1 })]);
+    expect((await runDispatch({ store: first, push, whatsapp, mode: 'log' } as never)).sent).toBe(
+      1,
+    );
+    expect(push.send).toHaveBeenCalledTimes(1);
+    expect(whatsapp.sendTemplate).toHaveBeenCalledTimes(1);
+    expect(first.attempts.map((a) => a.channel)).toEqual(['push', 'whatsapp']);
+
+    const retry = fakeStore([row({ ...dispute, attempts: 2 })]);
+    await runDispatch({ store: retry, push, whatsapp, mode: 'log' } as never);
+    expect(push.send).toHaveBeenCalledTimes(1);
+    expect(retry.attempts.map((a) => a.channel)).toEqual(['whatsapp']);
+
+    const appOnly = fakeStore([row({ ...dispute, channels: [], phone: '', attempts: 1 })]);
+    expect((await runDispatch({ store: appOnly, push, whatsapp, mode: 'log' } as never)).sent).toBe(
+      1,
+    );
+  });
+
+  it('deep links: booking detail by default, review / result screens where they exist', () => {
+    expect(pushPath('dispute_update', { booking_id: 'b-9' })).toBe('/bookings/b-9');
+    expect(pushPath('result_published', { result_id: 'r-1', booking_id: 'b-9' })).toBe('/r/r-1');
+    expect(
+      pushPath('review_needs_changes', {
+        review_link: 'https://platform.com/review/abc',
+        booking_id: 'b',
+      }),
+    ).toBe('/review/abc');
+    expect(pushPath('review_request', {})).toBe('/notifications');
+  });
+
+  it('Expo: one request for all devices; DeviceNotRegistered tokens come back; ok if any device accepted', async () => {
+    const fetchFn = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({
+            data: [
+              { status: 'ok', id: 'tk1' },
+              { status: 'error', details: { error: 'DeviceNotRegistered' } },
+            ],
+          }),
+          {
+            status: 200,
+          },
+        ),
+    );
+    const r = await new ExpoPushSender('secret', fetchFn as unknown as typeof fetch).send(
+      ['T1', 'T2'],
+      {
+        title: 'A',
+        body: 'B',
+        path: '/bookings/x',
+      },
+    );
+    expect(r).toMatchObject({ ok: true, messageId: 'tk1', invalidTokens: ['T2'] });
+    const [url, init] = fetchFn.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toBe('https://exp.host/--/api/v2/push/send');
+    expect((init.headers as Record<string, string>).Authorization).toBe('Bearer secret');
+    expect(JSON.parse(init.body as string)[0]).toMatchObject({
+      to: 'T1',
+      title: 'A',
+      body: 'B',
+      data: { path: '/bookings/x' },
+    });
+  });
+
+  it('Expo: all devices gone → failed without retry, tokens reported', async () => {
+    const fetchFn = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({
+            data: [{ status: 'error', details: { error: 'DeviceNotRegistered' } }],
+          }),
+          { status: 200 },
+        ),
+    );
+    const r = await new ExpoPushSender(undefined, fetchFn as unknown as typeof fetch).send(['T1'], {
+      title: 'A',
+      body: 'B',
+      path: '/',
+    });
+    expect(r).toMatchObject({ ok: false, retryable: false, invalidTokens: ['T1'] });
+  });
+
+  it('log mode includes a push channel; live mode configures Expo push without credentials', () => {
+    expect(
+      notifyConfigFromEnv((k) => (k === 'NOTIFY_PROVIDER_MODE' ? 'log' : undefined)).push?.provider,
+    ).toBe('log');
+    expect(notifyConfigFromEnv(() => undefined).push?.provider).toBe('expo');
   });
 });

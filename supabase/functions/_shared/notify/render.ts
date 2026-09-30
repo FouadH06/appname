@@ -244,3 +244,27 @@ export function replyText(result: Record<string, unknown> | null): string | null
   const locale: Locale = result.locale === 'ar' ? 'ar' : 'en';
   return fill(r[locale === 'ar' ? 'ar' : 'en'], formatVars(result, locale));
 }
+
+const pathOf = (link: string) => {
+  try {
+    return link.startsWith('/') ? link : new URL(link).pathname;
+  } catch {
+    return '';
+  }
+};
+
+/**
+ * Where a push opens (M13): the same path as the web route, so universal links, the app router and
+ * the web all agree. Never stale: booking detail always shows the current state.
+ */
+export function pushPath(type: string, payload: Record<string, unknown>): string {
+  const booking = str(payload.booking_id);
+  const review = pathOf(str(payload.review_link));
+  if (
+    (type === 'review_request' || type === 'review_needs_changes' || type === 'result_rejected') &&
+    review
+  )
+    return review;
+  if (type === 'result_published' && str(payload.result_id)) return `/r/${str(payload.result_id)}`;
+  return booking ? `/bookings/${booking}` : '/notifications';
+}

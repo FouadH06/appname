@@ -51,3 +51,11 @@ __pycache__/
 # M10 image benchmark: generated corpus and dumped outputs (regenerate with bench/corpus.ts)
 apps/media-worker/bench/corpus/
 apps/media-worker/bench/out/
+
+# Expo (M13)
+apps/mobile/.expo/
+apps/mobile/dist/
+apps/mobile/expo-env.d.ts
+apps/mobile/.env.local
+apps/mobile/test-results/
+apps/mobile/playwright-report/
