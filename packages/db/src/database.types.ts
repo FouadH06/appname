@@ -3738,6 +3738,7 @@ export type Database = {
       admin_get_dispute: { Args: { p_dispute_id: string }; Returns: Json };
       admin_get_media_case: { Args: { p_case_id: string }; Returns: Json };
       admin_get_review: { Args: { p_review_id: string }; Returns: Json };
+      admin_launch_readiness: { Args: Record<PropertyKey, never>; Returns: Json };
       admin_list_businesses: {
         Args: {
           p_cluster_id?: string;

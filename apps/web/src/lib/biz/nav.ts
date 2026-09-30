@@ -24,7 +24,7 @@ export const NAV: NavItem[] = [
   { key: 'services', label: 'Services', path: '/services', icon: '✂', roles: MANAGE },
   { key: 'staff', label: 'Staff', path: '/staff', icon: '◍', roles: DESK },
   { key: 'reviews', label: 'Reviews', path: '/reviews', icon: '★', roles: MANAGE },
-  { key: 'analytics', label: 'Analytics', path: '/analytics', icon: '◔', roles: MANAGE },
+  { key: 'analytics', label: 'Analytics', path: '/analytics', icon: '◔', roles: DESK }, // reception: counts, no revenue
   { key: 'settings', label: 'Settings', path: '/settings', icon: '⚙', roles: MANAGE },
 ];
 

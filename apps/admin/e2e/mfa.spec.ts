@@ -402,6 +402,13 @@ test('admin must enroll TOTP and reach aal2 before anything works', async ({ pag
     await expect(page.getByTestId('ranking-versions')).toContainText('active');
     await page.goto('/catalog');
     await expect(page.getByTestId('services')).toContainText('Haircut');
+
+    // ── M14: system health (jobs snapshot, queues) and launch readiness ──
+    await page.goto('/system');
+    await expect(page.getByTestId('system-health')).toContainText('Scheduled jobs');
+    await page.goto('/launch');
+    await expect(page.getByTestId('clusters')).toContainText('Hazmieh');
+    await expect(page.getByTestId('platform')).toContainText('WhatsApp templates approved');
   } finally {
     await db.end();
   }

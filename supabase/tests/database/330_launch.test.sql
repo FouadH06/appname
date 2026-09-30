@@ -5,7 +5,7 @@ create extension if not exists pgtap with schema extensions;
 set local search_path = extensions, public;
 set local role postgres;
 \ir ../helpers/fixtures.psql
-select plan(25);
+select plan(28);
 
 select tests.new_user('owner', '96170330100');
 select tests.new_user('mgr', '96170330101');
@@ -79,6 +79,11 @@ select is((select j -> 'services' -> 0 ->> 'name' from a where who = 'owner'), '
 select is((select (j -> 'kpis' -> 'prev' ->> 'completed')::int from a where who = 'owner'), 0, 'previous period for comparison');
 select results_eq($$ select (j ->> 'show_revenue')::boolean, j -> 'kpis' -> 'cur' -> 'revenue_min', j -> 'staff' -> 0 -> 'revenue' from a where who = 'recep' $$,
                   $$ values (false, 'null'::jsonb, 'null'::jsonb) $$, 'reception sees counts, never revenue');
+select tests.as_postgres();
+update public.business_settings set reception_sees_revenue = true where business_id = tests.id('biz');
+select tests.act_as('recep');
+select is((public.biz_get_analytics(tests.id('biz'), tests.day(-6), tests.day(0)) ->> 'show_revenue')::boolean, true,
+          'reception sees revenue when the owner allows it');
 select tests.act_as('stf');
 select throws_ok($$ select public.biz_get_analytics(tests.id('biz'), tests.day(-6), tests.day(0)) $$, 'P0001', 'FORBIDDEN', 'staff role has no analytics');
 select tests.act_as('outsider');
@@ -94,6 +99,7 @@ select is((select count(*)::int from cron.job where jobname in ('app_daily_metri
 select results_eq($$ select private.cron_interval_minutes('* * * * *'), private.cron_interval_minutes('*/10 * * * *'),
                             private.cron_interval_minutes('45 1 * * *') $$,
                   $$ values (1, 10, 1440) $$, 'expected run interval from the schedule');
+delete from private.cron_health where true;   -- the real 5-minute snapshot may have run (rolled back)
 select tests.act_as('mod', 'aal2');
 select throws_ok($$ select public.admin_system_health() $$, 'P0001', 'FORBIDDEN', 'moderators cannot see system health');
 select tests.act_as('ops', 'aal2');
@@ -107,6 +113,12 @@ select results_eq($$ select (j ->> 'stale')::boolean, (j ->> 'failing')::boolean
                      from jsonb_array_elements(public.admin_system_health() -> 'jobs') j order by j ->> 'job' $$,
                   $$ values (false, true), (true, false) $$,
                   'a daily job that failed is flagged; a per-minute job silent for an hour is stale');
+select tests.act_as('mod', 'aal2');
+select throws_ok($$ select public.admin_launch_readiness() $$, 'P0001', 'FORBIDDEN', 'launch readiness is ops-only');
+select tests.act_as('ops', 'aal2');
+select results_eq($$ select (b ->> 'ready')::boolean, b -> 'missing' ? 'cover', b -> 'missing' ? 'description'
+                     from jsonb_array_elements(public.admin_launch_readiness() -> 'businesses') b where b ->> 'id' = tests.id('biz')::text $$,
+                  $$ values (false, true, true) $$, 'readiness lists what a live business is missing');
 select tests.as_anon();
 select isnt(public.health_ping(), null, 'uptime ping works anonymously');
 

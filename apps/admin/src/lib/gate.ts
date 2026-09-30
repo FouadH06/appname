@@ -36,4 +36,5 @@ export const CUSTOMER_ROLES = ['support'] as const;
 export const REVIEW_ROLES = ['moderator', 'support'] as const;
 export const DISPUTE_ROLES = ['support'] as const;
 export const CATALOG_ROLES = ['ops'] as const;
+export const OPS_ROLES = ['ops'] as const;
 export const RANKING_ROLES = ['ops'] as const; // read; drafts / publish are superadmin only

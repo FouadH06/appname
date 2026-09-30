@@ -524,3 +524,13 @@ export async function zeroResultLogged(q: string): Promise<boolean> {
   );
   return (r.rows[0]?.n ?? 0) > 0;
 }
+
+// ─── M14 analytics ─────────────────────────────────────────────────────────
+/** Rebuild the daily rollups for the last n days (what the nightly job does for 7). */
+export async function refreshMetrics(days = 14): Promise<void> {
+  await db().query(
+    `select private.refresh_daily_metrics(((now() at time zone 'Asia/Beirut')::date - $1::int),
+                                          ((now() at time zone 'Asia/Beirut')::date - 1))`,
+    [days],
+  );
+}

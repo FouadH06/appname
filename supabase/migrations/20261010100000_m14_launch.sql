@@ -189,7 +189,9 @@ begin
   if p_from is null or p_to is null or p_from > p_to or p_to - p_from > 366 then
     perform private.raise_code('INVALID_INPUT', '{"field":"period"}');
   end if;
-  v_money := v_role in ('owner', 'manager');
+  -- reception sees revenue only when the owner turned it on (B11 edge case; default off)
+  v_money := v_role in ('owner', 'manager')
+    or coalesce((select bs.reception_sees_revenue from public.business_settings bs where bs.business_id = p_business_id), false);
   v_len := p_to - p_from + 1;
   v_prev_to := p_from - 1;
   v_prev_from := p_from - v_len;
@@ -350,6 +352,74 @@ begin
                             'db_size_mb', (pg_database_size(current_database()) / 1048576)::int);
 end $$;
 
+-- ═══ Launch readiness (ops) ══════════════════════════════════════════════════
+-- Gate D inputs: per cluster live count vs target and category coverage; per live business the go-live
+-- checklist plus launch checks (contact number, map pin, public staff, recent activity, message
+-- failures); platform settings visible from the database.
+create function public.admin_launch_readiness() returns jsonb
+language plpgsql stable security definer set search_path = '' as $$
+declare v jsonb;
+begin
+  perform private.admin_caller('{ops}');
+  with biz as (
+    select b.id, b.name, b.slug, b.status, cg.name_en as category,
+           (select l.id from public.business_locations l where l.business_id = b.id order by l.is_primary desc, l.created_at limit 1) as loc
+    from public.businesses b left join public.categories cg on cg.id = b.primary_category_id
+    where b.status in ('live', 'paused') and not b.is_test
+  ), checks as (
+    select biz.*, l.area_id,
+           public.get_go_live_checklist(biz.id) as go_live,
+           (l.whatsapp_e164 is not null or l.phone_e164 is not null) as contact,
+           (l.geo is not null) as pin,
+           exists (select 1 from public.staff_members s where s.business_id = biz.id and s.status = 'active' and s.publicly_bookable) as public_staff,
+           coalesce(length(btrim((select b2.description from public.businesses b2 where b2.id = biz.id))), 0) >= 40 as description,
+           exists (select 1 from public.business_members m where m.business_id = biz.id and m.role = 'owner' and m.status = 'active') as owner,
+           (select count(*) from public.bookings k where k.business_id = biz.id and k.status <> 'held'
+              and k.created_at > now() - interval '14 days')::int as bookings_14d,
+           (select count(*) from public.notifications n join public.bookings k on k.id = n.booking_id
+              where k.business_id = biz.id and n.status = 'failed' and n.created_at > now() - interval '7 days')::int as failed_messages_7d
+    from biz left join public.business_locations l on l.id = biz.loc
+  ), rows as (
+    select c.*, (select coalesce(jsonb_agg(e ->> 'key'), '[]') from jsonb_array_elements(c.go_live) e where not (e ->> 'ok')::boolean)
+                || case when c.contact then '[]'::jsonb else '["contact"]' end
+                || case when c.pin then '[]'::jsonb else '["map_pin"]' end
+                || case when c.public_staff then '[]'::jsonb else '["public_staff"]' end
+                || case when c.description then '[]'::jsonb else '["description"]' end
+                || case when c.owner then '[]'::jsonb else '["owner_account"]' end
+                || case when c.status = 'live' then '[]'::jsonb else '["paused"]' end as missing
+    from checks c
+  )
+  select jsonb_build_object(
+    'clusters', coalesce((select jsonb_agg(jsonb_build_object(
+        'id', cl.id, 'name', cl.name_en, 'target', cl.target_businesses,
+        'live', (select count(distinct r.id) from rows r join public.cluster_areas ca on ca.area_id = r.area_id
+                 where ca.cluster_id = cl.id and r.status = 'live'),
+        'ready', (select count(distinct r.id) from rows r join public.cluster_areas ca on ca.area_id = r.area_id
+                  where ca.cluster_id = cl.id and jsonb_array_length(r.missing) = 0),
+        'categories', coalesce((select jsonb_object_agg(q.category, q.n) from (
+            select r.category, count(distinct r.id) as n from rows r join public.cluster_areas ca on ca.area_id = r.area_id
+            where ca.cluster_id = cl.id and r.status = 'live' group by r.category) q), '{}'),
+        'gate_d_min_15', (select count(distinct r.id) from rows r join public.cluster_areas ca on ca.area_id = r.area_id
+                          where ca.cluster_id = cl.id and r.status = 'live') >= 15)
+      order by cl.sort) from public.clusters cl), '[]'),
+    'businesses', coalesce((select jsonb_agg(jsonb_build_object(
+        'id', r.id, 'name', r.name, 'slug', r.slug, 'status', r.status, 'category', r.category,
+        'ready', jsonb_array_length(r.missing) = 0, 'missing', r.missing,
+        'bookings_14d', r.bookings_14d, 'failed_messages_7d', r.failed_messages_7d)
+      order by jsonb_array_length(r.missing) desc, r.name) from rows r), '[]'),
+    'platform', jsonb_build_object(
+      'web_base_url', private.app_setting('web_base_url'),
+      'web_base_url_is_local', coalesce(private.app_setting('web_base_url'), '') ~ '(127\.0\.0\.1|localhost)',
+      'whatsapp_templates_approved', (select count(*) from public.notification_templates t
+                                      where t.channel = 'whatsapp' and t.is_active and t.status = 'approved'),
+      'whatsapp_templates_active', (select count(*) from public.notification_templates t where t.channel = 'whatsapp' and t.is_active),
+      'ranking_active', exists (select 1 from public.ranking_configs where status = 'active'),
+      'quality_scores_at', (select max(computed_at) from public.business_quality_scores),
+      'test_businesses', (select count(*) from public.businesses where is_test))
+  ) into v;
+  return v;
+end $$;
+
 -- Uptime monitors: proves the API and database answer (no data, anonymous).
 create function public.health_ping() returns timestamptz
 language sql stable security definer set search_path = '' as $$ select now() $$;
@@ -359,10 +429,11 @@ revoke execute on function private.beirut_day_start(date), private.working_minut
   private.metrics_rows(uuid, date, date), private.staff_metrics_rows(uuid, date, date),
   private.refresh_daily_metrics(date, date), private.job_daily_metrics(), private.cron_interval_minutes(text)
   from public, anon, authenticated;
-revoke execute on function public.biz_get_analytics(uuid, date, date), public.admin_system_health(), public.health_ping()
-  from public;
+revoke execute on function public.biz_get_analytics(uuid, date, date), public.admin_system_health(), public.health_ping(),
+  public.admin_launch_readiness() from public;
 grant execute on function public.biz_get_analytics(uuid, date, date) to authenticated, service_role;
 grant execute on function public.admin_system_health() to authenticated, service_role;
+grant execute on function public.admin_launch_readiness() to authenticated, service_role;
 grant execute on function public.health_ping() to anon, authenticated, service_role;
 
 do $$
