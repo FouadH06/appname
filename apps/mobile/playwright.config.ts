@@ -18,7 +18,7 @@ export default defineConfig({
   projects: [{ name: 'phone', use: { ...devices['Pixel 7'] } }],
   webServer: [
     {
-      command: 'pnpm --filter @app/web dev',
+      command: process.env.CI ? 'pnpm --filter @app/web start' : 'pnpm --filter @app/web dev',
       url: 'http://127.0.0.1:3000/api/health',
       reuseExistingServer: !process.env.CI,
       timeout: 180_000,

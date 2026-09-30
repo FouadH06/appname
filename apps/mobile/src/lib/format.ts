@@ -6,18 +6,35 @@ export const TZ = 'Asia/Beirut';
 export type PriceType = 'fixed' | 'from' | 'range' | 'on_consultation';
 
 export const timeText = (iso: string) =>
-  new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit', timeZone: TZ }).format(new Date(iso));
+  new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit', timeZone: TZ }).format(
+    new Date(iso),
+  );
 export const dayText = (iso: string) =>
-  new Intl.DateTimeFormat('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: TZ }).format(new Date(iso));
+  new Intl.DateTimeFormat('en-GB', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    timeZone: TZ,
+  }).format(new Date(iso));
 export const dateTimeText = (iso: string) => `${dayText(iso)}, ${timeText(iso)}`;
 
 /** YYYY-MM-DD in Beirut, n days from today */
 export function beirutDate(offset = 0): string {
   const d = new Date(Date.now() + offset * 86_400_000);
-  return new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: TZ,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(d);
 }
 export const dateLabel = (ymd: string) =>
-  new Intl.DateTimeFormat('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' }).format(new Date(`${ymd}T12:00:00Z`));
+  new Intl.DateTimeFormat('en-GB', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    timeZone: 'UTC',
+  }).format(new Date(`${ymd}T12:00:00Z`));
 
 export function money(v: number | null | undefined, currency = 'USD') {
   if (v === null || v === undefined) return '';
@@ -26,7 +43,12 @@ export function money(v: number | null | undefined, currency = 'USD') {
   return currency === 'USD' ? `$${s}` : `${s} ${currency}`;
 }
 
-export function priceText(p: { price_type: PriceType; price_min: number | null; price_max: number | null; currency?: string }) {
+export function priceText(p: {
+  price_type: PriceType;
+  price_min: number | null;
+  price_max: number | null;
+  currency?: string;
+}) {
   switch (p.price_type) {
     case 'from':
       return `from ${money(p.price_min, p.currency)}`;
@@ -56,7 +78,8 @@ export const ugcUrl = (path: string | null | undefined) =>
   path ? `${ENV.supabaseUrl}/storage/v1/object/public/ugc-public/${path}` : null;
 
 /** Same copy as web (i18n catalogue); English-first UI. */
-export const describeError = (code: string, vars: Record<string, string | number> = {}) => messageForCode('en', code, vars);
+export const describeError = (code: string, vars: Record<string, string | number> = {}) =>
+  messageForCode('en', code, vars);
 
 export const LABELS: Record<string, string> = {
   top_rated: 'Top rated',

@@ -28,7 +28,11 @@ export default function ReviewLink() {
       try {
         await claimBooking(supabase(), token);
       } catch (e) {
-        return setError(describeError((e as { code?: string }).code ?? 'UNKNOWN', { hint: summary.phone_hint ?? '' }));
+        return setError(
+          describeError((e as { code?: string }).code ?? 'UNKNOWN', {
+            hint: summary.phone_hint ?? '',
+          }),
+        );
       }
     }
     setReady(true);
@@ -39,15 +43,27 @@ export default function ReviewLink() {
 
   return (
     <Screen>
-      <Stack.Screen options={{ title: summary ? `Review ${summary.booking.business_name}` : 'Leave a review' }} />
-      {error ? <Text style={{ color: C.danger }} testID="review-link-error">{error}</Text>
-        : !summary || loading ? <State loading />
-        : !signedIn ? (
-          <>
-            <Body>Verify {summary.phone_hint ?? 'your number'} so we know the review comes from the visit.</Body>
-            <PhoneSignIn onVerified={() => void prepare()} />
-          </>
-        ) : ready && summary.booking_id ? <ReviewForm bookingId={summary.booking_id} /> : <State loading />}
+      <Stack.Screen
+        options={{ title: summary ? `Review ${summary.booking.business_name}` : 'Leave a review' }}
+      />
+      {error ? (
+        <Text style={{ color: C.danger }} testID="review-link-error">
+          {error}
+        </Text>
+      ) : !summary || loading ? (
+        <State loading />
+      ) : !signedIn ? (
+        <>
+          <Body>
+            Verify {summary.phone_hint ?? 'your number'} so we know the review comes from the visit.
+          </Body>
+          <PhoneSignIn onVerified={() => void prepare()} />
+        </>
+      ) : ready && summary.booking_id ? (
+        <ReviewForm bookingId={summary.booking_id} />
+      ) : (
+        <State loading />
+      )}
     </Screen>
   );
 }

@@ -41,16 +41,24 @@ export async function completeInPast(bookingId: string, daysAgo = 3) {
 }
 
 export async function bookingStatus(bookingId: string): Promise<string> {
-  const r = await db().query<{ status: string }>(`select status::text from public.bookings where id = $1`, [bookingId]);
+  const r = await db().query<{ status: string }>(
+    `select status::text from public.bookings where id = $1`,
+    [bookingId],
+  );
   return r.rows[0]!.status;
 }
 
 export async function favoriteCount(businessId: string): Promise<number> {
-  const r = await db().query<{ n: number }>(`select count(*)::int as n from public.favorite_businesses where business_id = $1`, [businessId]);
+  const r = await db().query<{ n: number }>(
+    `select count(*)::int as n from public.favorite_businesses where business_id = $1`,
+    [businessId],
+  );
   return r.rows[0]!.n;
 }
 
-export async function bookingAttribution(bookingId: string): Promise<{ source: string; channel: string | null }> {
+export async function bookingAttribution(
+  bookingId: string,
+): Promise<{ source: string; channel: string | null }> {
   const r = await db().query<{ source: string; channel: string | null }>(
     `select source::text, attribution ->> 'channel' as channel from public.bookings where id = $1`,
     [bookingId],

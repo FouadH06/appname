@@ -18,7 +18,9 @@ function OfflineBanner() {
   if (net.isConnected !== false && net.isInternetReachable !== false) return null;
   return (
     <SafeAreaView edges={['top']} style={{ backgroundColor: C.ink900 }} testID="offline-banner">
-      <Text style={{ color: '#fff', textAlign: 'center', paddingVertical: 6, fontSize: 13 }}>You’re offline. Bookings and changes need a connection.</Text>
+      <Text style={{ color: '#fff', textAlign: 'center', paddingVertical: 6, fontSize: 13 }}>
+        You’re offline. Bookings and changes need a connection.
+      </Text>
     </SafeAreaView>
   );
 }
@@ -30,9 +32,18 @@ function Shell() {
     if (signedIn) void refreshPushToken();
   }, [signedIn]);
   return (
-    <Stack screenOptions={{ headerTintColor: C.ink900, headerBackTitle: 'Back', contentStyle: { backgroundColor: C.surface50 } }}>
+    <Stack
+      screenOptions={{
+        headerTintColor: C.ink900,
+        headerBackTitle: 'Back',
+        contentStyle: { backgroundColor: C.surface50 },
+      }}
+    >
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen name="[slug]/book" options={{ presentation: 'fullScreenModal', title: 'Book' }} />
+      <Stack.Screen
+        name="[slug]/book"
+        options={{ presentation: 'fullScreenModal', title: 'Book' }}
+      />
       <Stack.Screen name="sign-in" options={{ presentation: 'modal', title: 'Sign in' }} />
     </Stack>
   );

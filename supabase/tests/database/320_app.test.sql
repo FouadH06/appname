@@ -5,7 +5,7 @@ create extension if not exists pgtap with schema extensions;
 set local search_path = extensions, public;
 set local role postgres;
 \ir ../helpers/fixtures.psql
-select plan(30);
+select plan(31);
 
 select tests.new_user('owner', '96170320100');
 select tests.new_user('c1', '96170320001');
@@ -164,6 +164,11 @@ select ok(not exists (select 1 from public.get_my_notifications() where type::te
 select ok(not exists (select 1 from public.get_my_notifications() where created_at < now() - interval '90 days'), '90-day retention');
 select is(public.get_unread_notification_count(), (select count(*)::int from public.get_my_notifications() where read_at is null),
   'unread count matches the inbox');
+
+-- app routes that must never become business slugs
+select tests.as_postgres();
+select is((select count(*)::int from public.reserved_slugs where slug in ('captcha', 'sign-in')), 2,
+  'app route slugs are reserved');
 
 select * from finish();
 rollback;

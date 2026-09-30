@@ -66,7 +66,7 @@ create function public.get_rebook_suggestions(p_limit int default 3) returns jso
 language plpgsql stable security definer set search_path = '' as $$
 declare v_uid uuid := private.uid();
 begin
-  if v_uid is null or private.is_anonymous() then return '[]'; end if;
+  if v_uid is null or private.is_anonymous() then return '[]'::jsonb; end if;
   return coalesce((
     select jsonb_agg(x order by (x ->> 'last_visit_at') desc)
     from (

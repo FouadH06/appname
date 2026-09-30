@@ -8,6 +8,9 @@ const EXCLUDE = ['/biz/*', '/api/*', '/captcha', '/lab/*', '/invite/*', '/accoun
 export function GET() {
   const team = process.env.APPLE_TEAM_ID;
   const appIDs = team ? [`${team}.com.appname.customer`] : [];
-  const components = [...EXCLUDE.map((p) => ({ '/': p, exclude: true })), ...PATHS.map((p) => ({ '/': p }))];
+  const components = [
+    ...EXCLUDE.map((p) => ({ '/': p, exclude: true })),
+    ...PATHS.map((p) => ({ '/': p })),
+  ];
   return Response.json({ applinks: { details: appIDs.length ? [{ appIDs, components }] : [] } });
 }

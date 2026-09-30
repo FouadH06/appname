@@ -24,8 +24,12 @@ export default function Explore() {
 
   useFocusEffect(
     useCallback(() => {
-      void AsyncStorage.getItem(RECENTS).then((v) => setRecents(v ? (JSON.parse(v) as string[]) : []));
-      void supabase().rpc('get_home', {}).then(({ data }) => setHome((data as unknown as Home) ?? null));
+      void AsyncStorage.getItem(RECENTS).then((v) =>
+        setRecents(v ? (JSON.parse(v) as string[]) : []),
+      );
+      void supabase()
+        .rpc('get_home', {})
+        .then(({ data }) => setHome((data as unknown as Home) ?? null));
     }, []),
   );
   useEffect(() => {
@@ -33,7 +37,9 @@ export default function Explore() {
     if (term.length < 2) return;
     let alive = true;
     const t = setTimeout(() => {
-      void supabase().rpc('search_suggest', { p_q: term }).then(({ data }) => alive && setSug((data as unknown as Suggest) ?? null));
+      void supabase()
+        .rpc('search_suggest', { p_q: term })
+        .then(({ data }) => alive && setSug((data as unknown as Suggest) ?? null));
     }, 150);
     return () => {
       alive = false;
@@ -71,20 +77,50 @@ export default function Explore() {
           testID="search-input"
         />
       </View>
-      <ScrollView contentContainerStyle={s.body} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
+      <ScrollView
+        contentContainerStyle={s.body}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+      >
         {typing ? (
           <View style={{ gap: 4 }} testID="suggestions">
-            {none ? <Muted>No exact matches for “{q.trim()}”. Try “haircut”, “nails” or “massage” — or search anyway.</Muted> : null}
+            {none ? (
+              <Muted>
+                No exact matches for “{q.trim()}”. Try “haircut”, “nails” or “massage” — or search
+                anyway.
+              </Muted>
+            ) : null}
             {sug.services.map((x) => (
-              <SuggestionRow key={x.id} icon="✂️" label={x.name} hint={x.places ? `${x.places} places` : 'Service'} testID="suggestion-service"
-                onPress={() => void go({ q: x.name, service: x.id }, x.name)} />
+              <SuggestionRow
+                key={x.id}
+                icon="✂️"
+                label={x.name}
+                hint={x.places ? `${x.places} places` : 'Service'}
+                testID="suggestion-service"
+                onPress={() => void go({ q: x.name, service: x.id }, x.name)}
+              />
             ))}
             {sug.businesses.map((b) => (
-              <SuggestionRow key={b.slug} icon="🏪" label={b.name} hint={[b.area, b.display_rating ? `★ ${b.display_rating}` : null].filter(Boolean).join(' · ')}
-                testID="suggestion-business" onPress={() => router.push({ pathname: '/[slug]', params: { slug: b.slug } })} />
+              <SuggestionRow
+                key={b.slug}
+                icon="🏪"
+                label={b.name}
+                hint={[b.area, b.display_rating ? `★ ${b.display_rating}` : null]
+                  .filter(Boolean)
+                  .join(' · ')}
+                testID="suggestion-business"
+                onPress={() => router.push({ pathname: '/[slug]', params: { slug: b.slug } })}
+              />
             ))}
             {sug.areas.map((a) => (
-              <SuggestionRow key={a.id} icon="📍" label={a.name} hint="Area" testID="suggestion-area" onPress={() => void go({ area: a.id, q: '' })} />
+              <SuggestionRow
+                key={a.id}
+                icon="📍"
+                label={a.name}
+                hint="Area"
+                testID="suggestion-area"
+                onPress={() => void go({ area: a.id, q: '' })}
+              />
             ))}
           </View>
         ) : (
@@ -92,22 +128,55 @@ export default function Explore() {
             {recents.length ? (
               <View style={{ gap: 4 }}>
                 <Row>
-                  <View style={{ flex: 1 }}><H2>Recent</H2></View>
-                  <Pressable onPress={() => { setRecents([]); void AsyncStorage.removeItem(RECENTS); }}><Muted>Clear</Muted></Pressable>
+                  <View style={{ flex: 1 }}>
+                    <H2>Recent</H2>
+                  </View>
+                  <Pressable
+                    onPress={() => {
+                      setRecents([]);
+                      void AsyncStorage.removeItem(RECENTS);
+                    }}
+                  >
+                    <Muted>Clear</Muted>
+                  </Pressable>
                 </Row>
-                {recents.map((r) => <SuggestionRow key={r} icon="🕘" label={r} hint="" onPress={() => void go({ q: r }, r)} />)}
+                {recents.map((r) => (
+                  <SuggestionRow
+                    key={r}
+                    icon="🕘"
+                    label={r}
+                    hint=""
+                    onPress={() => void go({ q: r }, r)}
+                  />
+                ))}
               </View>
             ) : null}
             {home?.popular_services.length ? (
               <View style={{ gap: 8 }}>
                 <H2>Popular</H2>
-                <Row wrap>{home.popular_services.map((p) => <Chip key={p.id} label={p.name} onPress={() => void go({ q: p.name, service: p.id }, p.name)} />)}</Row>
+                <Row wrap>
+                  {home.popular_services.map((p) => (
+                    <Chip
+                      key={p.id}
+                      label={p.name}
+                      onPress={() => void go({ q: p.name, service: p.id }, p.name)}
+                    />
+                  ))}
+                </Row>
               </View>
             ) : null}
             {home ? (
               <View style={{ gap: 8 }}>
                 <H2>Browse</H2>
-                <Row wrap>{home.categories.map((c) => <Chip key={c.id} label={c.name} onPress={() => void go({ category: c.id, q: c.name })} />)}</Row>
+                <Row wrap>
+                  {home.categories.map((c) => (
+                    <Chip
+                      key={c.id}
+                      label={c.name}
+                      onPress={() => void go({ category: c.id, q: c.name })}
+                    />
+                  ))}
+                </Row>
               </View>
             ) : null}
           </>
@@ -117,9 +186,26 @@ export default function Explore() {
   );
 }
 
-function SuggestionRow({ icon, label, hint, onPress, testID }: { icon: string; label: string; hint: string; onPress: () => void; testID?: string }) {
+function SuggestionRow({
+  icon,
+  label,
+  hint,
+  onPress,
+  testID,
+}: {
+  icon: string;
+  label: string;
+  hint: string;
+  onPress: () => void;
+  testID?: string;
+}) {
   return (
-    <Pressable onPress={onPress} testID={testID} accessibilityRole="button" style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10 }}>
+    <Pressable
+      onPress={onPress}
+      testID={testID}
+      accessibilityRole="button"
+      style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10 }}
+    >
       <Text>{icon}</Text>
       <Text style={[s.text, { flex: 1 }]}>{label}</Text>
       <Muted>{hint}</Muted>

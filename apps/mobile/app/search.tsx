@@ -15,7 +15,13 @@ const SORTS: [string, string][] = [
 ];
 
 export default function SearchScreen() {
-  const p = useLocalSearchParams<{ q?: string; service?: string; category?: string; cluster?: string; area?: string }>();
+  const p = useLocalSearchParams<{
+    q?: string;
+    service?: string;
+    category?: string;
+    cluster?: string;
+    area?: string;
+  }>();
   const [today, setToday] = useState(false);
   const [rating, setRating] = useState(false);
   const [audience, setAudience] = useState<'women' | 'men' | null>(null);
@@ -67,20 +73,83 @@ export default function SearchScreen() {
         contentContainerStyle={s.body}
         ListHeaderComponent={
           <View style={{ gap: 12 }}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-              <Chip label="Available today" active={today} onPress={() => { setToday(!today); reset(); }} testID="filter-today" />
-              <Chip label="Rating 4.5+" active={rating} onPress={() => { setRating(!rating); reset(); }} testID="filter-rating" />
-              {[1, 2, 3].map((l) => <Chip key={l} label={'$'.repeat(l)} active={price === l} onPress={() => { setPrice(price === l ? null : l); reset(); }} />)}
-              <Chip label="For women" active={audience === 'women'} onPress={() => { setAudience(audience === 'women' ? null : 'women'); reset(); }} />
-              <Chip label="For men" active={audience === 'men'} onPress={() => { setAudience(audience === 'men' ? null : 'men'); reset(); }} />
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ gap: 8 }}
+            >
+              <Chip
+                label="Available today"
+                active={today}
+                onPress={() => {
+                  setToday(!today);
+                  reset();
+                }}
+                testID="filter-today"
+              />
+              <Chip
+                label="Rating 4.5+"
+                active={rating}
+                onPress={() => {
+                  setRating(!rating);
+                  reset();
+                }}
+                testID="filter-rating"
+              />
+              {[1, 2, 3].map((l) => (
+                <Chip
+                  key={l}
+                  label={'$'.repeat(l)}
+                  active={price === l}
+                  onPress={() => {
+                    setPrice(price === l ? null : l);
+                    reset();
+                  }}
+                />
+              ))}
+              <Chip
+                label="For women"
+                active={audience === 'women'}
+                onPress={() => {
+                  setAudience(audience === 'women' ? null : 'women');
+                  reset();
+                }}
+              />
+              <Chip
+                label="For men"
+                active={audience === 'men'}
+                onPress={() => {
+                  setAudience(audience === 'men' ? null : 'men');
+                  reset();
+                }}
+              />
             </ScrollView>
             <Row wrap>
-              {SORTS.map(([k, label]) => <Chip key={k} label={label} active={sort === k} onPress={() => { setSort(k); reset(); }} />)}
+              {SORTS.map(([k, label]) => (
+                <Chip
+                  key={k}
+                  label={label}
+                  active={sort === k}
+                  onPress={() => {
+                    setSort(k);
+                    reset();
+                  }}
+                />
+              ))}
             </Row>
-            {res ? <Muted testID="result-count">{res.total} {res.total === 1 ? 'place' : 'places'}</Muted> : null}
+            {res ? (
+              <Muted testID="result-count">
+                {res.total} {res.total === 1 ? 'place' : 'places'}
+              </Muted>
+            ) : null}
             <State loading={!rows && !error} error={error} />
             {res?.intent.not_offered ? (
-              <View testID="not-offered"><H2>Not on APP_NAME yet</H2><Muted>We cover hair, barbers, nails, lashes & brows, makeup, spas and beauty centers.</Muted></View>
+              <View testID="not-offered">
+                <H2>Not on APP_NAME yet</H2>
+                <Muted>
+                  We cover hair, barbers, nails, lashes & brows, makeup, spas and beauty centers.
+                </Muted>
+              </View>
             ) : rows && rows.length === 0 ? (
               <Muted testID="no-results">No places match all your filters. Try removing one.</Muted>
             ) : null}
@@ -90,11 +159,15 @@ export default function SearchScreen() {
         renderItem={({ item }) => <BusinessCard c={item} />}
         ListFooterComponent={
           <View style={{ gap: 12, marginTop: 12 }}>
-            {res && rows && res.total > rows.length ? <Button title="More places" kind="secondary" onPress={() => setPage(page + 1)} /> : null}
+            {res && rows && res.total > rows.length ? (
+              <Button title="More places" kind="secondary" onPress={() => setPage(page + 1)} />
+            ) : null}
             {res?.nearby?.length ? (
               <View style={{ gap: 12 }} testID="also-nearby">
                 <H2>Also nearby</H2>
-                {res.nearby.map((c) => <BusinessCard key={c.location_id} c={c} />)}
+                {res.nearby.map((c) => (
+                  <BusinessCard key={c.location_id} c={c} />
+                ))}
               </View>
             ) : null}
           </View>

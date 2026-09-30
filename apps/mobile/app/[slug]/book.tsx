@@ -5,8 +5,30 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ensureAnonymousSession } from '@app/api';
 import { Captcha } from '@/components/captcha';
 import { PhoneSignIn } from '@/components/phone-sign-in';
-import { Body, Button, C, Card, Chip, Field, H1, H2, Muted, Row, State, confirmAction, s } from '@/components/ui';
-import { beirutDate, dateLabel, dateTimeText, describeError, durationText, priceText, timeText } from '@/lib/format';
+import {
+  Body,
+  Button,
+  C,
+  Card,
+  Chip,
+  Field,
+  H1,
+  H2,
+  Muted,
+  Row,
+  State,
+  confirmAction,
+  s,
+} from '@/components/ui';
+import {
+  beirutDate,
+  dateLabel,
+  dateTimeText,
+  describeError,
+  durationText,
+  priceText,
+  timeText,
+} from '@/lib/format';
 import { askForPush, dismissPushPrompt, shouldAskForPush } from '@/lib/push';
 import { useSession } from '@/lib/session';
 import { codeOf, supabase } from '@/lib/supabase';
@@ -19,7 +41,12 @@ type Step = 'service' | 'staff' | 'time' | 'review' | 'done';
 type Choice = { mode: 'any' } | { mode: 'specific'; staffId: string; rebook?: boolean };
 
 export default function BookingFlow() {
-  const p = useLocalSearchParams<{ slug: string; service?: string; staff?: string; rebook?: string }>();
+  const p = useLocalSearchParams<{
+    slug: string;
+    service?: string;
+    staff?: string;
+    rebook?: string;
+  }>();
   const { session, signedIn } = useSession();
   const [page, setPage] = useState<BusinessPage | null>(null);
   const [step, setStep] = useState<Step>(p.service ? 'staff' : 'service');
@@ -37,11 +64,13 @@ export default function BookingFlow() {
   const [msg, setMsg] = useState<string | null>(null);
 
   useEffect(() => {
-    void supabase().rpc('get_business_page', { p_slug: p.slug.toLowerCase() }).then(({ data }) => {
-      const r = data as unknown as BusinessPageResult | null;
-      if (r && r.state === 'ok') setPage(r as BusinessPage);
-      else setMsg('This business isn’t taking bookings right now.');
-    });
+    void supabase()
+      .rpc('get_business_page', { p_slug: p.slug.toLowerCase() })
+      .then(({ data }) => {
+        const r = data as unknown as BusinessPageResult | null;
+        if (r && r.state === 'ok') setPage(r as BusinessPage);
+        else setMsg('This business isn’t taking bookings right now.');
+      });
   }, [p.slug]);
   const service = page?.services.find((x) => x.id === serviceId);
   const staffId = choice.mode === 'specific' ? choice.staffId : undefined;
@@ -49,24 +78,32 @@ export default function BookingFlow() {
   // staff options + auto-skip (one qualified person, any-only, rebook preset)
   useEffect(() => {
     if (!page || !serviceId || step !== 'staff') return;
-    void supabase().rpc('get_staff_options', { p_location_id: page.location.id, p_service_id: serviceId }).then(({ data }) => {
-      const o = data as unknown as StaffOptions;
-      setOptions(o);
-      if (p.staff && o.staff.some((x) => x.id === p.staff)) {
-        setChoice({ mode: 'specific', staffId: p.staff, rebook: p.rebook === '1' });
-        setStep('time');
-      } else if (o.choice_mode === 'any_only') setStep('time');
-      else if (o.staff.length === 1) {
-        setChoice({ mode: 'specific', staffId: o.staff[0]!.id });
-        setStep('time');
-      }
-    });
+    void supabase()
+      .rpc('get_staff_options', { p_location_id: page.location.id, p_service_id: serviceId })
+      .then(({ data }) => {
+        const o = data as unknown as StaffOptions;
+        setOptions(o);
+        if (p.staff && o.staff.some((x) => x.id === p.staff)) {
+          setChoice({ mode: 'specific', staffId: p.staff, rebook: p.rebook === '1' });
+          setStep('time');
+        } else if (o.choice_mode === 'any_only') setStep('time');
+        else if (o.staff.length === 1) {
+          setChoice({ mode: 'specific', staffId: o.staff[0]!.id });
+          setStep('time');
+        }
+      });
   }, [page, serviceId, step, p.staff, p.rebook]);
 
   useEffect(() => {
     if (!page || !serviceId || step !== 'time') return;
     void supabase()
-      .rpc('get_available_days', { p_location_id: page.location.id, p_service_id: serviceId, p_staff_id: staffId, p_date_from: beirutDate(0), p_date_to: beirutDate(13) })
+      .rpc('get_available_days', {
+        p_location_id: page.location.id,
+        p_service_id: serviceId,
+        p_staff_id: staffId,
+        p_date_from: beirutDate(0),
+        p_date_to: beirutDate(13),
+      })
       .then(({ data }) => {
         const list = ((data ?? []) as string[]).sort();
         setDays(list);
@@ -77,11 +114,21 @@ export default function BookingFlow() {
   const loadSlots = useCallback(async () => {
     if (!page || !serviceId || !date) return;
     setSlots(null);
-    const { data } = await supabase().rpc('get_available_slots', { p_location_id: page.location.id, p_service_id: serviceId, p_staff_id: staffId, p_date_from: date, p_date_to: date });
+    const { data } = await supabase().rpc('get_available_slots', {
+      p_location_id: page.location.id,
+      p_service_id: serviceId,
+      p_staff_id: staffId,
+      p_date_from: date,
+      p_date_to: date,
+    });
     const list = (data ?? []).map((r) => r.slot_start);
     setSlots(list);
     if (!list.length) {
-      const { data: n } = await supabase().rpc('get_next_available', { p_location_id: page.location.id, p_service_id: serviceId, p_staff_id: staffId });
+      const { data: n } = await supabase().rpc('get_next_available', {
+        p_location_id: page.location.id,
+        p_service_id: serviceId,
+        p_staff_id: staffId,
+      });
       setNext((n as string | null) ?? null);
     }
   }, [page, serviceId, staffId, date]);
@@ -103,7 +150,8 @@ export default function BookingFlow() {
         p_service_id: serviceId,
         p_start: start,
         p_staff_id: staffId,
-        p_selection_mode: choice.mode === 'specific' ? (choice.rebook ? 'rebook' : 'specific') : 'any',
+        p_selection_mode:
+          choice.mode === 'specific' ? (choice.rebook ? 'rebook' : 'specific') : 'any',
         p_source: choice.mode === 'specific' && choice.rebook ? 'rebook' : 'marketplace_other',
         p_attribution: { channel: 'app' },
       });
@@ -123,17 +171,31 @@ export default function BookingFlow() {
 
   const leave = () => {
     if (!hold || step === 'done') return router.back();
-    confirmAction('Leave booking?', 'We’ll release the time we’re holding for you.', 'Leave', () => router.back(), 'Stay');
+    confirmAction(
+      'Leave booking?',
+      'We’ll release the time we’re holding for you.',
+      'Leave',
+      () => router.back(),
+      'Stay',
+    );
   };
 
   return (
     <SafeAreaView style={s.screen} edges={['top', 'bottom']} testID="booking-flow">
       <Stack.Screen options={{ headerShown: false, gestureEnabled: !hold }} />
       <Row>
-        <Pressable onPress={leave} accessibilityRole="button" accessibilityLabel="Close" style={{ padding: 16 }} testID="close-flow">
+        <Pressable
+          onPress={leave}
+          accessibilityRole="button"
+          accessibilityLabel="Close"
+          style={{ padding: 16 }}
+          testID="close-flow"
+        >
           <Text style={{ fontSize: 20 }}>✕</Text>
         </Pressable>
-        <Text style={[s.h2, { flex: 1 }]} numberOfLines={1}>{page?.business.name ?? ''}</Text>
+        <Text style={[s.h2, { flex: 1 }]} numberOfLines={1}>
+          {page?.business.name ?? ''}
+        </Text>
       </Row>
       <ScrollView contentContainerStyle={s.body}>
         {msg ? <Body testID="flow-message">{msg}</Body> : null}
@@ -142,12 +204,25 @@ export default function BookingFlow() {
         {page && step === 'service' ? (
           <View style={{ gap: 12 }} testID="step-service">
             <H1>Choose a service</H1>
-            {page.services.filter((x) => x.online).map((x) => (
-              <Pressable key={x.id} style={s.card} onPress={() => { setServiceId(x.id); setStep('staff'); }} testID="service-option" accessibilityRole="button">
-                <Text style={s.cardTitle}>{x.name}</Text>
-                <Muted>{priceText(x)} · {durationText(x.duration_min)}</Muted>
-              </Pressable>
-            ))}
+            {page.services
+              .filter((x) => x.online)
+              .map((x) => (
+                <Pressable
+                  key={x.id}
+                  style={s.card}
+                  onPress={() => {
+                    setServiceId(x.id);
+                    setStep('staff');
+                  }}
+                  testID="service-option"
+                  accessibilityRole="button"
+                >
+                  <Text style={s.cardTitle}>{x.name}</Text>
+                  <Muted>
+                    {priceText(x)} · {durationText(x.duration_min)}
+                  </Muted>
+                </Pressable>
+              ))}
           </View>
         ) : null}
 
@@ -156,15 +231,44 @@ export default function BookingFlow() {
             <H1>Who would you like?</H1>
             <State loading={!options} />
             {options && options.choice_mode !== 'choose_only' ? (
-              <Pressable style={s.card} onPress={() => { setChoice({ mode: 'any' }); setStep('time'); }} testID="staff-any" accessibilityRole="button">
+              <Pressable
+                style={s.card}
+                onPress={() => {
+                  setChoice({ mode: 'any' });
+                  setStep('time');
+                }}
+                testID="staff-any"
+                accessibilityRole="button"
+              >
                 <Text style={s.cardTitle}>Any available</Text>
-                <Muted>{options.any_next ? `Next: ${dateTimeText(options.any_next)}` : 'Whoever is free'}</Muted>
+                <Muted>
+                  {options.any_next ? `Next: ${dateTimeText(options.any_next)}` : 'Whoever is free'}
+                </Muted>
               </Pressable>
             ) : null}
             {options?.staff.map((m) => (
-              <Pressable key={m.id} style={s.card} onPress={() => { setChoice({ mode: 'specific', staffId: m.id, rebook: options.rebook?.staff_id === m.id }); setStep('time'); }} testID="staff-option" accessibilityRole="button">
-                <Text style={s.cardTitle}>{m.name}{options.rebook?.staff_id === m.id ? ' · your last visit' : ''}</Text>
-                <Muted>{m.role_title ?? ''}{m.next_available ? ` · Next: ${dateTimeText(m.next_available)}` : ''}</Muted>
+              <Pressable
+                key={m.id}
+                style={s.card}
+                onPress={() => {
+                  setChoice({
+                    mode: 'specific',
+                    staffId: m.id,
+                    rebook: options.rebook?.staff_id === m.id,
+                  });
+                  setStep('time');
+                }}
+                testID="staff-option"
+                accessibilityRole="button"
+              >
+                <Text style={s.cardTitle}>
+                  {m.name}
+                  {options.rebook?.staff_id === m.id ? ' · your last visit' : ''}
+                </Text>
+                <Muted>
+                  {m.role_title ?? ''}
+                  {m.next_available ? ` · Next: ${dateTimeText(m.next_available)}` : ''}
+                </Muted>
               </Pressable>
             ))}
           </View>
@@ -173,36 +277,94 @@ export default function BookingFlow() {
         {page && step === 'time' ? (
           <View style={{ gap: 12 }} testID="step-time">
             <H1>Pick a time</H1>
-            <Muted>{service?.name}{choice.mode === 'specific' ? ` with ${options?.staff.find((m) => m.id === staffId)?.name.split(' ')[0] ?? ''}` : ' · any available'}</Muted>
+            <Muted>
+              {service?.name}
+              {choice.mode === 'specific'
+                ? ` with ${options?.staff.find((m) => m.id === staffId)?.name.split(' ')[0] ?? ''}`
+                : ' · any available'}
+            </Muted>
             {!session ? <Captcha onToken={setCaptcha} /> : null}
-            <State loading={!days} empty={days?.length === 0} emptyText="No free times in the next two weeks." />
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-              {(days ?? []).map((d) => <Chip key={d} label={dateLabel(d)} active={d === date} onPress={() => setDate(d)} testID="day" />)}
+            <State
+              loading={!days}
+              empty={days?.length === 0}
+              emptyText="No free times in the next two weeks."
+            />
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ gap: 8 }}
+            >
+              {(days ?? []).map((d) => (
+                <Chip
+                  key={d}
+                  label={dateLabel(d)}
+                  active={d === date}
+                  onPress={() => setDate(d)}
+                  testID="day"
+                />
+              ))}
             </ScrollView>
             <State loading={!!date && !slots} />
-            {slots && !slots.length ? <Muted>No times left this day.{next ? ` Next: ${dateTimeText(next)}` : ''}</Muted> : null}
+            {slots && !slots.length ? (
+              <Muted>No times left this day.{next ? ` Next: ${dateTimeText(next)}` : ''}</Muted>
+            ) : null}
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }} testID="slots">
               {(slots ?? []).map((t) => (
-                <Chip key={t} label={timeText(t)} onPress={() => !busy && void take(t)} testID="slot" disabled={!session && !captcha} />
+                <Chip
+                  key={t}
+                  label={timeText(t)}
+                  onPress={() => !busy && void take(t)}
+                  testID="slot"
+                  disabled={!session && !captcha}
+                />
               ))}
             </View>
           </View>
         ) : null}
 
         {page && step === 'review' && hold && service ? (
-          <Review page={page} service={service.name} hold={hold} anyMode={choice.mode === 'any'} signedIn={signedIn}
-            onDone={(b) => { setBooked(b); setStep('done'); }} onExpired={() => { setHold(null); setStep('time'); setMsg('Your hold expired. Pick a time again.'); }} />
+          <Review
+            page={page}
+            service={service.name}
+            hold={hold}
+            anyMode={choice.mode === 'any'}
+            signedIn={signedIn}
+            onDone={(b) => {
+              setBooked(b);
+              setStep('done');
+            }}
+            onExpired={() => {
+              setHold(null);
+              setStep('time');
+              setMsg('Your hold expired. Pick a time again.');
+            }}
+          />
         ) : null}
 
-        {step === 'done' && booked ? <Success booked={booked} business={page?.business.name ?? ''} /> : null}
+        {step === 'done' && booked ? (
+          <Success booked={booked} business={page?.business.name ?? ''} />
+        ) : null}
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-function Review({ page, service, hold, anyMode, signedIn, onDone, onExpired }: {
-  page: BusinessPage; service: string; hold: Hold; anyMode: boolean; signedIn: boolean;
-  onDone: (b: { id: string; status: string }) => void; onExpired: () => void;
+function Review({
+  page,
+  service,
+  hold,
+  anyMode,
+  signedIn,
+  onDone,
+  onExpired,
+}: {
+  page: BusinessPage;
+  service: string;
+  hold: Hold;
+  anyMode: boolean;
+  signedIn: boolean;
+  onDone: (b: { id: string; status: string }) => void;
+  onExpired: () => void;
 }) {
   const [left, setLeft] = useState(() => new Date(hold.expires_at).getTime() - Date.now());
   const [first, setFirst] = useState('');
@@ -217,10 +379,16 @@ function Review({ page, service, hold, anyMode, signedIn, onDone, onExpired }: {
   }, [hold.expires_at]);
   useEffect(() => {
     if (!signedIn) return;
-    void supabase().auth.getUser().then(async ({ data }) => {
-      const { data: prof } = await supabase().from('profiles').select('first_name').eq('id', data.user!.id).maybeSingle();
-      setNeedName(!prof?.first_name);
-    });
+    void supabase()
+      .auth.getUser()
+      .then(async ({ data }) => {
+        const { data: prof } = await supabase()
+          .from('profiles')
+          .select('first_name')
+          .eq('id', data.user!.id)
+          .maybeSingle();
+        setNeedName(!prof?.first_name);
+      });
   }, [signedIn]);
 
   const confirm = async () => {
@@ -248,12 +416,18 @@ function Review({ page, service, hold, anyMode, signedIn, onDone, onExpired }: {
   return (
     <View style={{ gap: 12 }} testID="step-review">
       <H1>{request ? 'Send your request' : 'Confirm your booking'}</H1>
-      <Muted testID="hold-timer">{left > 0 ? `We’re holding this time for ${mm}:${ss}` : 'Your hold expired.'}</Muted>
+      <Muted testID="hold-timer">
+        {left > 0 ? `We’re holding this time for ${mm}:${ss}` : 'Your hold expired.'}
+      </Muted>
       <Card testID="summary">
         <Text style={s.cardTitle}>{page.business.name}</Text>
         <Body>{service}</Body>
         <Body>{dateTimeText(hold.starts_at)}</Body>
-        <Body testID="summary-staff">{anyMode ? `You’ll be with ${hold.staff_first_name} (assigned from available staff)` : `with ${hold.staff_first_name}`}</Body>
+        <Body testID="summary-staff">
+          {anyMode
+            ? `You’ll be with ${hold.staff_first_name} (assigned from available staff)`
+            : `with ${hold.staff_first_name}`}
+        </Body>
         <Muted>{priceText(hold)} · pay at the venue</Muted>
       </Card>
       <Muted>
@@ -263,20 +437,46 @@ function Review({ page, service, hold, anyMode, signedIn, onDone, onExpired }: {
       {!signedIn ? (
         <Card>
           <H2>Verify your phone</H2>
-          <PhoneSignIn onVerified={() => undefined} intro="We’ll send your confirmation and reminders on WhatsApp." />
+          <PhoneSignIn
+            onVerified={() => undefined}
+            intro="We’ll send your confirmation and reminders on WhatsApp."
+          />
         </Card>
       ) : (
         <>
-          {needName ? <Field label="First name" value={first} onChangeText={setFirst} autoComplete="given-name" /> : null}
-          <Button title={request ? 'Send request' : 'Confirm booking'} onPress={() => void confirm()} busy={busy} disabled={left <= 0 || (needName && !first.trim())} testID="confirm" />
+          {needName ? (
+            <Field
+              label="First name"
+              value={first}
+              onChangeText={setFirst}
+              autoComplete="given-name"
+            />
+          ) : null}
+          <Button
+            title={request ? 'Send request' : 'Confirm booking'}
+            onPress={() => void confirm()}
+            busy={busy}
+            disabled={left <= 0 || (needName && !first.trim())}
+            testID="confirm"
+          />
         </>
       )}
-      {error ? <Text style={{ color: C.danger }} accessibilityRole="alert">{error}</Text> : null}
+      {error ? (
+        <Text style={{ color: C.danger }} accessibilityRole="alert">
+          {error}
+        </Text>
+      ) : null}
     </View>
   );
 }
 
-function Success({ booked, business }: { booked: { id: string; status: string }; business: string }) {
+function Success({
+  booked,
+  business,
+}: {
+  booked: { id: string; status: string };
+  business: string;
+}) {
   const [ask, setAsk] = useState(false);
   useEffect(() => {
     void shouldAskForPush().then(setAsk);
@@ -284,17 +484,35 @@ function Success({ booked, business }: { booked: { id: string; status: string };
   return (
     <View style={{ gap: 12 }} testID="booking-success">
       <H1>{booked.status === 'pending' ? 'Request sent' : 'You’re booked'}</H1>
-      <Body>{booked.status === 'pending' ? `${business} will confirm shortly. We’ll let you know.` : `See you at ${business}. We’ll send a reminder before your visit.`}</Body>
+      <Body>
+        {booked.status === 'pending'
+          ? `${business} will confirm shortly. We’ll let you know.`
+          : `See you at ${business}. We’ll send a reminder before your visit.`}
+      </Body>
       {ask ? (
         <Card testID="push-prompt">
           <Body>Want a reminder before your appointment?</Body>
           <Row>
-            <Button title="Yes, notify me" onPress={() => void askForPush().finally(() => setAsk(false))} />
-            <Button title="Not now" kind="secondary" onPress={() => { void dismissPushPrompt(); setAsk(false); }} />
+            <Button
+              title="Yes, notify me"
+              onPress={() => void askForPush().finally(() => setAsk(false))}
+            />
+            <Button
+              title="Not now"
+              kind="secondary"
+              onPress={() => {
+                void dismissPushPrompt();
+                setAsk(false);
+              }}
+            />
           </Row>
         </Card>
       ) : null}
-      <Button title="View booking" onPress={() => router.replace({ pathname: '/bookings/[id]', params: { id: booked.id } })} testID="view-booking" />
+      <Button
+        title="View booking"
+        onPress={() => router.replace({ pathname: '/bookings/[id]', params: { id: booked.id } })}
+        testID="view-booking"
+      />
       <Button title="Done" kind="secondary" onPress={() => router.dismissAll()} />
     </View>
   );

@@ -53,21 +53,51 @@ export function PhoneSignIn({ onVerified, intro }: { onVerified: () => void; int
       {intro ? <Body>{intro}</Body> : null}
       {!sent ? (
         <>
-          <Field label="Phone number" value={phone} onChangeText={setPhone} keyboardType="phone-pad" placeholder="70 123 456" autoComplete="tel" textContentType="telephoneNumber" />
+          <Field
+            label="Phone number"
+            value={phone}
+            onChangeText={setPhone}
+            keyboardType="phone-pad"
+            placeholder="70 123 456"
+            autoComplete="tel"
+            textContentType="telephoneNumber"
+          />
           <Captcha onToken={setCaptcha} nonce={nonce} />
-          <Button title="Send code" onPress={() => void send()} busy={busy} disabled={!captcha || !phone.trim()} testID="send-code" />
+          <Button
+            title="Send code"
+            onPress={() => void send()}
+            busy={busy}
+            disabled={!captcha || !phone.trim()}
+            testID="send-code"
+          />
           <Muted>We&apos;ll send you a code on WhatsApp.</Muted>
         </>
       ) : (
         <>
           <Muted>Code sent to {sent.e164}.</Muted>
-          <Field label="6-digit code" value={code} keyboardType="number-pad" maxLength={6} autoComplete="one-time-code" textContentType="oneTimeCode"
+          <Field
+            label="6-digit code"
+            value={code}
+            keyboardType="number-pad"
+            maxLength={6}
+            autoComplete="one-time-code"
+            textContentType="oneTimeCode"
             onChangeText={(v) => {
               const d = v.replace(/\D/g, '').slice(0, 6);
               setCode(d);
               if (d.length === 6) void verify(d);
-            }} />
-          <Button title="Use another number" kind="secondary" onPress={() => { setSent(null); setCode(''); setCaptcha(null); setNonce((n) => n + 1); }} />
+            }}
+          />
+          <Button
+            title="Use another number"
+            kind="secondary"
+            onPress={() => {
+              setSent(null);
+              setCode('');
+              setCaptcha(null);
+              setNonce((n) => n + 1);
+            }}
+          />
         </>
       )}
       {error ? (

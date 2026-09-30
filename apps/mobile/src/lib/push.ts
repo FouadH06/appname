@@ -15,18 +15,27 @@ const ASKED = 'push:asked';
 const TOKEN = 'push:token';
 
 Notifications.setNotificationHandler({
-  handleNotification: async () => ({ shouldPlaySound: false, shouldSetBadge: false, shouldShowBanner: true, shouldShowList: true }),
+  handleNotification: async () => ({
+    shouldPlaySound: false,
+    shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
 });
 
 const projectId = () =>
-  (Constants.expoConfig?.extra?.eas as { projectId?: string } | undefined)?.projectId ?? Constants.easConfig?.projectId;
+  (Constants.expoConfig?.extra?.eas as { projectId?: string } | undefined)?.projectId ??
+  Constants.easConfig?.projectId;
 
 export const pushSupported = () => Platform.OS !== 'web' && Device.isDevice && !!projectId();
 
 async function register(): Promise<boolean> {
   if (!pushSupported()) return false;
   const { data } = await Notifications.getExpoPushTokenAsync({ projectId: projectId()! });
-  const { error } = await supabase().rpc('register_push_token', { p_token: data, p_platform: Platform.OS === 'ios' ? 'ios' : 'android' });
+  const { error } = await supabase().rpc('register_push_token', {
+    p_token: data,
+    p_platform: Platform.OS === 'ios' ? 'ios' : 'android',
+  });
   if (!error) await AsyncStorage.setItem(TOKEN, data);
   return !error;
 }
@@ -41,7 +50,10 @@ export async function shouldAskForPush(): Promise<boolean> {
 export async function askForPush(): Promise<boolean> {
   await AsyncStorage.setItem(ASKED, '1');
   if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync('default', { name: 'Booking updates', importance: Notifications.AndroidImportance.DEFAULT });
+    await Notifications.setNotificationChannelAsync('default', {
+      name: 'Booking updates',
+      importance: Notifications.AndroidImportance.DEFAULT,
+    });
   }
   const { status } = await Notifications.requestPermissionsAsync();
   return status === 'granted' ? register() : false;

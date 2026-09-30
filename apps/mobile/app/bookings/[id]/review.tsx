@@ -11,7 +11,13 @@ export default function BookingReview() {
   return (
     <Screen>
       <Stack.Screen options={{ title: 'Leave a review' }} />
-      {loading ? <State loading /> : signedIn ? <ReviewForm bookingId={id} /> : <PhoneSignIn onVerified={() => undefined} />}
+      {loading ? (
+        <State loading />
+      ) : signedIn ? (
+        <ReviewForm bookingId={id} />
+      ) : (
+        <PhoneSignIn onVerified={() => undefined} />
+      )}
     </Screen>
   );
 }

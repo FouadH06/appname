@@ -9,9 +9,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.appname.customer",
-      "associatedDomains": [
-        "applinks:platform.com"
-      ],
+      "associatedDomains": ["applinks:platform.com"],
       "infoPlist": {
         "NSCameraUsageDescription": "Take a photo of your result to add it to your review.",
         "NSPhotoLibraryUsageDescription": "Choose photos of your result to add them to your review."
@@ -29,15 +27,10 @@
               "host": "platform.com"
             }
           ],
-          "category": [
-            "BROWSABLE",
-            "DEFAULT"
-          ]
+          "category": ["BROWSABLE", "DEFAULT"]
         }
       ],
-      "permissions": [
-        "android.permission.POST_NOTIFICATIONS"
-      ]
+      "permissions": ["android.permission.POST_NOTIFICATIONS"]
     },
     "extra": {
       "supportsRTL": true,

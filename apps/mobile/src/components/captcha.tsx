@@ -5,7 +5,13 @@ import { ENV } from '@/lib/supabase';
 
 // Turnstile for the app: the web app's /captcha page runs the widget on our own domain and posts the
 // single-use token back (WebView on iOS/Android, iframe in the web build). Usually invisible.
-export function Captcha({ onToken, nonce = 0 }: { onToken: (token: string) => void; nonce?: number }) {
+export function Captcha({
+  onToken,
+  nonce = 0,
+}: {
+  onToken: (token: string) => void;
+  nonce?: number;
+}) {
   const src = `${ENV.webUrl}/captcha?n=${nonce}`;
   const parse = (data: unknown) => {
     try {
@@ -28,13 +34,22 @@ export function Captcha({ onToken, nonce = 0 }: { onToken: (token: string) => vo
   if (Platform.OS === 'web') {
     return (
       <View style={{ height: 70 }} testID="captcha">
-        {createElement('iframe', { src, title: 'Verification', style: { border: 0, width: '100%', height: 70 } })}
+        {createElement('iframe', {
+          src,
+          title: 'Verification',
+          style: { border: 0, width: '100%', height: 70 },
+        })}
       </View>
     );
   }
   return (
     <View style={{ height: 70 }} testID="captcha">
-      <WebView key={nonce} source={{ uri: src }} onMessage={(e) => parse(e.nativeEvent.data)} style={{ backgroundColor: 'transparent' }} />
+      <WebView
+        key={nonce}
+        source={{ uri: src }}
+        onMessage={(e) => parse(e.nativeEvent.data)}
+        style={{ backgroundColor: 'transparent' }}
+      />
     </View>
   );
 }

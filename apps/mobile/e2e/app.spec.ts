@@ -38,7 +38,9 @@ async function pickFirstSlot(page: Page) {
   await slot.click();
 }
 
-test('app: discover → book → manage → rebook → review → favorites → inbox → deep links', async ({ page }) => {
+test('app: discover → book → manage → rebook → review → favorites → inbox → deep links', async ({
+  page,
+}) => {
   test.setTimeout(300_000);
   page.on('dialog', (d) => void d.accept()); // confirmAction on the web build uses window.confirm
   const b = await createCalendarBusiness('App Salon');
@@ -50,10 +52,14 @@ test('app: discover → book → manage → rebook → review → favorites → 
     await page.goto('/');
     await page.getByTestId('home-search').click();
     await page.getByTestId('search-input').fill(b.name);
-    await expect(page.getByTestId('suggestion-business').filter({ hasText: b.name }).first()).toBeVisible({ timeout: 20_000 });
+    await expect(
+      page.getByTestId('suggestion-business').filter({ hasText: b.name }).first(),
+    ).toBeVisible({ timeout: 20_000 });
     await page.getByTestId('suggestion-business').filter({ hasText: b.name }).first().click();
     await expect(page.getByTestId('business-profile')).toBeVisible();
-    await expect(page.getByTestId('service-row').filter({ hasText: 'Haircut' }).first()).toBeVisible();
+    await expect(
+      page.getByTestId('service-row').filter({ hasText: 'Haircut' }).first(),
+    ).toBeVisible();
   });
 
   await test.step('favorite while signed out asks to sign in', async () => {
@@ -77,7 +83,10 @@ test('app: discover → book → manage → rebook → review → favorites → 
     await review.getByTestId('confirm').click();
     await expect(page.getByTestId('booking-success')).toContainText('You’re booked');
     first = await latestBooking(b.businessId);
-    expect(await bookingAttribution(first)).toEqual({ source: 'marketplace_other', channel: 'app' });
+    expect(await bookingAttribution(first)).toEqual({
+      source: 'marketplace_other',
+      channel: 'app',
+    });
     await expect(page.getByTestId('push-prompt')).toHaveCount(0); // never on the web build
   });
 
@@ -116,7 +125,12 @@ test('app: discover → book → manage → rebook → review → favorites → 
   await test.step('Bookings tab → past visit → leave a review', async () => {
     await page.goto('/bookings');
     await page.getByTestId('tab-past').click();
-    await page.getByTestId('booking-card').filter({ hasText: b.name }).filter({ hasText: 'Completed' }).first().click();
+    await page
+      .getByTestId('booking-card')
+      .filter({ hasText: b.name })
+      .filter({ hasText: 'Completed' })
+      .first()
+      .click();
     await expect(page.getByTestId('booking-status')).toHaveText('Completed');
     await page.getByTestId('leave-review').click();
     await expect(page.getByTestId('review-form')).toBeVisible();

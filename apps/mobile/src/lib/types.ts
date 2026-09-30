@@ -57,13 +57,21 @@ export interface BusinessPage {
   staff: PublicStaff[];
   rating: { review_count: number; display_rating: number | null };
 }
-export type BusinessPageResult = BusinessPage | { state: 'not_found' | 'unavailable' } | { redirect_to: string; state?: undefined };
+export type BusinessPageResult =
+  | BusinessPage
+  | { state: 'not_found' | 'unavailable' }
+  | { redirect_to: string; state?: undefined };
 
 export interface StaffOptions {
   choice_mode: BusinessPage['rules']['staff_choice_mode'];
   any_next: string | null;
   rebook: { staff_id: string; name: string; last_visit_at: string; same_service: boolean } | null;
-  staff: (PublicStaff & { next_available: string | null; price_type: PriceType; price_min: number | null; price_max: number | null })[];
+  staff: (PublicStaff & {
+    next_available: string | null;
+    price_type: PriceType;
+    price_min: number | null;
+    price_max: number | null;
+  })[];
 }
 export interface Hold {
   booking_id: string;
@@ -90,7 +98,15 @@ export interface SearchCard {
   cover_path: string | null;
   next_available_at: string | null;
   labels: string[];
-  service: { service_id: string; name: string; type: PriceType; min: number | null; max: number | null; duration: number; next: string | null } | null;
+  service: {
+    service_id: string;
+    name: string;
+    type: PriceType;
+    min: number | null;
+    max: number | null;
+    duration: number;
+    next: string | null;
+  } | null;
 }
 export interface SearchResult {
   total: number;
@@ -156,7 +172,16 @@ export interface MyBooking {
   can_reschedule: boolean;
   can_contest: boolean;
   business: { id: string; name: string; slug: string; live: boolean };
-  location: { id: string; address_line: string | null; landmark: string | null; area: string | null; lat: number; lng: number; phone: string | null; whatsapp: string | null };
+  location: {
+    id: string;
+    address_line: string | null;
+    landmark: string | null;
+    area: string | null;
+    lat: number;
+    lng: number;
+    phone: string | null;
+    whatsapp: string | null;
+  };
   review?: { id: string; can_review: boolean; days_left: number | null } | null;
 }
 export type MyBookingDetail = MyBooking & {

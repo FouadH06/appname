@@ -11,7 +11,12 @@ interface SessionState {
   userId: string | null;
 }
 
-const Ctx = createContext<SessionState>({ session: null, loading: true, signedIn: false, userId: null });
+const Ctx = createContext<SessionState>({
+  session: null,
+  loading: true,
+  signedIn: false,
+  userId: null,
+});
 
 export function SessionProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
@@ -28,7 +33,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, []);
   const signedIn = !!session && !session.user.is_anonymous;
   return (
-    <Ctx.Provider value={{ session, loading, signedIn, userId: signedIn ? session!.user.id : null }}>
+    <Ctx.Provider
+      value={{ session, loading, signedIn, userId: signedIn ? session!.user.id : null }}
+    >
       {children}
     </Ctx.Provider>
   );

@@ -23,7 +23,8 @@ const secureChunked = {
   async setItem(key: string, value: string) {
     const old = Number((await SecureStore.getItemAsync(`${key}.n`)) ?? '0');
     const n = Math.ceil(value.length / CHUNK);
-    for (let i = 0; i < n; i++) await SecureStore.setItemAsync(`${key}.${i}`, value.slice(i * CHUNK, (i + 1) * CHUNK));
+    for (let i = 0; i < n; i++)
+      await SecureStore.setItemAsync(`${key}.${i}`, value.slice(i * CHUNK, (i + 1) * CHUNK));
     for (let i = n; i < old; i++) await SecureStore.deleteItemAsync(`${key}.${i}`);
     await SecureStore.setItemAsync(`${key}.n`, String(n));
   },

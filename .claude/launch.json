@@ -4,21 +4,13 @@
     {
       "name": "web",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": [
-        "--filter",
-        "@app/web",
-        "dev"
-      ],
+      "runtimeArgs": ["--filter", "@app/web", "dev"],
       "port": 3000
     },
     {
       "name": "admin",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": [
-        "--filter",
-        "@app/admin",
-        "dev"
-      ],
+      "runtimeArgs": ["--filter", "@app/admin", "dev"],
       "port": 3001
     },
     {

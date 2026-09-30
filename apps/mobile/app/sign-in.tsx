@@ -6,7 +6,10 @@ import { Screen } from '@/components/ui';
 export default function SignIn() {
   return (
     <Screen>
-      <PhoneSignIn onVerified={() => (router.canGoBack() ? router.back() : router.replace('/'))} intro="Verify your phone to save places and manage your bookings." />
+      <PhoneSignIn
+        onVerified={() => (router.canGoBack() ? router.back() : router.replace('/'))}
+        intro="Verify your phone to save places and manage your bookings."
+      />
     </Screen>
   );
 }
