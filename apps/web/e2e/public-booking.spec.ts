@@ -32,8 +32,9 @@ async function pickFirstSlot(page: Page) {
   await expect(time).toBeVisible();
   const slot = time.getByTestId('slots').first().getByRole('button').first();
   await expect(slot).toBeEnabled({ timeout: 45_000 }); // Turnstile token for the anonymous session
-  const label = (await slot.textContent())!.trim();
+  const label = (await slot.textContent())!.replace(/Instant|Request/, '').trim();
   await slot.click();
+  await page.getByTestId('time-continue').click(); // pick, then continue (the hold is taken here)
   return label;
 }
 
@@ -73,7 +74,7 @@ test('Instagram link → booked in under a minute; reschedule (Any available) an
     if (await first.isVisible()) await first.fill('Rana');
     await review.getByLabel(/Note to/).fill('Short on the sides please');
     await review.getByTestId('confirm-booking').click();
-    await expect(page.getByTestId('booking-success')).toContainText('You’re booked');
+    await expect(page.getByTestId('booking-success')).toContainText('Booking confirmed');
     await expect(page.getByTestId('booking-status')).toHaveText('Confirmed');
   });
 
@@ -110,13 +111,16 @@ test('Instagram link → booked in under a minute; reschedule (Any available) an
     await setBookingMode(b.businessId, 'request');
     await page.goto(`/${slug}/book?service=${b.serviceId}`);
     const staff = page.getByTestId('step-staff');
-    await expect(staff.getByText('Recommended for fastest booking')).toBeVisible();
+    await expect(staff.getByRole('radio', { name: /Any available/ })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
     await staff.getByTestId('staff-continue').click();
     await pickFirstSlot(page);
     const review = page.getByTestId('step-review');
     await expect(review.getByTestId('summary-staff')).toContainText('You’ll be with');
     await expect(review.getByTestId('phone-verified')).toBeVisible(); // already signed in
-    await expect(review.getByTestId('confirm-booking')).toContainText('Send request');
+    await expect(review.getByTestId('confirm-booking')).toContainText('Send booking request');
     await review.getByTestId('confirm-booking').click();
     await expect(page.getByTestId('booking-success')).toContainText('Request sent');
   });

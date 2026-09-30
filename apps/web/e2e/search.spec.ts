@@ -36,7 +36,7 @@ test('find, filter and land on a business through search', async ({ page }) => {
     await expect(page).toHaveURL(new RegExp(`/${slug}$`), { timeout: 30_000 });
   });
 
-  await test.step('Arabizi "7ala2" in Hazmieh / Baabda → card with the service price and a Book link', async () => {
+  await test.step('Arabizi "7ala2" in Hazmieh / Baabda → card with the service price and its next time', async () => {
     await page.goto('/?cluster=hazmieh-baabda');
     await expect(page.getByTestId('search-box')).toHaveAttribute('data-ready', 'true', {
       timeout: 30_000,
@@ -46,18 +46,20 @@ test('find, filter and land on a business through search', async ({ page }) => {
     await expect(page).toHaveURL(/\/search\?q=7ala2&cluster=/);
     const card = page.getByTestId('business-card').filter({ hasText: name });
     await expect(card).toBeVisible({ timeout: 30_000 });
-    await expect(card.getByTestId('card-service')).toContainText('Haircut · $15');
-    await expect(card.getByRole('link', { name: 'Book Haircut' })).toHaveAttribute(
+    await expect(card.getByTestId('card-service')).toContainText('Haircut');
+    await expect(card).toContainText('$15');
+    // the earliest time is the card's booking shortcut
+    await expect(card.getByTestId('card-next')).toHaveAttribute(
       'href',
       new RegExp(`/${slug}/book\\?service=`),
     );
   });
 
   await test.step('a filter it fails removes it; removing the filter brings it back', async () => {
-    await page.getByTestId('filters').getByRole('link', { name: 'Rating 4.5+' }).click();
+    await page.getByRole('link', { name: 'Rating 4.5+' }).filter({ visible: true }).click();
     await expect(page).toHaveURL(/rating=4.5/);
     await expect(page.getByTestId('business-card').filter({ hasText: name })).toHaveCount(0);
-    await page.getByTestId('filters').getByRole('link', { name: 'Rating 4.5+' }).click();
+    await page.getByRole('link', { name: 'Rating 4.5+' }).filter({ visible: true }).click();
     await expect(page.getByTestId('business-card').filter({ hasText: name })).toBeVisible();
   });
 

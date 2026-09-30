@@ -211,7 +211,9 @@ export default async function BusinessPageRoute({ params }: Params) {
                 </div>
               </div>
               <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[15px]">
-                <Rating value={p.rating.display_rating} count={p.rating.review_count} />
+                <span data-testid="rating-headline">
+                  <Rating value={p.rating.display_rating} count={p.rating.review_count} />
+                </span>
                 {l.area?.en ? (
                   <span className="flex items-center gap-1 text-ink-700">
                     <IconPin size={16} /> {l.area.en}

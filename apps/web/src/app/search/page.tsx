@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { Suspense, type ReactNode } from 'react';
 import { BusinessCard } from '@/components/customer/cards';
 import { IconFilter } from '@/components/customer/icons';
-import { container } from '@/components/customer/layout';
+import { BRAND, container } from '@/components/customer/layout';
 import { CustomerShell } from '@/components/customer/shell';
 import { SearchBox } from '@/components/public/search-box';
 import { UseMyLocation } from '@/components/public/use-my-location';
@@ -268,7 +268,7 @@ export default async function SearchPage({ searchParams }: Props) {
               {group(
                 'Rating',
                 <Link href={toggle('rating', '4.5')} className={option(sp.rating === '4.5')}>
-                  4.5 and up
+                  Rating 4.5+
                 </Link>,
               )}
               {group(
@@ -332,7 +332,7 @@ export default async function SearchPage({ searchParams }: Props) {
                 className="rounded-card border border-line-200 bg-surface-0 p-4 text-sm"
                 data-testid="not-offered"
               >
-                <p className="font-medium">Not on here yet</p>
+                <p className="font-medium">Not on {BRAND} yet</p>
                 <p className="mt-1 text-ink-700">
                   We cover {home.categories.map((c) => c.name.toLowerCase()).join(', ')}. Try one of
                   those, or check back soon.

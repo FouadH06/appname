@@ -20,16 +20,20 @@ import type { SearchCard } from '@/lib/types';
 
 // Small app UI kit (M13). Colors follow the web tokens (accent, ink, line, surface).
 export const C = {
-  accent: '#C8553D',
-  ink900: '#1F1B18',
-  ink700: '#4A433E',
-  ink500: '#7A716A',
-  line: '#E6E0DA',
-  surface0: '#FFFFFF',
-  surface50: '#FAF7F4',
-  surface100: '#F2EDE8',
-  danger: '#B42318',
-  success: '#157F3C',
+  // UX pass: same locked palette as the web customer surface (ivory, deep green, near-black ink)
+  accent: '#0F4D3A',
+  accent50: '#EAF3ED',
+  accent100: '#D7E7DD',
+  ink900: '#1A1C19',
+  ink700: '#444841',
+  ink500: '#6B6F68',
+  line: '#E4E0D6',
+  surface0: '#FFFEFB',
+  surface50: '#F7F5EF',
+  surface100: '#EFECE4',
+  danger: '#B8322A',
+  success: '#1B7A4B',
+  star: '#E2A012',
 };
 
 /** Destructive confirm. react-native-web's Alert is a no-op, so the web build uses window.confirm. */
@@ -346,7 +350,7 @@ export const s = StyleSheet.create({
   label: { fontSize: 13, color: C.ink700, fontWeight: '500' },
   btn: {
     minHeight: 48,
-    borderRadius: 12,
+    borderRadius: 10,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
@@ -363,7 +367,7 @@ export const s = StyleSheet.create({
   },
   card: {
     backgroundColor: C.surface0,
-    borderRadius: 16,
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: C.line,
     padding: 16,
@@ -374,7 +378,7 @@ export const s = StyleSheet.create({
     minHeight: 48,
     borderWidth: 1,
     borderColor: C.line,
-    borderRadius: 12,
+    borderRadius: 10,
     paddingHorizontal: 14,
     fontSize: 16,
     color: C.ink900,

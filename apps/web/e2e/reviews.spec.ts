@@ -104,7 +104,7 @@ test('review link → stars live → comment moderated → public page → busin
     const card = page.getByTestId('review-card').first();
     await expect(card).toContainText('Verified visit');
     await expect(card).not.toContainText('71 123 456');
-    await expect(page.getByTestId('rating-headline')).toContainText('1 verified review');
+    await expect(page.getByTestId('rating-headline')).toContainText('1 verified');
   });
 
   await test.step('the business replies (moderated) and reports; it cannot hide the review', async () => {

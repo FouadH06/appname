@@ -3,7 +3,7 @@ import { BusinessCard, Section, ServiceTile } from '@/components/customer/cards'
 import { CategoryIcon } from '@/components/customer/category-icon';
 import { IconCalendar, IconChevron, IconPin, IconStar } from '@/components/customer/icons';
 import { ReturningModules } from '@/components/customer/returning';
-import { container } from '@/components/customer/layout';
+import { BRAND, container } from '@/components/customer/layout';
 import { CustomerShell } from '@/components/customer/shell';
 import { SearchBox } from '@/components/public/search-box';
 import { getHome, type Cluster } from '@/lib/public/search';
@@ -147,7 +147,7 @@ export default async function Home({ searchParams }: Props) {
           </Section>
         ) : null}
         {home.new.length >= 3 ? (
-          <Section title="New here" testId="rail">
+          <Section title={`New on ${BRAND}`} testId="rail">
             {home.new.slice(0, 8).map((c) => (
               <BusinessCard key={c.location_id} c={c} />
             ))}
