@@ -32,6 +32,8 @@ jobs:
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
+      # M14: fail on high / critical advisories (moderate ones are reviewed in the launch report)
+      - run: pnpm audit --audit-level high
 
   database:
     name: Database (migrations + pgTAP)

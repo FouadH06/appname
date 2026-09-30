@@ -115,6 +115,9 @@ export default async function Home({ searchParams }: Props) {
           <Link href="/terms" className="hover:underline">
             Terms
           </Link>
+          <Link href="/review-guidelines" className="hover:underline">
+            Review guidelines
+          </Link>
         </footer>
       </div>
     </main>

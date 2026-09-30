@@ -420,6 +420,9 @@ begin
   return v;
 end $$;
 
+-- web route for the review / photo guidelines (legal placeholder)
+insert into public.reserved_slugs (slug) values ('review-guidelines') on conflict do nothing;
+
 -- Uptime monitors: proves the API and database answer (no data, anonymous).
 create function public.health_ping() returns timestamptz
 language sql stable security definer set search_path = '' as $$ select now() $$;
