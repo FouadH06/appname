@@ -104,13 +104,14 @@ export function Stars({ value, size = 14 }: { value: number; size?: number }) {
   return <Text style={{ color: C.accent, fontSize: size }}>{'★'.repeat(Math.round(value))}<Text style={{ color: C.line }}>{'★'.repeat(5 - Math.round(value))}</Text></Text>;
 }
 
-/** C4 BusinessCard (compact on rails). Tapping opens the business profile (with the service preselected). */
+/** C4 BusinessCard (compact on rails). Tapping opens the business profile (with the service preselected).
+ *  Link asChild on web forwards style to the anchor, which can't take an array, so it's flattened. */
 export function BusinessCard({ c, compact }: { c: SearchCard; compact?: boolean }) {
   const cover = mediaUrl(c.cover_path);
   const next = c.service?.next ?? c.next_available_at;
   return (
     <Link href={{ pathname: '/[slug]', params: { slug: c.slug, ...(c.service ? { service: c.service.service_id } : {}) } }} asChild>
-      <Pressable style={[s.card, { padding: 0, overflow: 'hidden', width: compact ? 220 : undefined }]} testID="business-card" accessibilityRole="link">
+      <Pressable style={StyleSheet.flatten([s.card, { padding: 0, overflow: 'hidden' as const, width: compact ? 220 : undefined }])} testID="business-card" accessibilityRole="link">
         <View style={{ height: compact ? 96 : 130, backgroundColor: C.surface100 }}>
           {cover ? <Image source={{ uri: cover }} style={{ width: '100%', height: '100%' }} /> : null}
         </View>

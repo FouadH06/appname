@@ -11,7 +11,8 @@ export default defineConfig({
   reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : 'list',
   use: {
     baseURL: 'http://127.0.0.1:8081',
-    trace: 'on-first-retry',
+    trace: 'retain-on-failure',
+    screenshot: 'only-on-failure',
     ...(process.env.PW_CHANNEL ? { channel: process.env.PW_CHANNEL } : {}),
   },
   projects: [{ name: 'phone', use: { ...devices['Pixel 7'] } }],
@@ -23,7 +24,7 @@ export default defineConfig({
       timeout: 180_000,
     },
     {
-      command: 'npx expo export --platform web --output-dir dist && npx expo serve --port 8081',
+      command: 'npx expo export --platform web --output-dir dist && node e2e/support/serve.mjs',
       url: 'http://127.0.0.1:8081',
       reuseExistingServer: !process.env.CI,
       timeout: 300_000,

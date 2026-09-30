@@ -50,6 +50,7 @@ test('app: discover → book → manage → rebook → review → favorites → 
     await page.goto('/');
     await page.getByTestId('home-search').click();
     await page.getByTestId('search-input').fill(b.name);
+    await expect(page.getByTestId('suggestion-business').filter({ hasText: b.name }).first()).toBeVisible({ timeout: 20_000 });
     await page.getByTestId('suggestion-business').filter({ hasText: b.name }).first().click();
     await expect(page.getByTestId('business-profile')).toBeVisible();
     await expect(page.getByTestId('service-row').filter({ hasText: 'Haircut' }).first()).toBeVisible();
@@ -115,7 +116,7 @@ test('app: discover → book → manage → rebook → review → favorites → 
   await test.step('Bookings tab → past visit → leave a review', async () => {
     await page.goto('/bookings');
     await page.getByTestId('tab-past').click();
-    await page.getByTestId('booking-card').filter({ hasText: b.name }).first().click();
+    await page.getByTestId('booking-card').filter({ hasText: b.name }).filter({ hasText: 'Completed' }).first().click();
     await expect(page.getByTestId('booking-status')).toHaveText('Completed');
     await page.getByTestId('leave-review').click();
     await expect(page.getByTestId('review-form')).toBeVisible();
@@ -154,6 +155,14 @@ test('app: discover → book → manage → rebook → review → favorites → 
     await expect(page.getByTestId('result-removed')).toBeVisible();
     await page.goto('/no-such-business');
     await expect(page.getByText(/This page doesn.t exist/)).toBeVisible();
+  });
+
+  await test.step('offline: banner appears and clears', async () => {
+    await page.goto('/');
+    await page.context().setOffline(true);
+    await expect(page.getByTestId('offline-banner')).toBeVisible();
+    await page.context().setOffline(false);
+    await expect(page.getByTestId('offline-banner')).toHaveCount(0);
   });
 
   await test.step('profile: preferences load; log out returns to signed-out state', async () => {
