@@ -368,7 +368,8 @@ function Review({
 }) {
   const [left, setLeft] = useState(() => new Date(hold.expires_at).getTime() - Date.now());
   const [first, setFirst] = useState('');
-  const [needName, setNeedName] = useState(false);
+  // null until we know whether the profile has a first name (the button waits, so it never flickers)
+  const [needName, setNeedName] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const idem = useMemo(() => `app-${hold.booking_id}`, [hold.booking_id]);
@@ -434,7 +435,9 @@ function Review({
         {request ? 'The business confirms requests, usually within an hour. ' : ''}
         Free cancellation up to {Math.round(page.rules.cancellation_window_minutes / 60)} h before.
       </Muted>
-      {!signedIn ? (
+      {signedIn && needName === null ? (
+        <State loading />
+      ) : !signedIn ? (
         <Card>
           <H2>Verify your phone</H2>
           <PhoneSignIn
@@ -456,7 +459,7 @@ function Review({
             title={request ? 'Send request' : 'Confirm booking'}
             onPress={() => void confirm()}
             busy={busy}
-            disabled={left <= 0 || (needName && !first.trim())}
+            disabled={left <= 0 || (!!needName && !first.trim())}
             testID="confirm"
           />
         </>
