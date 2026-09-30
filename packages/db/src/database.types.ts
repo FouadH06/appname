@@ -2106,6 +2106,7 @@ export type Database = {
           attempts: number;
           booking_id: string | null;
           channel_override: Database['public']['Enums']['notification_channel'] | null;
+          claimed_at: string | null;
           created_at: string;
           dedupe_key: string | null;
           id: string;
@@ -2126,6 +2127,7 @@ export type Database = {
           attempts?: number;
           booking_id?: string | null;
           channel_override?: Database['public']['Enums']['notification_channel'] | null;
+          claimed_at?: string | null;
           created_at?: string;
           dedupe_key?: string | null;
           id?: string;
@@ -2146,6 +2148,7 @@ export type Database = {
           attempts?: number;
           booking_id?: string | null;
           channel_override?: Database['public']['Enums']['notification_channel'] | null;
+          claimed_at?: string | null;
           created_at?: string;
           dedupe_key?: string | null;
           id?: string;

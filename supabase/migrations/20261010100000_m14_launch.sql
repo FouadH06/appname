@@ -315,7 +315,7 @@ begin
 
   v_queues := jsonb_build_object(
     'notifications_overdue', (select count(*) from public.notifications where status = 'queued' and scheduled_for < now() - interval '15 minutes'),
-    'notifications_processing_stuck', (select count(*) from public.notifications where status = 'processing' and scheduled_for < now() - interval '15 minutes'),
+    'notifications_processing_stuck', (select count(*) from public.notifications where status = 'processing' and claimed_at < now() - interval '15 minutes'),
     'search_refresh', (select jsonb_build_object('count', count(*), 'oldest', min(requested_at)) from private.search_refresh_queue),
     'photos_pending_30m', (select count(*) from public.review_media where state = 'pending' and created_at < now() - interval '30 minutes'),
     'comments_pending_1h', (select count(*) from public.reviews where text_state = 'pending' and updated_at < now() - interval '1 hour'),
@@ -427,6 +427,134 @@ insert into public.reserved_slugs (slug) values ('review-guidelines') on conflic
 create function public.health_ping() returns timestamptz
 language sql stable security definer set search_path = '' as $$ select now() $$;
 
+
+-- ═══ Reliability: dispatcher runs that never finished ═══════════════════════
+alter table public.notifications add column claimed_at timestamptz;
+create index on public.notifications (claimed_at) where status = 'processing';
+
+-- Same as M13 plus: stale 'processing' rows are reclaimed (claimed_at), hopeless ones fail.
+create or replace function public.notify_claim(p_limit int default 50) returns jsonb
+language plpgsql volatile security definer set search_path = '' as $$
+declare v jsonb;
+begin
+  update public.notifications n set status = 'cancelled'
+  from public.bookings b
+  where n.booking_id = b.id and n.status = 'queued' and n.scheduled_for <= now()
+    and n.type in ('booking_reminder_24h', 'booking_reminder_2h')
+    and (b.status <> 'confirmed' or (n.payload ->> 'starts_at')::timestamptz <> b.starts_at);
+
+  -- a row claimed by a dispatcher run that never finished (timeout / crash) is retried once the claim
+  -- is 10 minutes old; after 5 attempts it fails for a human to look at (at-least-once delivery)
+  update public.notifications set status = 'failed', last_error = 'dispatcher did not finish (5 attempts)'
+   where status = 'processing' and claimed_at < now() - interval '10 minutes' and attempts >= 5;
+
+  with due as (
+    select id from public.notifications
+    where ((status = 'queued' and scheduled_for <= now())
+           or (status = 'processing' and claimed_at < now() - interval '10 minutes'))
+      and (recipient_phone is not null or private.has_push(recipient_user_id))
+    order by scheduled_for limit least(greatest(coalesce(p_limit, 50), 1), 500)
+    for update skip locked
+  ), claimed as (
+    update public.notifications n set status = 'processing', attempts = n.attempts + 1, claimed_at = now()
+    from due where n.id = due.id
+    returning n.*
+  )
+  select coalesce(jsonb_agg(jsonb_build_object(
+           'id', c.id, 'type', c.type, 'locale', c.locale, 'phone', c.recipient_phone, 'attempts', c.attempts,
+           'payload', c.payload || jsonb_build_object('booking_id', c.booking_id), 'critical', coalesce(r.critical, false),
+           'channels', (select coalesce(jsonb_agg(ch order by o), '[]') from unnest(
+                          case when c.channel_override is not null then array[c.channel_override]
+                               when 'push' = any (coalesce(r.primary_channels, '{}')) and private.has_push(c.recipient_user_id)
+                                 then array['push'::public.notification_channel]
+                               else array(select x from unnest(coalesce(r.primary_channels, '{whatsapp}')) x where x <> 'push')
+                                    || case when coalesce(r.critical, false) then r.fallback_channels else '{}' end end)
+                          with ordinality u(ch, o)
+                        where ch in ('whatsapp', 'sms', 'push')
+                          and (ch <> 'push' or private.has_push(c.recipient_user_id))
+                          and (ch = 'push' or c.recipient_phone is not null)
+                          and not exists (select 1 from public.notification_preferences p
+                                          where p.user_id = c.recipient_user_id and p.channel = ch and not p.enabled)),
+           'also_push', coalesce(r.also_push, false) and c.channel_override is null and private.has_push(c.recipient_user_id),
+           'push_tokens', (select coalesce(jsonb_agg(t.expo_token), '[]') from public.push_tokens t
+                           where t.user_id = c.recipient_user_id and t.disabled_at is null),
+           'templates', (select coalesce(jsonb_object_agg(t.channel, to_jsonb(t) - 'created_at'), '{}')
+                         from (select distinct on (t.channel) t.*
+                               from public.notification_templates t
+                               where t.type = c.type and t.is_active and t.locale in (c.locale, 'en')
+                               order by t.channel, (t.status = 'approved') desc, (t.locale = c.locale) desc) t))), '[]')
+    into v
+  from claimed c left join private.notification_routes r on r.type = c.type;
+  return v;
+end $$;
+-- ═══ Account deletion completed (Phase 3 Part 2 §1.1) ═══════════════════════
+-- M4 built the skeleton. Added: the person's reviews and photos are removed (as when the author deletes
+-- them), app push tokens are disabled, favorites removed, and the Auth user is scrubbed by a cron
+-- statement (pg_cron runs it as the job owner — app_owner functions can't touch the auth schema):
+-- phone, email and metadata cleared, sessions / identities / MFA factors deleted, sign-in blocked. The
+-- UUID stays as a pseudonymous key because audit, dispute and booking history reference it (deviation
+-- from "delete the auth.users row", see the M14 report).
+create or replace function private.job_process_account_deletions() returns int
+language plpgsql security definer set search_path = '' as $$
+declare r record; b record; v record; v_rm uuid; n int := 0;
+begin
+  for r in select * from private.account_deletions where status = 'requested'
+           order by requested_at limit 50 for update skip locked
+  loop
+    -- An active owner must hand the business over first (support-assisted)
+    if exists (select 1 from public.business_members where user_id = r.user_id and role = 'owner' and status = 'active') then
+      update private.account_deletions set status = 'needs_support', note = 'active business owner' where user_id = r.user_id;
+      continue;
+    end if;
+
+    delete from public.bookings where hold_owner_user_id = r.user_id and status = 'held';
+    for b in select id, status, business_customer_id from public.bookings
+             where customer_user_id = r.user_id and status in ('pending', 'confirmed') and starts_at > now()
+             for update
+    loop
+      update public.bookings set status = 'cancelled', cancelled_by_kind = 'customer', cancel_reason = 'account_deleted'
+       where id = b.id;
+      perform private.log_booking_event(b.id, 'cancelled', 'customer', b.status, 'cancelled',
+                                        '{"notify":true,"reason":"account_deleted"}');
+      perform private.recompute_business_customer_stats(b.business_customer_id);
+    end loop;
+
+    -- reviews and customer photos go, as if the author deleted each one
+    for v in update public.reviews set status = 'deleted_by_author', deleted_at = now()
+             where author_user_id = r.user_id and status <> 'deleted_by_author' returning id, business_id
+    loop
+      update public.moderation_cases set state = 'decided', decided_at = now(), note = 'account deleted'
+       where subject_id = v.id and state in ('open', 'claimed', 'escalated');
+      for v_rm in select rm.id from public.review_media rm where rm.review_id = v.id and rm.state <> 'removed' loop
+        perform private.remove_review_media(v_rm, 'account_deleted');
+      end loop;
+      perform private.recompute_rating_summary(v.business_id);
+    end loop;
+
+    update public.push_tokens set disabled_at = now() where user_id = r.user_id and disabled_at is null;
+    delete from public.favorite_businesses where user_id = r.user_id;
+
+    -- Businesses keep their own records; the link to the person goes. A detached record whose
+    -- phone would collide with an existing shadow at that business drops the phone snapshot.
+    update public.business_customers bc set user_id = null, claimed_at = null,
+      phone_e164 = case when exists (select 1 from public.business_customers s
+                                     where s.business_id = bc.business_id and s.user_id is null
+                                       and s.archived_at is null and s.phone_e164 = bc.phone_e164)
+                        then null else bc.phone_e164 end
+    where bc.user_id = r.user_id;
+    update public.business_members set status = 'revoked' where user_id = r.user_id and status = 'active';
+    update public.staff_members set user_id = null where user_id = r.user_id;
+    delete from private.claim_dismissals where user_id = r.user_id;
+
+    update public.profiles set status = 'deleted', deleted_at = now(), first_name = null, last_name = null,
+                               email = null, phone_verified_at = null, phone_e164 = null, default_area_id = null
+     where id = r.user_id;
+    update private.account_deletions set status = 'processed', processed_at = now() where user_id = r.user_id;
+    n := n + 1;
+  end loop;
+  return n;
+end $$;
+
 -- ═══ Grants & schedules ═════════════════════════════════════════════════════
 revoke execute on function private.beirut_day_start(date), private.working_minutes(uuid, uuid, date),
   private.metrics_rows(uuid, date, date), private.staff_metrics_rows(uuid, date, date),
@@ -442,7 +570,7 @@ grant execute on function public.health_ping() to anon, authenticated, service_r
 do $$
 declare j text;
 begin
-  foreach j in array array['app_daily_metrics', 'app_cron_health', 'app_cron_cleanup'] loop
+  foreach j in array array['app_daily_metrics', 'app_cron_health', 'app_cron_cleanup', 'app_account_auth_scrub'] loop
     perform cron.unschedule(jobid) from cron.job where jobname = j;
   end loop;
 end $$;
@@ -460,6 +588,19 @@ select cron.schedule('app_cron_health', '*/5 * * * *', $job$
   on conflict (jobname) do update set schedule = excluded.schedule, active = excluded.active,
     last_run_at = excluded.last_run_at, last_status = excluded.last_status, last_message = excluded.last_message,
     runs_24h = excluded.runs_24h, failures_24h = excluded.failures_24h, captured_at = excluded.captured_at
+$job$);
+-- Auth side of account deletion (runs as the job owner, which may write the auth schema)
+select cron.schedule('app_account_auth_scrub', '*/15 * * * *', $job$
+  with d as (select user_id from private.account_deletions where status = 'processed' and auth_deleted_at is null limit 100),
+  s as (delete from auth.sessions where user_id in (select user_id from d)),
+  i as (delete from auth.identities where user_id in (select user_id from d)),
+  f as (delete from auth.mfa_factors where user_id in (select user_id from d)),
+  t as (delete from auth.one_time_tokens where user_id in (select user_id from d)),
+  u as (update auth.users set phone = null, phone_confirmed_at = null, phone_change = '', email = null,
+               email_confirmed_at = null, email_change = '', raw_user_meta_data = '{}'::jsonb,
+               raw_app_meta_data = '{"provider":"deleted"}'::jsonb, banned_until = 'infinity', updated_at = now()
+        where id in (select user_id from d) returning id)
+  update private.account_deletions set auth_deleted_at = now() where user_id in (select id from u)
 $job$);
 -- pg_cron keeps every run forever; a week is enough for the health view
 select cron.schedule('app_cron_cleanup', '20 4 * * *', $job$ delete from cron.job_run_details where end_time < now() - interval '7 days' $job$);

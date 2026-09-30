@@ -5,8 +5,13 @@ create extension if not exists pgtap with schema extensions;
 set local search_path = extensions, public;
 set local role postgres;
 \ir ../helpers/fixtures.psql
-select plan(28);
+select plan(31);
 
+create function tests.as_service() returns void language plpgsql as $$
+begin
+  perform set_config('request.jwt.claims', '{"role":"service_role"}', true);
+  perform set_config('role', 'service_role', true);
+end $$;
 select tests.new_user('owner', '96170330100');
 select tests.new_user('mgr', '96170330101');
 select tests.new_user('recep', '96170330102');
@@ -121,6 +126,48 @@ select results_eq($$ select (b ->> 'ready')::boolean, b -> 'missing' ? 'cover', 
                   $$ values (false, true, true) $$, 'readiness lists what a live business is missing');
 select tests.as_anon();
 select isnt(public.health_ping(), null, 'uptime ping works anonymously');
+
+-- ═══ stale dispatcher claims ═══
+select tests.as_postgres();
+grant usage on schema tests to service_role;
+grant execute on all functions in schema tests to service_role;
+grant select on tests.ids to service_role;
+insert into public.notifications (type, recipient_user_id, recipient_phone, payload, status, attempts, claimed_at, scheduled_for, dedupe_key) values
+  ('booking_confirmed', tests.id('mgr'), '+96170330101', '{}', 'processing', 1, now() - interval '11 minutes', now() - interval '12 minutes', 'm14-stale-1'),
+  ('booking_confirmed', tests.id('mgr'), '+96170330101', '{}', 'processing', 5, now() - interval '11 minutes', now() - interval '12 minutes', 'm14-stale-5'),
+  ('booking_confirmed', tests.id('mgr'), '+96170330101', '{}', 'processing', 1, now() - interval '2 minutes', now() - interval '3 minutes', 'm14-fresh');
+select tests.as_service();
+select public.notify_claim(50);
+select tests.as_postgres();
+select results_eq($$ select dedupe_key, status::text, attempts::int from public.notifications where dedupe_key like 'm14-%' order by dedupe_key $$,
+                  $$ values ('m14-fresh', 'processing', 1), ('m14-stale-1', 'processing', 2), ('m14-stale-5', 'failed', 5) $$,
+                  'an unfinished claim is retried after 10 min; after 5 attempts it fails; a fresh claim is left alone');
+
+-- ═══ account deletion completed ═══
+select tests.new_user('gone', '96170330777');
+select tests.customer_record('r_gone', 'biz', 'Gone Customer', '+96170330777', 'gone');
+select tests.visit('v_gone', 'biz', 'Karim Haddad', 'Cut', 'r_gone', tests.at(tests.day(-1), '10:00'));
+update public.bookings set customer_user_id = tests.id('gone') where id = tests.id('v_gone');
+select tests.act_as('gone');
+select public.submit_review(tests.id('v_gone'), 5);
+select public.register_push_token('ExponentPushToken[gone0000001]', 'ios');
+select public.toggle_favorite_business(tests.id('biz'));
+select public.delete_my_account();
+select tests.as_postgres();
+select private.job_process_account_deletions();
+select results_eq($$ select (select status::text from public.reviews where booking_id = tests.id('v_gone')),
+                            (select disabled_at is not null from public.push_tokens where expo_token = 'ExponentPushToken[gone0000001]'),
+                            (select count(*)::int from public.favorite_businesses where user_id = tests.id('gone')),
+                            (select status::text from public.profiles where id = tests.id('gone')) $$,
+                  $$ values ('deleted_by_author', true, 0, 'deleted') $$,
+                  'deletion removes the review, disables push, drops favorites, anonymizes the profile');
+do $$ begin execute (select command from cron.job where jobname = 'app_account_auth_scrub'); end $$;
+select results_eq($$ select phone is null, email is null, banned_until = 'infinity',
+                            (select count(*)::int from auth.sessions s where s.user_id = u.id),
+                            (select auth_deleted_at is not null from private.account_deletions d where d.user_id = u.id)
+                     from auth.users u where u.id = tests.id('gone') $$,
+                  $$ values (true, true, true, 0, true) $$,
+                  'the auth user is scrubbed: no phone, no sessions, sign-in blocked');
 
 select * from finish();
 rollback;
