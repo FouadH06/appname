@@ -2,3 +2,61 @@
 @import '@app/ui-web/styles.css';
 
 @source '../../../../packages/ui-web/src';
+
+/*
+ * Customer surface (UX pass, locked visual direction): warm ivory, deep green, near-black ink.
+ * Scoped to [data-surface='customer'] so the business dashboard keeps its current look. Light only for
+ * now (the locked references are light); every role is redefined here, so the root dark values never apply.
+ */
+[data-surface='customer'] {
+  --ink-900: #1a1c19;
+  --ink-700: #444841;
+  --ink-500: #6b6f68;
+  --line-200: #e4e0d6;
+  --surface-0: #fffefb;
+  --surface-50: #f7f5ef;
+  --surface-100: #efece4;
+  --accent-600: #0f4d3a;
+  --accent-700: #0b3b2d;
+  --accent-100: #d7e7dd;
+  --accent-50: #eaf3ed;
+  --trust-600: #0f6b52;
+  --star-500: #e2a012;
+  --success-600: #1b7a4b;
+  --warning-600: #a86a12;
+  --danger-600: #b8322a;
+  --info-600: #2f5fb0;
+  --radius-control: 10px;
+  --radius-card: 14px;
+  --radius-sheet: 18px;
+  --font-sans:
+    ui-sans-serif, -apple-system, 'Segoe UI', 'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif;
+  color-scheme: light;
+  background: var(--surface-50);
+  color: var(--ink-900);
+  font-family: var(--font-sans);
+}
+
+@theme inline {
+  --color-accent-700: var(--accent-700, var(--accent-600));
+  --color-accent-100: var(--accent-100, var(--surface-100));
+  --color-accent-50: var(--accent-50, var(--surface-50));
+}
+
+/* visible keyboard focus everywhere on the customer surface */
+[data-surface='customer'] :where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--accent-600);
+  outline-offset: 2px;
+}
+
+/* horizontal rails: no visible scrollbar, snap to cards */
+.rail {
+  scrollbar-width: none;
+  scroll-snap-type: x proximity;
+}
+.rail::-webkit-scrollbar {
+  display: none;
+}
+.rail > * {
+  scroll-snap-align: start;
+}

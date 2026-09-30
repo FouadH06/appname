@@ -18,6 +18,35 @@ export function mediaUrl(path: string | null | undefined): string | null {
   return `${base}/storage/v1/object/public/business-media/${path}`;
 }
 
+/**
+ * Business photo sized for its slot. Covers are stored at ≤ 1600 px WebP; where Supabase image
+ * transformations are enabled (`NEXT_PUBLIC_IMAGE_TRANSFORMS=true`, paid plans) cards ask for a
+ * width-limited rendition instead of the stored file.
+ */
+export function coverUrl(path: string | null | undefined, width: number): string | null {
+  const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!path || !base) return null;
+  if (process.env.NEXT_PUBLIC_IMAGE_TRANSFORMS === 'true') {
+    return `${base}/storage/v1/render/image/public/business-media/${path}?width=${width}&quality=75`;
+  }
+  return mediaUrl(path);
+}
+
+/** Beirut calendar date (YYYY-MM-DD) n days from today. */
+export const beirutDay = (offsetDays = 0) =>
+  new Intl.DateTimeFormat('en-CA', { timeZone: TZ }).format(
+    new Date(Date.now() + offsetDays * 86_400_000),
+  );
+
+/** "Today 4:30 PM" / "Tomorrow 11:00 AM" / "Thu 3 Oct, 2:00 PM". */
+export function whenText(iso: string) {
+  const date = new Intl.DateTimeFormat('en-CA', { timeZone: TZ }).format(new Date(iso));
+  const day = relativeDay(date, beirutDay(0));
+  return day === 'Today' || day === 'Tomorrow'
+    ? `${day} ${timeText(iso)}`
+    : `${day}, ${timeText(iso)}`;
+}
+
 /** Published customer-result derivatives (M10): only ever ugc-public paths. */
 export function ugcUrl(path: string | null | undefined): string | null {
   const base = process.env.NEXT_PUBLIC_SUPABASE_URL;

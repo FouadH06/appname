@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { IconClock, IconPin, IconSearch } from '@/components/customer/icons';
 import { supabase } from '@/lib/supabase';
 
 // C3 search: typed suggestions (services with places nearby · businesses · areas), recents (device only),
@@ -139,6 +140,7 @@ export function SearchBox({
   return (
     <div className="relative w-full" ref={box} data-testid="search-box" data-ready={ready}>
       <form
+        className="relative"
         role="search"
         onSubmit={(e) => {
           e.preventDefault();
@@ -150,11 +152,15 @@ export function SearchBox({
           else submit();
         }}
       >
+        <IconSearch
+          size={big ? 22 : 18}
+          className="pointer-events-none absolute start-4 top-1/2 -translate-y-1/2 text-ink-700"
+        />
         <input
-          className={`w-full rounded-control border border-line-200 bg-surface-0 px-4 ${big ? 'h-14 text-lg' : 'h-11 text-sm'}`}
+          className={`w-full rounded-full border border-line-200 bg-surface-0 pe-4 shadow-sm outline-none placeholder:text-ink-500 focus:border-accent-600 ${big ? 'h-14 ps-12 text-base sm:text-lg' : 'h-11 ps-11 text-sm'}`}
           type="search"
           value={q}
-          placeholder="What do you need? Haircut, nails, balayage…"
+          placeholder="Search services or businesses"
           aria-label="Search services or businesses"
           dir="auto"
           autoComplete="off"
@@ -196,19 +202,19 @@ export function SearchBox({
             <li key={`${it.kind}-${it.href}`} role="option" aria-selected={i === active}>
               <button
                 type="button"
-                className={`flex w-full items-center gap-3 px-4 py-2 text-start text-sm ${i === active ? 'bg-surface-100' : 'hover:bg-surface-50'}`}
+                className={`flex min-h-11 w-full items-center gap-3 px-4 py-2 text-start text-sm ${i === active ? 'bg-accent-50' : 'hover:bg-surface-50'}`}
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => go(it.href, it.kind === 'business' ? undefined : it.label)}
                 data-testid={`suggestion-${it.kind}`}
               >
-                <span aria-hidden>
-                  {it.kind === 'service'
-                    ? '✂️'
-                    : it.kind === 'business'
-                      ? '🏪'
-                      : it.kind === 'area'
-                        ? '📍'
-                        : '🕘'}
+                <span className="text-ink-500">
+                  {it.kind === 'area' ? (
+                    <IconPin size={16} />
+                  ) : it.kind === 'recent' ? (
+                    <IconClock size={16} />
+                  ) : (
+                    <IconSearch size={16} />
+                  )}
                 </span>
                 <span className="flex-1" dir="auto">
                   {it.label}

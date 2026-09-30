@@ -13,7 +13,7 @@ export function UseMyLocation() {
   return (
     <button
       type="button"
-      className="rounded-full border border-line-200 bg-surface-0 px-3 py-1 text-sm"
+      className="inline-flex h-10 shrink-0 items-center whitespace-nowrap rounded-full border border-line-200 bg-surface-0 px-4 text-sm font-medium hover:border-accent-600"
       disabled={state === 'asking'}
       onClick={() => {
         if (!navigator.geolocation) return setState('denied');
