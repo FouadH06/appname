@@ -1,6 +1,6 @@
 # M14 — Analytics, hardening & launch preparation: launch-readiness report
 
-Status: **implemented, awaiting review** · branch `m14-launch`
+Status: **implemented, awaiting review** · branch `m14-launch` · branch CI green on `1c1d5a1` (run 36712513599: format/lint/typecheck/unit/audit, build, pgTAP, web + admin + app e2e)
 
 Lean scope per the PO: real launch risks only. This report separates what the code proves from what only
 staging, real devices and real providers can prove — **CI green does not mean launch-ready.**
@@ -43,7 +43,9 @@ The single source of truth for what remains: [`docs/launch/pre-real-user-checkli
    Auth user scrubbed (see decision 1).
 3. **Web host needs no secret.** The service key was listed for the web app but no code path uses it —
    documented as "do not set" (smaller blast radius).
-4. Minor: `IP_HASH_SECRET` is unused because IP events are never recorded (fraud uses the device hash) —
+4. **App booking review race (M13).** CI's fresh database showed a brand-new customer an enabled-looking
+   Confirm that disabled once the first-name field appeared; Confirm now renders after the profile check.
+5. Minor: `IP_HASH_SECRET` is unused because IP events are never recorded (fraud uses the device hash) —
    documented, no raw IPs stored.
 
 ## Results
