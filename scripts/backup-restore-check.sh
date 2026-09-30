@@ -10,6 +10,7 @@
 # pg_cron / pg_net / pgmq are server-level or database-bound and are not restored into the scratch
 # database; their schemas are excluded from the comparison (jobs are recreated by migrations).
 set -euo pipefail
+export MSYS_NO_PATHCONV=1   # Git Bash on Windows: keep container paths as-is
 
 CONTAINER="${DB_CONTAINER:-supabase_db_app-name}"
 SCRATCH="restore_check"
@@ -57,14 +58,32 @@ from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname in 
 SQL
 )
 
-echo "1/4 dumping postgres (custom format)…"
+echo "1/4 dumping postgres (custom format) from one snapshot…"
 start=$(date +%s)
-docker exec "$CONTAINER" sh -c 'pg_dump -U postgres -d postgres -Fc --no-owner=false -f /tmp/backup.dump \
-  --exclude-schema=cron --exclude-schema=net --exclude-schema=pgmq --exclude-schema=_realtime \
-  --exclude-extension=pg_cron --exclude-extension=pg_net --exclude-extension=pgmq' 2>/dev/null || \
-docker exec "$CONTAINER" sh -c 'pg_dump -U postgres -d postgres -Fc -f /tmp/backup.dump \
-  --exclude-schema=cron --exclude-schema=net --exclude-schema=pgmq --exclude-schema=_realtime \
-  --exclude-extension=pg_cron --exclude-extension=pg_net --exclude-extension=pgmq'
+# Background jobs (dispatcher, search refresh…) keep writing, so the dump and the source summary must see
+# the same data: a session holds a repeatable-read transaction and exports its snapshot; pg_dump and the
+# summary both use it.
+printf '%s\n' "$SUMMARY_SQL" | docker exec -i "$CONTAINER" sh -c 'cat > /tmp/summary.sql'
+printf '%s\n' "$ACL_SQL" | docker exec -i "$CONTAINER" sh -c 'cat > /tmp/acl.sql'
+docker exec "$CONTAINER" sh -c '
+  set -e
+  rm -f /tmp/snapfifo /tmp/snap.out /tmp/source.txt /tmp/source_acl.txt; mkfifo /tmp/snapfifo
+  psql -U postgres -d postgres -qAt < /tmp/snapfifo > /tmp/snap.out 2>&1 &
+  exec 3>/tmp/snapfifo
+  echo "begin isolation level repeatable read; select pg_export_snapshot();" >&3
+  i=0; while [ ! -s /tmp/snap.out ] && [ $i -lt 50 ]; do sleep 0.1; i=$((i+1)); done
+  SNAP=$(head -1 /tmp/snap.out)
+  pg_dump -U postgres -d postgres -Fc -f /tmp/backup.dump --snapshot="$SNAP" \
+    --exclude-schema=cron --exclude-schema=net --exclude-schema=pgmq --exclude-schema=_realtime \
+    --exclude-extension=pg_cron --exclude-extension=pg_net --exclude-extension=pgmq
+  echo "\\o /tmp/source.txt" >&3; echo "\\i /tmp/summary.sql" >&3
+  echo "\\o /tmp/source_acl.txt" >&3; echo "\\i /tmp/acl.sql" >&3
+  echo "\\o" >&3; echo "commit;" >&3
+  exec 3>&-
+  wait
+'
+docker exec "$CONTAINER" cat /tmp/source.txt > /tmp/source.txt
+docker exec "$CONTAINER" cat /tmp/source_acl.txt > /tmp/source_acl.txt
 size=$(docker exec "$CONTAINER" sh -c 'du -k /tmp/backup.dump | cut -f1')
 echo "   dump: ${size} KB in $(( $(date +%s) - start )) s"
 
@@ -77,9 +96,7 @@ docker exec "$CONTAINER" sh -c "pg_restore -U postgres -d $SCRATCH --no-comments
 echo "   restore finished in $(( $(date +%s) - start )) s ($(grep -c 'error:' /tmp/restore.log || true) non-fatal restore messages)"
 
 echo "3/4 comparing…"
-psqlc -d postgres -c "$SUMMARY_SQL" > /tmp/source.txt
 psqlc -d "$SCRATCH" -c "$SUMMARY_SQL" > /tmp/restored.txt
-psqlc -d postgres -c "$ACL_SQL" > /tmp/source_acl.txt
 psqlc -d "$SCRATCH" -c "$ACL_SQL" > /tmp/restored_acl.txt
 tables=$(grep -c '^table ' /tmp/source.txt)
 rows=$(awk '/^table /{s+=$3} END{print s}' /tmp/source.txt)

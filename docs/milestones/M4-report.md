@@ -2,6 +2,9 @@
 
 Status: **closed (local + CI verified); hosted staging verification DEFERRED** · Branch `m4-auth-identity` → `main`
 
+> **M14: this checklist is consolidated with every later deferred item in
+> [`docs/launch/pre-real-user-checklist.md`](../launch/pre-real-user-checklist.md) — track progress there.**
+>
 > **Deferred, not cancelled (decision 2026-09-28).** M4 was approved (D1–D9) and merged on the
 > strength of local and CI coverage. Hosted staging verification was blocked by a tooling issue
 > (the session's command-safety layer) and is an **open integration task that must be completed
