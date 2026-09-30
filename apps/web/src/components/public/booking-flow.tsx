@@ -338,6 +338,28 @@ export function BookingFlow({ page: cached }: { page: BusinessPage }) {
   };
   const stepNo = { service: 1, staff: 2, time: 3, review: 4 }[step];
 
+  const sideAction =
+    step === 'staff' ? (
+      <button
+        type="button"
+        className={primary}
+        disabled={!options}
+        onClick={() => setStep('time')}
+        data-testid="side-continue"
+      >
+        Continue
+      </button>
+    ) : step === 'time' ? (
+      <button
+        type="button"
+        className={primary}
+        disabled={!picked || busy || (hasSession === false && !captcha)}
+        onClick={() => picked && void takeSlot(picked)}
+        data-testid="side-continue"
+      >
+        {busy ? 'Holding your time…' : picked ? `Continue · ${timeText(picked)}` : 'Pick a time'}
+      </button>
+    ) : null;
   const summary = (
     <aside className="hidden lg:block" aria-label="Booking summary">
       <div className={`${card} sticky top-24 flex flex-col gap-3 p-5`} data-testid="side-summary">
@@ -383,6 +405,7 @@ export function BookingFlow({ page: cached }: { page: BusinessPage }) {
             </>
           )}
         </p>
+        {sideAction}
       </div>
     </aside>
   );
@@ -580,7 +603,7 @@ export function BookingFlow({ page: cached }: { page: BusinessPage }) {
                       })}
                   </div>
                 ) : null}
-                <StickyAction>
+                <StickyAction mobileOnly>
                   <button
                     type="button"
                     className={primary}
@@ -794,7 +817,7 @@ export function BookingFlow({ page: cached }: { page: BusinessPage }) {
                     : ''}
                 </p>
 
-                <StickyAction>
+                <StickyAction mobileOnly>
                   <button
                     type="button"
                     className={primary}
@@ -885,9 +908,17 @@ function ServiceHeader({ service }: { service: PublicService }) {
 }
 
 /** Primary action: sticky above the home indicator on phones/tablets, inline on desktop. */
-function StickyAction({ children }: { children: ReactNode }) {
+function StickyAction({
+  children,
+  mobileOnly = false,
+}: {
+  children: ReactNode;
+  mobileOnly?: boolean;
+}) {
   return (
-    <div className="fixed inset-x-0 bottom-0 z-20 border-t border-line-200 bg-surface-0 px-4 pb-[max(12px,env(safe-area-inset-bottom))] pt-3 lg:static lg:border-0 lg:bg-transparent lg:p-0">
+    <div
+      className={`fixed inset-x-0 bottom-0 z-20 border-t border-line-200 bg-surface-0 px-4 pb-[max(12px,env(safe-area-inset-bottom))] pt-3 ${mobileOnly ? 'lg:hidden' : 'lg:static lg:border-0 lg:bg-transparent lg:p-0'}`}
+    >
       <div className="mx-auto max-w-xl lg:mx-0 lg:max-w-sm">{children}</div>
     </div>
   );
