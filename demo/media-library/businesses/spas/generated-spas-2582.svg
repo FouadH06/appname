@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1000" viewBox="0 0 1000 1000">
+<rect width="100%" height="100%" fill="#F7F2E8"/><circle cx="272" cy="245" r="107" fill="#B38B52" opacity="0.13"/><circle cx="243" cy="442" r="156" fill="#B38B52" opacity="0.14"/><circle cx="745" cy="720" r="167" fill="#B38B52" opacity="0.10"/><circle cx="28" cy="648" r="106" fill="#B38B52" opacity="0.22"/><circle cx="404" cy="683" r="105" fill="#B38B52" opacity="0.16"/><circle cx="115" cy="438" r="163" fill="#B38B52" opacity="0.17"/><circle cx="97" cy="792" r="139" fill="#B38B52" opacity="0.19"/><circle cx="320" cy="216" r="179" fill="#B38B52" opacity="0.11"/><circle cx="560" cy="147" r="173" fill="#B38B52" opacity="0.08"/><circle cx="687" cy="656" r="138" fill="#B38B52" opacity="0.15"/>
+<rect x="70" y="100" width="860" height="800" rx="35" fill="none" stroke="#B38B52" stroke-width="2" opacity=".45"/>
+<text x="50%" y="47%" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="55" font-weight="700" fill="#312A22" letter-spacing="3">SPAS</text>
+<text x="50%" y="54%" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="22" fill="#312A22" opacity=".62">APP_NAME • GENERATED DEMO MEDIA</text>
+<text x="50%" y="92%" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="16" fill="#312A22" opacity=".45">business-interior</text>
+</svg>

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1000" viewBox="0 0 1000 1000">
+<rect width="100%" height="100%" fill="#F6F1F2"/><circle cx="1000" cy="727" r="92" fill="#A6777E" opacity="0.10"/><circle cx="334" cy="213" r="109" fill="#A6777E" opacity="0.12"/><circle cx="609" cy="749" r="63" fill="#A6777E" opacity="0.16"/><circle cx="541" cy="388" r="108" fill="#A6777E" opacity="0.22"/><circle cx="625" cy="291" r="93" fill="#A6777E" opacity="0.10"/><circle cx="523" cy="774" r="192" fill="#A6777E" opacity="0.12"/><circle cx="915" cy="102" r="159" fill="#A6777E" opacity="0.22"/><circle cx="411" cy="620" r="135" fill="#A6777E" opacity="0.19"/><circle cx="850" cy="989" r="152" fill="#A6777E" opacity="0.22"/><circle cx="253" cy="381" r="114" fill="#A6777E" opacity="0.10"/>
+<rect x="70" y="100" width="860" height="800" rx="35" fill="none" stroke="#A6777E" stroke-width="2" opacity=".45"/>
+<text x="50%" y="47%" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="55" font-weight="700" fill="#302628" letter-spacing="3">BLOWOUT</text>
+<text x="50%" y="54%" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="22" fill="#302628" opacity=".62">APP_NAME • GENERATED DEMO MEDIA</text>
+<text x="50%" y="92%" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="16" fill="#302628" opacity=".45">customer-result</text>
+</svg>

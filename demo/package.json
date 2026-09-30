@@ -1,0 +1,14 @@
+{
+  "name": "@app/demo",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Demo-only fixtures and media (never pilot data). Local stack unless explicitly allowed.",
+  "scripts": {
+    "seed": "node src/seed.mjs"
+  },
+  "dependencies": {
+    "pg": "^8.23.0",
+    "sharp": "0.35.5"
+  }
+}

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800">
+<rect width="100%" height="100%" fill="#F6F1F2"/><circle cx="420" cy="691" r="101" fill="#A6777E" opacity="0.20"/><circle cx="767" cy="249" r="102" fill="#A6777E" opacity="0.24"/><circle cx="425" cy="611" r="118" fill="#A6777E" opacity="0.22"/><circle cx="404" cy="597" r="158" fill="#A6777E" opacity="0.23"/><circle cx="677" cy="478" r="159" fill="#A6777E" opacity="0.15"/><circle cx="148" cy="636" r="41" fill="#A6777E" opacity="0.21"/><circle cx="428" cy="563" r="69" fill="#A6777E" opacity="0.15"/><circle cx="323" cy="63" r="135" fill="#A6777E" opacity="0.09"/><circle cx="547" cy="746" r="49" fill="#A6777E" opacity="0.11"/><circle cx="786" cy="726" r="52" fill="#A6777E" opacity="0.12"/>
+<rect x="84" y="80" width="1032" height="640" rx="28" fill="none" stroke="#A6777E" stroke-width="2" opacity=".45"/>
+<text x="50%" y="47%" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="44" font-weight="700" fill="#302628" letter-spacing="3">LASH STUDIO</text>
+<text x="50%" y="54%" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="18" fill="#302628" opacity=".62">APP_NAME • GENERATED DEMO MEDIA</text>
+<text x="50%" y="92%" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#302628" opacity=".45">business-cover</text>
+</svg>

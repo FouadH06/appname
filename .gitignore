@@ -59,3 +59,6 @@ apps/mobile/expo-env.d.ts
 apps/mobile/.env.local
 apps/mobile/test-results/
 apps/mobile/playwright-report/
+
+# demo media download cache (stock previews fetched once by the demo seeder)
+demo/.cache/

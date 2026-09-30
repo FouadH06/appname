@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1200" viewBox="0 0 800 1200">
+<rect width="100%" height="100%" fill="#F1F4F0"/><circle cx="96" cy="877" r="98" fill="#6B806B" opacity="0.18"/><circle cx="569" cy="1003" r="82" fill="#6B806B" opacity="0.22"/><circle cx="152" cy="827" r="145" fill="#6B806B" opacity="0.14"/><circle cx="119" cy="188" r="134" fill="#6B806B" opacity="0.22"/><circle cx="715" cy="307" r="156" fill="#6B806B" opacity="0.19"/><circle cx="600" cy="645" r="92" fill="#6B806B" opacity="0.24"/><circle cx="370" cy="876" r="158" fill="#6B806B" opacity="0.09"/><circle cx="309" cy="829" r="137" fill="#6B806B" opacity="0.17"/><circle cx="409" cy="432" r="143" fill="#6B806B" opacity="0.14"/><circle cx="286" cy="1049" r="68" fill="#6B806B" opacity="0.23"/>
+<rect x="56" y="120" width="688" height="960" rx="28" fill="none" stroke="#6B806B" stroke-width="2" opacity=".45"/>
+<text x="50%" y="47%" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="44" font-weight="700" fill="#242A24" letter-spacing="3">HAIRSTYLIST</text>
+<text x="50%" y="54%" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="18" fill="#242A24" opacity=".62">APP_NAME • GENERATED DEMO MEDIA</text>
+<text x="50%" y="92%" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#242A24" opacity=".45">staff-profile-or-team</text>
+</svg>

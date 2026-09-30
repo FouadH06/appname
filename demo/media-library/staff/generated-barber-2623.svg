@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1200" viewBox="0 0 800 1200">
+<rect width="100%" height="100%" fill="#F1F4F0"/><circle cx="645" cy="320" r="103" fill="#6B806B" opacity="0.20"/><circle cx="165" cy="254" r="120" fill="#6B806B" opacity="0.16"/><circle cx="19" cy="721" r="61" fill="#6B806B" opacity="0.09"/><circle cx="184" cy="284" r="92" fill="#6B806B" opacity="0.19"/><circle cx="526" cy="807" r="42" fill="#6B806B" opacity="0.11"/><circle cx="441" cy="715" r="78" fill="#6B806B" opacity="0.12"/><circle cx="319" cy="833" r="115" fill="#6B806B" opacity="0.11"/><circle cx="533" cy="172" r="145" fill="#6B806B" opacity="0.12"/><circle cx="555" cy="913" r="46" fill="#6B806B" opacity="0.24"/><circle cx="605" cy="1027" r="145" fill="#6B806B" opacity="0.20"/>
+<rect x="56" y="120" width="688" height="960" rx="28" fill="none" stroke="#6B806B" stroke-width="2" opacity=".45"/>
+<text x="50%" y="47%" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="44" font-weight="700" fill="#242A24" letter-spacing="3">BARBER</text>
+<text x="50%" y="54%" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="18" fill="#242A24" opacity=".62">APP_NAME • GENERATED DEMO MEDIA</text>
+<text x="50%" y="92%" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#242A24" opacity=".45">staff-profile-or-team</text>
+</svg>

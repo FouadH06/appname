@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1200" viewBox="0 0 800 1200">
+<rect width="100%" height="100%" fill="#F1F4F0"/><circle cx="793" cy="363" r="103" fill="#6B806B" opacity="0.09"/><circle cx="368" cy="197" r="85" fill="#6B806B" opacity="0.23"/><circle cx="610" cy="250" r="70" fill="#6B806B" opacity="0.14"/><circle cx="434" cy="1100" r="50" fill="#6B806B" opacity="0.20"/><circle cx="459" cy="236" r="52" fill="#6B806B" opacity="0.16"/><circle cx="48" cy="188" r="146" fill="#6B806B" opacity="0.20"/><circle cx="152" cy="1031" r="159" fill="#6B806B" opacity="0.23"/><circle cx="625" cy="108" r="152" fill="#6B806B" opacity="0.13"/><circle cx="371" cy="1104" r="153" fill="#6B806B" opacity="0.14"/><circle cx="694" cy="1117" r="80" fill="#6B806B" opacity="0.15"/>
+<rect x="56" y="120" width="688" height="960" rx="28" fill="none" stroke="#6B806B" stroke-width="2" opacity=".45"/>
+<text x="50%" y="47%" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="44" font-weight="700" fill="#242A24" letter-spacing="3">HAIR COLOR</text>
+<text x="50%" y="54%" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="18" fill="#242A24" opacity=".62">APP_NAME • GENERATED DEMO MEDIA</text>
+<text x="50%" y="92%" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#242A24" opacity=".45">customer-result</text>
+</svg>

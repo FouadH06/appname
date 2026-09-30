@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1200" viewBox="0 0 800 1200">
+<rect width="100%" height="100%" fill="#EEF2F6"/><circle cx="138" cy="28" r="60" fill="#687C95" opacity="0.08"/><circle cx="135" cy="53" r="53" fill="#687C95" opacity="0.09"/><circle cx="643" cy="698" r="69" fill="#687C95" opacity="0.15"/><circle cx="362" cy="547" r="74" fill="#687C95" opacity="0.21"/><circle cx="566" cy="461" r="61" fill="#687C95" opacity="0.15"/><circle cx="260" cy="395" r="127" fill="#687C95" opacity="0.17"/><circle cx="360" cy="812" r="135" fill="#687C95" opacity="0.14"/><circle cx="15" cy="327" r="118" fill="#687C95" opacity="0.20"/><circle cx="522" cy="550" r="68" fill="#687C95" opacity="0.13"/><circle cx="313" cy="579" r="60" fill="#687C95" opacity="0.09"/>
+<rect x="56" y="120" width="688" height="960" rx="28" fill="none" stroke="#687C95" stroke-width="2" opacity=".45"/>
+<text x="50%" y="47%" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="44" font-weight="700" fill="#202831" letter-spacing="3">BARBERS</text>
+<text x="50%" y="54%" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="18" fill="#202831" opacity=".62">APP_NAME • GENERATED DEMO MEDIA</text>
+<text x="50%" y="92%" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#202831" opacity=".45">business-interior</text>
+</svg>

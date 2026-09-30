@@ -1,7 +1,7 @@
 {
   "name": "app-name",
   "private": true,
-  "description": "APP_NAME — Lebanon-first service discovery, booking and business management platform (monorepo).",
+  "description": "APP_NAME \u00e2\u20ac\u201d Lebanon-first service discovery, booking and business management platform (monorepo).",
   "packageManager": "pnpm@10.34.5",
   "engines": {
     "node": ">=22.12.0",
@@ -22,7 +22,8 @@
     "db:reset": "supabase db reset",
     "db:test": "supabase test db",
     "db:lint": "supabase db lint --level warning",
-    "db:types": "supabase gen types typescript --local --schema public > packages/db/src/database.types.ts && prettier --write packages/db/src/database.types.ts"
+    "db:types": "supabase gen types typescript --local --schema public > packages/db/src/database.types.ts && prettier --write packages/db/src/database.types.ts",
+    "seed:demo": "pnpm --filter @app/demo seed --level ux"
   },
   "devDependencies": {
     "prettier": "^3.9.9",

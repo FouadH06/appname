@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1000" viewBox="0 0 1000 1000">
+<rect width="100%" height="100%" fill="#F7F2E8"/><circle cx="210" cy="209" r="191" fill="#B38B52" opacity="0.22"/><circle cx="498" cy="224" r="146" fill="#B38B52" opacity="0.18"/><circle cx="746" cy="793" r="108" fill="#B38B52" opacity="0.17"/><circle cx="929" cy="852" r="181" fill="#B38B52" opacity="0.19"/><circle cx="540" cy="664" r="91" fill="#B38B52" opacity="0.22"/><circle cx="506" cy="412" r="132" fill="#B38B52" opacity="0.10"/><circle cx="153" cy="405" r="198" fill="#B38B52" opacity="0.12"/><circle cx="910" cy="119" r="54" fill="#B38B52" opacity="0.24"/><circle cx="236" cy="673" r="192" fill="#B38B52" opacity="0.14"/><circle cx="885" cy="374" r="60" fill="#B38B52" opacity="0.18"/>
+<rect x="70" y="100" width="860" height="800" rx="35" fill="none" stroke="#B38B52" stroke-width="2" opacity=".45"/>
+<text x="50%" y="47%" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="55" font-weight="700" fill="#312A22" letter-spacing="3">MANICURE</text>
+<text x="50%" y="54%" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="22" fill="#312A22" opacity=".62">APP_NAME • GENERATED DEMO MEDIA</text>
+<text x="50%" y="92%" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="16" fill="#312A22" opacity=".45">customer-result</text>
+</svg>

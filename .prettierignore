@@ -12,3 +12,6 @@ supabase/.temp
 supabase/.branches
 # Spec docs are hand-formatted; don't reflow them.
 docs
+
+# demo-media source library (vendored as delivered; manifest is canonical)
+demo/media-library
