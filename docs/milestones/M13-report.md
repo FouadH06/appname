@@ -1,6 +1,6 @@
 # M13 — Expo customer app: report
 
-Status: **implemented, awaiting review** · branch `m13-app`
+Status: **implemented, awaiting review** · branch `m13-app` · branch CI green on `1a83a81` (run 36697780462: format/lint/typecheck/unit, build, pgTAP, web + admin + app e2e)
 
 Lean scope: the Phase 2 customer screens as a native app on the existing RPCs, plus the retention backend
 (favorites, rebook suggestions, push, inbox). No new booking logic; M12 search untouched. Store builds
@@ -74,6 +74,7 @@ Search and booking paths are unchanged (M12/M3 numbers stand).
 - `expo serve` has no SPA fallback, so deep links 404'd on the web build → test server with fallback.
 - react-native-web's `Alert` is a no-op → cancel/leave/delete confirms use `window.confirm` on web.
 - Slots were tappable before the captcha token arrived → disabled until ready.
+- CI build: `/captcha` was prerendered and read the public env at build time → rendered per request.
 - `get_rebook_suggestions` returned an untyped `'[]'` (plpgsql_check warning) → `'[]'::jsonb`.
 
 ## Known limitations / needs your accounts
