@@ -53,6 +53,16 @@
 .rail {
   scrollbar-width: none;
   scroll-snap-type: x proximity;
+  /* phones: rails bleed to the screen edge with a 16 px gutter — snap to the gutter, not the edge */
+  scroll-padding-inline: 1rem;
+}
+@media (min-width: 640px) {
+  .rail {
+    scroll-padding-inline: 0;
+  }
+}
+.rail.rail-flush {
+  scroll-padding-inline: 0;
 }
 .rail::-webkit-scrollbar {
   display: none;

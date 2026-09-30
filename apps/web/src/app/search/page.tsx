@@ -83,7 +83,7 @@ export default async function SearchPage({ searchParams }: Props) {
   const chip = (on: boolean) =>
     `inline-flex h-10 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-4 text-sm font-medium ${on ? 'border-accent-600 bg-accent-600 text-white' : 'border-line-200 bg-surface-0 text-ink-900 hover:border-accent-600'}`;
   const option = (on: boolean) =>
-    `flex min-h-10 items-center justify-between rounded-control px-3 text-sm ${on ? 'bg-accent-50 font-semibold text-accent-600' : 'text-ink-700 hover:bg-surface-100'}`;
+    `flex min-h-10 items-center lg:min-h-9 justify-between rounded-control px-3 text-sm ${on ? 'bg-accent-50 font-semibold text-accent-600' : 'text-ink-700 hover:bg-surface-100'}`;
 
   const dateForm = (
     <form action="/search" className="flex flex-col gap-2 text-sm" aria-label="Date and time">
@@ -153,8 +153,8 @@ export default async function SearchPage({ searchParams }: Props) {
 
   return (
     <CustomerShell>
-      <main className={`${container} flex flex-col gap-4 pb-10 pt-4 lg:pt-8`}>
-        <div className="lg:max-w-3xl">
+      <main className={`${container} flex flex-col gap-3 pb-10 pt-4 lg:gap-4 lg:pt-6`}>
+        <div className="lg:max-w-2xl">
           <SearchBox cluster={sp.cluster} initial={sp.q} />
         </div>
         <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
@@ -239,10 +239,10 @@ export default async function SearchPage({ searchParams }: Props) {
           </div>
         </details>
 
-        <div className="grid gap-6 lg:grid-cols-[248px_minmax(0,1fr)] xl:gap-8">
+        <div className="grid gap-5 lg:grid-cols-[216px_minmax(0,1fr)] xl:gap-6">
           {/* desktop filter column */}
           <aside className="hidden lg:block" aria-label="Filters">
-            <div className="sticky top-24 flex flex-col gap-5 rounded-card border border-line-200 bg-surface-0 p-3">
+            <div className="sticky top-24 flex flex-col gap-4 rounded-card border border-line-200 bg-surface-0 p-2.5">
               {group('Area', areaLinks)}
               {group(
                 'Availability',
@@ -273,7 +273,7 @@ export default async function SearchPage({ searchParams }: Props) {
               )}
               {group(
                 'Price',
-                <div className="flex gap-2 px-3">
+                <div className="flex gap-1.5 px-3 [&>a]:h-9 [&>a]:px-3">
                   {[1, 2, 3].map((l) => (
                     <Link
                       key={l}
@@ -304,8 +304,8 @@ export default async function SearchPage({ searchParams }: Props) {
             </div>
           </aside>
 
-          <div className="flex min-w-0 flex-col gap-4">
-            <div className="hidden items-center gap-1 text-sm lg:flex">
+          <div className="flex min-w-0 flex-col gap-3">
+            <div className="hidden flex-wrap items-center gap-1 text-sm lg:flex">
               <span className="me-1 text-ink-500">Sort</span>
               {SORTS.map(([k, label]) => (
                 <Link
@@ -367,7 +367,7 @@ export default async function SearchPage({ searchParams }: Props) {
             ) : null}
 
             <div
-              className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3"
+              className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3"
               data-testid="results"
             >
               {res.results.map((c, i) => (
@@ -393,7 +393,7 @@ export default async function SearchPage({ searchParams }: Props) {
             {res.nearby?.length ? (
               <section className="mt-4 flex flex-col gap-3" data-testid="also-nearby">
                 <h2 className="text-lg font-semibold">Also nearby</h2>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3">
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
                   {res.nearby.map((c) => (
                     <BusinessCard key={c.location_id} c={c} row />
                   ))}

@@ -157,7 +157,7 @@ export function SearchBox({
           className="pointer-events-none absolute start-4 top-1/2 -translate-y-1/2 text-ink-700"
         />
         <input
-          className={`w-full rounded-full border border-line-200 bg-surface-0 pe-4 shadow-sm outline-none placeholder:text-ink-500 focus:border-accent-600 ${big ? 'h-14 ps-12 text-base sm:text-lg' : 'h-11 ps-11 text-sm'}`}
+          className={`w-full rounded-full border border-line-200 bg-surface-0 pe-4 shadow-sm outline-none placeholder:text-ink-500 focus:border-accent-600 ${big ? 'h-12 ps-12 text-base lg:h-[52px]' : 'h-11 ps-11 text-sm'}`}
           type="search"
           value={q}
           placeholder="Search services or businesses"

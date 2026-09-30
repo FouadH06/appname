@@ -70,7 +70,7 @@ const primary =
   'flex h-12 w-full items-center justify-center gap-2 rounded-control bg-accent-600 px-4 text-base font-semibold text-white hover:bg-accent-700 disabled:opacity-50';
 const card = 'rounded-card border border-line-200 bg-surface-0';
 const choiceCard = (on: boolean) =>
-  `flex w-full items-center gap-3 rounded-card border p-4 text-start transition-colors ${on ? 'border-accent-600 bg-accent-50 ring-1 ring-accent-600' : 'border-line-200 bg-surface-0 hover:border-accent-600'}`;
+  `flex w-full items-center gap-3 rounded-card border px-3 py-2.5 text-start transition-colors ${on ? 'border-accent-600 bg-accent-50 ring-1 ring-accent-600' : 'border-line-200 bg-surface-0 hover:border-accent-600'}`;
 
 function attribution(): Record<string, string> {
   try {
@@ -362,7 +362,7 @@ export function BookingFlow({ page: cached }: { page: BusinessPage }) {
     ) : null;
   const summary = (
     <aside className="hidden lg:block" aria-label="Booking summary">
-      <div className={`${card} sticky top-24 flex flex-col gap-3 p-5`} data-testid="side-summary">
+      <div className={`${card} sticky top-24 flex flex-col gap-3 p-4`} data-testid="side-summary">
         <p className="text-lg font-semibold" dir="auto">
           {b.name}
         </p>
@@ -414,7 +414,7 @@ export function BookingFlow({ page: cached }: { page: BusinessPage }) {
     <CustomerShell mobileHeader={false} mobileNav={false}>
       <div className={`${container} pb-32 lg:pb-12`}>
         {/* step header: back · title (phones) — back · business · step (desktop) */}
-        <div className="sticky top-0 z-20 -mx-4 flex h-14 items-center gap-2 bg-surface-50/95 px-2 backdrop-blur sm:-mx-6 sm:px-4 lg:static lg:mx-0 lg:mt-6 lg:h-auto lg:px-0 lg:backdrop-blur-none">
+        <div className="sticky top-0 z-20 -mx-4 flex h-14 items-center gap-2 bg-surface-50/95 px-2 backdrop-blur sm:-mx-6 sm:px-4 lg:static lg:mx-0 lg:mt-5 lg:h-auto lg:px-0 lg:backdrop-blur-none">
           <button
             type="button"
             onClick={back}
@@ -440,7 +440,7 @@ export function BookingFlow({ page: cached }: { page: BusinessPage }) {
           {l.area?.en ? ` · ${l.area.en}` : ''}
         </p>
 
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="grid gap-6 lg:gap-7 lg:grid-cols-[minmax(0,1fr)_340px]">
           <main className="flex min-w-0 flex-col gap-5 pt-2 lg:pt-0">
             {step === 'service' ? (
               <section className="flex flex-col gap-3" data-testid="step-service">
@@ -497,7 +497,7 @@ export function BookingFlow({ page: cached }: { page: BusinessPage }) {
                 {!options ? (
                   <div className="grid gap-3 sm:grid-cols-2" aria-busy="true">
                     {[0, 1, 2, 3].map((i) => (
-                      <span key={i} className="h-24 animate-pulse rounded-card bg-surface-100" />
+                      <span key={i} className="h-16 animate-pulse rounded-card bg-surface-100" />
                     ))}
                   </div>
                 ) : null}
@@ -545,16 +545,18 @@ export function BookingFlow({ page: cached }: { page: BusinessPage }) {
                         className={`${choiceCard(choice.mode === 'any')} sm:col-span-2 xl:col-span-3`}
                         onClick={() => setChoice({ mode: 'any' })}
                       >
-                        <span className="grid size-14 shrink-0 place-items-center rounded-full bg-accent-100 text-accent-600">
-                          <IconUsers size={26} />
+                        <span className="grid size-10 shrink-0 place-items-center rounded-full bg-accent-100 text-accent-600">
+                          <IconUsers size={20} />
                         </span>
-                        <span className="flex min-w-0 flex-1 flex-col gap-1">
-                          <span className="font-semibold">Any available</span>
-                          <span className="text-sm text-ink-700">
-                            We’ll assign the first available professional for you.
+                        <span className="flex min-w-0 flex-1 flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-3">
+                          <span className="flex min-w-0 flex-col">
+                            <span className="font-semibold">Any available</span>
+                            <span className="text-[13px] text-ink-700">
+                              We’ll assign the first available professional.
+                            </span>
                           </span>
-                          <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-surface-0 px-2.5 py-1 text-sm">
-                            <IconClock size={15} />
+                          <span className="inline-flex w-fit items-center gap-1.5 text-[13px] font-medium text-accent-600 sm:ms-auto">
+                            <IconClock size={14} />
                             {options.any_next
                               ? `Earliest ${whenText(options.any_next)}`
                               : 'No times in the next weeks'}
@@ -577,16 +579,16 @@ export function BookingFlow({ page: cached }: { page: BusinessPage }) {
                             className={`${choiceCard(on)} ${s.next_available ? '' : 'opacity-60'}`}
                             onClick={() => setChoice({ mode: 'specific', staffId: s.id })}
                           >
-                            <Avatar name={s.name} url={mediaUrl(s.photo_path)} size="size-14" />
-                            <span className="flex min-w-0 flex-1 flex-col gap-1">
+                            <Avatar name={s.name} url={mediaUrl(s.photo_path)} size="size-11" />
+                            <span className="flex min-w-0 flex-1 flex-col">
                               <span className="font-semibold">{s.name.split(' ')[0]}</span>
                               {s.role_title || s.specialties.length ? (
-                                <span className="line-clamp-1 text-sm text-ink-700">
+                                <span className="line-clamp-1 text-[13px] text-ink-700">
                                   {s.role_title ?? s.specialties.join(' · ')}
                                 </span>
                               ) : null}
-                              <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-surface-100 px-2.5 py-1 text-sm">
-                                <IconClock size={15} />
+                              <span className="inline-flex w-fit items-center gap-1 text-[13px] font-medium text-accent-600">
+                                <IconClock size={14} />
                                 {s.next_available
                                   ? whenText(s.next_available)
                                   : 'Fully booked for 14 days'}
@@ -621,7 +623,7 @@ export function BookingFlow({ page: cached }: { page: BusinessPage }) {
             ) : null}
 
             {step === 'time' && service ? (
-              <section className="flex flex-col gap-5" data-testid="step-time">
+              <section className="flex flex-col gap-4" data-testid="step-time">
                 <div className={`${card} flex items-center gap-3 p-3`}>
                   <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                     <span className="font-semibold" dir="auto">
@@ -671,14 +673,14 @@ export function BookingFlow({ page: cached }: { page: BusinessPage }) {
                         disabled={!has}
                         aria-pressed={on}
                         aria-label={relativeDay(d, beirutDate(0))}
-                        className={`flex w-[76px] shrink-0 flex-col items-center gap-0.5 rounded-card border py-2.5 text-sm lg:w-[84px] ${on ? 'border-accent-600 bg-accent-600 text-white' : 'border-line-200 bg-surface-0 hover:border-accent-600'} disabled:cursor-not-allowed disabled:opacity-40`}
+                        className={`flex w-[68px] shrink-0 flex-col items-center rounded-card border py-2 text-sm lg:w-[70px] ${on ? 'border-accent-600 bg-accent-600 text-white' : 'border-line-200 bg-surface-0 hover:border-accent-600'} disabled:cursor-not-allowed disabled:opacity-40`}
                         onClick={() => {
                           setDate(d);
                           setPicked(null);
                         }}
                       >
                         <span className="text-xs">{label}</span>
-                        <span className="text-xl font-semibold leading-tight">
+                        <span className="text-lg font-semibold leading-tight">
                           {Number(d.slice(8))}
                         </span>
                         <span className="text-xs">
@@ -703,11 +705,11 @@ export function BookingFlow({ page: cached }: { page: BusinessPage }) {
 
                 {slots === null ? (
                   <div
-                    className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-6"
+                    className="grid grid-cols-3 gap-2 min-[360px]:grid-cols-4 sm:grid-cols-5 md:grid-cols-6 xl:grid-cols-8"
                     aria-busy="true"
                   >
                     {Array.from({ length: 8 }, (_, i) => (
-                      <span key={i} className="h-14 animate-pulse rounded-control bg-surface-100" />
+                      <span key={i} className="h-12 animate-pulse rounded-control bg-surface-100" />
                     ))}
                   </div>
                 ) : !slots.length ? (
@@ -753,11 +755,11 @@ export function BookingFlow({ page: cached }: { page: BusinessPage }) {
                     return (
                       <div
                         key={part}
-                        className="flex flex-col gap-3 border-b border-line-200 pb-5 last:border-0"
+                        className="flex flex-col gap-2.5 border-b border-line-200 pb-4 last:border-0"
                       >
-                        <p className="flex items-center gap-3">
-                          <span className="grid size-10 place-items-center rounded-full bg-surface-100 text-ink-700">
-                            <Icon size={20} />
+                        <p className="flex items-center gap-2.5">
+                          <span className="grid size-8 place-items-center rounded-full bg-surface-100 text-ink-700">
+                            <Icon size={18} />
                           </span>
                           <span className="font-semibold">{part}</span>
                           <span className="text-sm text-ink-500">
@@ -765,7 +767,7 @@ export function BookingFlow({ page: cached }: { page: BusinessPage }) {
                           </span>
                         </p>
                         <div
-                          className="grid grid-cols-3 gap-2 min-[400px]:grid-cols-4 md:grid-cols-5 xl:grid-cols-6"
+                          className="grid grid-cols-3 gap-2 min-[360px]:grid-cols-4 sm:grid-cols-5 md:grid-cols-6 xl:grid-cols-8"
                           data-testid="slots"
                         >
                           {inPart.map((s) => {
@@ -776,7 +778,7 @@ export function BookingFlow({ page: cached }: { page: BusinessPage }) {
                                 type="button"
                                 aria-pressed={on}
                                 disabled={busy || (hasSession === false && !captcha)}
-                                className={`flex h-14 flex-col items-center justify-center gap-0.5 rounded-control border text-sm font-semibold transition-colors disabled:opacity-50 ${on ? 'border-accent-600 bg-accent-600 text-white [&_span]:text-white' : instant ? 'border-accent-100 bg-accent-50 hover:border-accent-600' : 'border-line-200 bg-surface-0 hover:border-accent-600'}`}
+                                className={`flex h-[52px] flex-col items-center justify-center rounded-control border text-sm font-semibold md:h-12 transition-colors disabled:opacity-50 ${on ? 'border-accent-600 bg-accent-600 text-white [&_span]:text-white' : instant ? 'border-accent-100 bg-accent-50 hover:border-accent-600' : 'border-line-200 bg-surface-0 hover:border-accent-600'}`}
                                 onClick={() => setPicked(s)}
                               >
                                 {timeText(s)}
@@ -888,8 +890,8 @@ function SummaryLine({ label, value }: { label: string; value: string }) {
 /** Compact service header (the service is already chosen — it must not take half the screen). */
 function ServiceHeader({ service }: { service: PublicService }) {
   return (
-    <div className={`${card} flex flex-col gap-1 p-4`}>
-      <p className="text-lg font-semibold" dir="auto">
+    <div className={`${card} flex flex-col gap-0.5 px-3.5 py-3`}>
+      <p className="font-semibold" dir="auto">
         {service.name}
       </p>
       {service.description ? (

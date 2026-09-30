@@ -15,16 +15,18 @@ export function Gallery({ images, name }: { images: string[]; name: string }) {
   const [index, setIndex] = useState(0);
   if (!images.length)
     return (
-      <div className="aspect-[4/3] w-full bg-surface-100 lg:aspect-[2/1] lg:max-h-[460px] lg:rounded-card" />
+      <div className="aspect-[3/2] w-full bg-surface-100 md:aspect-auto md:h-[250px] lg:h-[240px] xl:h-[280px] lg:rounded-card" />
     );
   return (
     <div className="relative">
       <div
         ref={ref}
-        className="rail flex aspect-[4/3] w-full snap-x snap-mandatory overflow-x-auto lg:aspect-[2/1] lg:max-h-[460px] lg:rounded-card"
+        className="rail rail-flush flex aspect-[3/2] w-full snap-x snap-mandatory overflow-x-auto md:aspect-auto md:h-[250px] md:gap-1 lg:h-[240px] xl:h-[280px] lg:rounded-card"
         onScroll={(e) => {
+          // tablets/desktops show two photos side by side: step by one photo, not one viewport
           const el = e.currentTarget;
-          setIndex(Math.round(Math.abs(el.scrollLeft) / el.clientWidth));
+          const step = (el.firstElementChild as HTMLElement | null)?.offsetWidth || el.clientWidth;
+          setIndex(Math.round(Math.abs(el.scrollLeft) / step));
         }}
         aria-label={`${name} photos`}
         data-testid="gallery"
@@ -37,7 +39,7 @@ export function Gallery({ images, name }: { images: string[]; name: string }) {
             alt={i === 0 ? name : ''}
             loading={i === 0 ? 'eager' : 'lazy'}
             fetchPriority={i === 0 ? 'high' : undefined}
-            className="h-full w-full shrink-0 snap-start object-cover"
+            className={`h-full w-full shrink-0 snap-start object-cover ${images.length > 1 ? 'md:w-[calc(50%-2px)]' : ''}`}
           />
         ))}
       </div>
@@ -149,11 +151,11 @@ export function NextAvailableRow({
 export function ServiceNext({ locationId, serviceId }: { locationId: string; serviceId: string }) {
   const next = useNext(locationId, serviceId);
   if (next === undefined)
-    return <span className="inline-block h-7 w-28 animate-pulse rounded-full bg-accent-50" />;
-  if (!next) return <span className="text-sm text-ink-500">No free times soon</span>;
+    return <span className="inline-block h-6 w-28 animate-pulse rounded-full bg-accent-50" />;
+  if (!next) return <span className="text-[13px] text-ink-500">No free times soon</span>;
   return (
     <span
-      className="rounded-full bg-accent-50 px-2.5 py-1 text-sm font-medium text-accent-600"
+      className="rounded-full bg-accent-50 px-2.5 py-0.5 text-[13px] font-medium text-accent-600"
       data-testid="service-next"
     >
       Next {whenText(next)}

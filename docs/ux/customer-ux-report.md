@@ -97,6 +97,27 @@ service) and a compact row layout for result lists, `Rating`, `ServiceTile`, `Se
 - Stored business photos are ≤ 1600 px WebP (~100–250 KB); cards use them lazily in fixed-ratio frames until
   image transformations are enabled (`NEXT_PUBLIC_IMAGE_TRANSFORMS`); results use the 320/800/2048 derivatives.
 
+## Visual-density pass (PO review, 2026-09-30)
+
+Same components, same behaviour — smaller, denser, more choices as the screen widens:
+
+- **Cards**: image 16/10 → 16/9 (2/1 from 1280 px, ≈ 20 % shorter); body padding and gaps tightened; service/labels
+  and price share one line; "Next …" is a compact 32 px row (40 px on phones). Grids: 2 → 3 (768) → 4 (≥ 1024)
+  columns, two rows at most.
+- **Home**: title/subtitle tighter; search and quick filters share one row on desktop; categories are compact pills
+  from 768 px (circles on phones); section gaps 48 → 32 px.
+- **Search**: horizontal result cards at every width (112–128 px image) — 1 column on phones, 2 on tablets, 3 from
+  1280 px; sidebar 248 → 216 px with denser options. Chosen over tall vertical cards: ~3× more results per
+  viewport with rating, area, service, price and next time on each.
+- **Profile**: gallery 432 → 240–280 px on desktop (two photos side by side from 768 px), 4/3 → 3/2 on phones;
+  shorter service cards (3 per row at ≥ 1280, 3 on tablets); compact "Any available"; sticky panel kept.
+- **Professional**: "Any available" is one compact row; staff cards ≈ 30 % shorter (44 px avatar, next time as text);
+  1 / 2 / 3 columns.
+- **Date & time**: slots 56 → 48 px (52 px on phones), 4 per row from 360 px, 6 on tablets, 8 on desktop; smaller
+  date cards and part headers; Instant/Request keep icon + text.
+- **Fixes found on the way**: phone rails snapped the first card to the screen edge (scroll-padding now matches the
+  16 px gutter); row images no longer stretch result cards.
+
 ## Tests
 
 | Check | Result |

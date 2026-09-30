@@ -175,7 +175,7 @@ export default async function BusinessPageRoute({ params }: Params) {
       ) : null}
 
       <div
-        className={`${container} grid gap-6 pb-28 !px-0 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-8 lg:!px-8 lg:pb-12 lg:pt-6`}
+        className={`${container} grid gap-6 pb-28 !px-0 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-7 lg:!px-8 lg:pb-12 lg:pt-5`}
       >
         <main className="flex min-w-0 flex-col">
           {/* gallery with overlay actions (phones) */}
@@ -190,12 +190,12 @@ export default async function BusinessPageRoute({ params }: Params) {
             </div>
           </div>
 
-          <div className="relative -mt-5 flex flex-col gap-8 rounded-t-[20px] bg-surface-50 px-4 pt-5 sm:px-6 lg:mt-0 lg:rounded-none lg:px-0 lg:pt-6">
+          <div className="relative -mt-5 flex flex-col gap-7 rounded-t-[20px] bg-surface-50 px-4 pt-5 sm:px-6 md:mt-0 md:rounded-none md:pt-4 lg:px-0">
             {/* identity */}
-            <section className="flex flex-col gap-3">
+            <section className="flex flex-col gap-2.5">
               <div className="flex items-start justify-between gap-3">
                 <h1
-                  className="text-[28px] font-semibold leading-tight tracking-tight lg:text-4xl"
+                  className="text-[26px] font-semibold leading-tight tracking-tight lg:text-3xl"
                   dir="auto"
                   data-testid="business-name"
                 >
@@ -265,7 +265,7 @@ export default async function BusinessPageRoute({ params }: Params) {
                   </a>
                 ) : null}
               </div>
-              <ul className="rail -mx-4 flex gap-3 overflow-x-auto px-4 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 xl:grid-cols-3 [&>li]:w-[72%] [&>li]:max-w-[300px] [&>li]:shrink-0 sm:[&>li]:w-auto sm:[&>li]:max-w-none">
+              <ul className="rail -mx-4 flex gap-3 overflow-x-auto px-4 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 [&>li]:w-[72%] [&>li]:max-w-[300px] [&>li]:shrink-0 sm:[&>li]:w-auto sm:[&>li]:max-w-none">
                 {ordered.slice(0, 6).map((s) => (
                   <li key={s.id}>
                     <ServiceCard
@@ -323,10 +323,10 @@ export default async function BusinessPageRoute({ params }: Params) {
                   {canBook && rules.staff_choice_mode !== 'choose_only' ? (
                     <Link
                       href={bookHref}
-                      className="flex items-center gap-3 rounded-card border border-accent-600 bg-accent-50 p-3 sm:w-56 sm:shrink-0"
+                      className="flex items-center gap-3 rounded-card border border-accent-600 bg-accent-50 px-3 py-2.5 sm:w-56 sm:shrink-0"
                     >
-                      <span className="grid size-12 shrink-0 place-items-center rounded-full bg-accent-100 text-accent-600">
-                        <IconUsers size={22} />
+                      <span className="grid size-10 shrink-0 place-items-center rounded-full bg-accent-100 text-accent-600">
+                        <IconUsers size={20} />
                       </span>
                       <span className="flex flex-col">
                         <span className="font-semibold">Any available</span>
@@ -507,7 +507,7 @@ export default async function BusinessPageRoute({ params }: Params) {
 
         {/* sticky booking panel (≥ 1024 px) */}
         <aside className="hidden lg:block" aria-label="Book">
-          <div className={`${panel} sticky top-24 flex flex-col gap-4 p-5`}>
+          <div className={`${panel} sticky top-24 flex flex-col gap-3.5 p-4`}>
             <div className="flex flex-col gap-1">
               <p className="text-lg font-semibold" dir="auto">
                 {b.name}
@@ -606,7 +606,7 @@ function ServiceCard({
         <IconClock size={15} /> {durationText(s.duration_min)}
         {s.audience !== 'everyone' ? ` · ${AUDIENCE[s.audience]}` : ''}
       </span>
-      <span className="mt-auto flex items-center justify-between gap-2 pt-1">
+      <span className="mt-auto flex items-center justify-between gap-2 pt-0.5">
         {canBook && s.online ? (
           <ServiceNext locationId={locationId} serviceId={s.id} />
         ) : (
@@ -620,7 +620,7 @@ function ServiceCard({
     </>
   );
   const cls =
-    'flex h-full min-h-[132px] flex-col gap-1.5 rounded-card border border-line-200 bg-surface-0 p-4 hover:border-accent-600';
+    'flex h-full flex-col gap-1 rounded-card border border-line-200 bg-surface-0 px-3.5 py-3 hover:border-accent-600';
   if (canBook && s.online)
     return (
       <Link

@@ -39,7 +39,7 @@ export function BusinessCard({
   c: SearchCard;
   mode?: 'business' | 'availability' | 'service';
   priority?: boolean;
-  /** results list: a compact row on phones, the regular card from 640 px */
+  /** results list: a compact horizontal row at every width (faster comparison, image doesn't dominate) */
   row?: boolean;
 }) {
   const img = coverUrl(c.cover_path, 640);
@@ -48,11 +48,11 @@ export function BusinessCard({
   const labels = c.labels.filter((l) => l !== 'available_today').slice(0, 2);
   return (
     <article
-      className={`group relative flex h-full overflow-hidden rounded-card border border-line-200 bg-surface-0 transition-shadow hover:shadow-md ${row ? 'flex-row sm:flex-col' : 'flex-col'}`}
+      className={`group relative flex h-full overflow-hidden rounded-card border border-line-200 bg-surface-0 transition-shadow hover:shadow-md ${row ? 'flex-row' : 'flex-col'}`}
       data-testid="business-card"
     >
       <div
-        className={`relative shrink-0 overflow-hidden bg-surface-100 ${row ? 'w-28 self-stretch sm:aspect-[16/10] sm:w-full sm:self-auto' : 'aspect-[16/10] w-full'}`}
+        className={`relative shrink-0 overflow-hidden bg-surface-100 ${row ? 'min-h-28 w-28 self-stretch sm:w-32 xl:w-28' : 'aspect-[16/9] w-full xl:aspect-[2/1]'}`}
       >
         {img ? (
           // eslint-disable-next-line @next/next/no-img-element -- public storage (fixed ratio box, lazy)
@@ -61,11 +61,11 @@ export function BusinessCard({
             alt=""
             loading={priority ? 'eager' : 'lazy'}
             decoding="async"
-            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
           />
         ) : null}
         {mode === 'availability' && next ? (
-          <span className="absolute bottom-2 start-2 rounded-full bg-accent-600 px-2.5 py-1 text-xs font-semibold text-white">
+          <span className="absolute bottom-2 start-2 rounded-full bg-accent-600 px-2 py-0.5 text-xs font-semibold text-white">
             Available today
           </span>
         ) : null}
@@ -75,31 +75,32 @@ export function BusinessCard({
           className="absolute end-2 top-2 z-10"
         />
       </div>
-      <div className="flex min-w-0 flex-1 flex-col gap-1.5 p-3">
-        <h3 className="line-clamp-1 text-base font-semibold" dir="auto">
+      <div className="flex min-w-0 flex-1 flex-col gap-1 px-3 py-2.5">
+        <h3 className="line-clamp-1 text-[15px] font-semibold leading-snug" dir="auto">
           <Link href={href} className="after:absolute after:inset-0">
             {c.name}
           </Link>
         </h3>
-        <p className="flex flex-wrap items-center gap-x-1.5 text-sm">
+        <p className="flex min-w-0 items-center gap-x-1.5 whitespace-nowrap text-sm">
           <Rating value={c.display_rating} count={c.review_count} />
-          {c.area ? <span className="text-ink-500">· {c.area}</span> : null}
-          {c.km != null ? <span className="text-ink-500">· {c.km} km</span> : null}
+          {c.area ? <span className="min-w-0 truncate text-ink-500">· {c.area}</span> : null}
+          {c.km != null ? <span className="shrink-0 text-ink-500">· {c.km} km</span> : null}
         </p>
-        {c.service ? (
-          <p className="text-sm text-ink-700" data-testid="card-service">
-            {c.service.name} · {durationText(c.service.duration)}
-          </p>
-        ) : labels.length ? (
-          <p className="line-clamp-1 text-sm text-ink-700">
-            {labels.map((l) => LABELS[l] ?? l).join(' · ')}
-          </p>
-        ) : null}
-        <div className="mt-auto flex items-end justify-between gap-2 pt-1">
-          <span className="text-sm font-semibold text-ink-900">
+        {/* service (or labels) and price share one line */}
+        <p className="flex items-baseline justify-between gap-2 text-sm">
+          {c.service ? (
+            <span className="min-w-0 truncate text-ink-700" data-testid="card-service">
+              {c.service.name} · {durationText(c.service.duration)}
+            </span>
+          ) : (
+            <span className="min-w-0 truncate text-ink-700">
+              {labels.map((l) => LABELS[l] ?? l).join(' · ')}
+            </span>
+          )}
+          <span className="shrink-0 font-semibold text-ink-900">
             {c.service ? servicePrice(c.service) : c.price_level ? '$'.repeat(c.price_level) : ''}
           </span>
-        </div>
+        </p>
         {next ? (
           <Link
             href={
@@ -107,16 +108,16 @@ export function BusinessCard({
                 ? `/${c.slug}/book?service=${c.service.service_id}&start=${encodeURIComponent(next)}`
                 : href
             }
-            className="relative z-10 flex min-h-10 items-center justify-between gap-2 rounded-control bg-accent-50 px-2.5 py-1.5 text-sm hover:bg-accent-100"
+            className="relative z-10 mt-auto flex min-h-10 items-center justify-between gap-2 rounded-control bg-accent-50 px-2.5 text-[13px] hover:bg-accent-100 sm:min-h-8"
             data-testid="card-next"
           >
             <span className="text-ink-700">
               Next <span className="font-semibold text-accent-600">{whenText(next)}</span>
             </span>
-            <IconChevron size={16} className="text-accent-600 rtl:rotate-180" />
+            <IconChevron size={14} className="text-accent-600 rtl:rotate-180" />
           </Link>
         ) : (
-          <p className="text-sm text-ink-500">See times on the page</p>
+          <p className="mt-auto text-[13px] text-ink-500">See times on the page</p>
         )}
       </div>
     </article>
@@ -136,7 +137,7 @@ export function ServiceTile({
   return (
     <Link
       href={href}
-      className="flex h-full flex-col justify-between gap-2 rounded-card border border-line-200 bg-surface-0 p-4 hover:border-accent-600"
+      className="flex h-full flex-col justify-between gap-1.5 rounded-card border border-line-200 bg-surface-0 px-3 py-2.5 hover:border-accent-600"
     >
       <span className="font-semibold" dir="auto">
         {name}
@@ -151,14 +152,14 @@ export function ServiceTile({
 
 /**
  * A titled section whose cards scroll horizontally on phones and become a grid from tablets up
- * (3 columns, 4 on wide screens) — no giant stretched cards, no endless desktop scrolling.
+ * (3 columns on tablets, 4 from 1024 px; two rows at most) — no giant stretched cards, no endless desktop scrolling.
  */
 export function Section({
   title,
   more,
   children,
   testId,
-  grid = 'sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 lg:[&>*:nth-child(n+7)]:hidden xl:[&>*:nth-child(n+7)]:block xl:[&>*:nth-child(n+9)]:hidden',
+  grid = 'sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 sm:max-md:[&>*:nth-child(n+5)]:hidden md:max-lg:[&>*:nth-child(n+7)]:hidden lg:[&>*:nth-child(n+9)]:hidden',
 }: {
   title: string;
   more?: string;
@@ -167,9 +168,9 @@ export function Section({
   grid?: string;
 }) {
   return (
-    <section className="flex flex-col gap-3" data-testid={testId}>
+    <section className="flex flex-col gap-2.5" data-testid={testId}>
       <div className="flex items-end justify-between gap-3">
-        <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
+        <h2 className="text-lg font-semibold tracking-tight lg:text-xl">{title}</h2>
         {more ? (
           <Link
             href={more}

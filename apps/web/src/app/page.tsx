@@ -58,57 +58,62 @@ export default async function Home({ searchParams }: Props) {
 
   return (
     <CustomerShell headerExtra={<AreaPicker clusters={home.clusters} current={cluster} />}>
-      <main className={`${container} flex flex-col gap-8 pb-10 pt-4 lg:gap-12 lg:pt-10`}>
-        <section className="flex flex-col gap-4 lg:gap-5">
-          <h1 className="hidden text-4xl font-semibold tracking-tight lg:block">
-            Find and book trusted local services
-          </h1>
-          <p className="hidden max-w-2xl text-ink-700 lg:block">
-            Verified reviews from real visits, real prices and times you can book now.
-          </p>
-          <div className="lg:max-w-3xl">
-            <SearchBox cluster={cluster?.id} big />
+      <main className={`${container} flex flex-col gap-7 pb-10 pt-4 md:gap-8 lg:pt-7`}>
+        <section className="flex flex-col gap-3 lg:gap-4">
+          <div className="hidden lg:block">
+            <h1 className="text-3xl font-semibold tracking-tight">
+              Find and book trusted local services
+            </h1>
+            <p className="mt-1 text-ink-700">
+              Verified reviews from real visits, real prices and times you can book now.
+            </p>
           </div>
-          <nav
-            aria-label="Quick filters"
-            className="rail -mx-4 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:px-0"
-          >
-            <Link
-              href={q({ available_today: '1' })}
-              className={`${intent} border-accent-600 bg-accent-600 text-white hover:bg-accent-700`}
+          {/* desktop: search and quick filters share one row */}
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:gap-4">
+            <div className="lg:w-full lg:max-w-2xl">
+              <SearchBox cluster={cluster?.id} big />
+            </div>
+            <nav
+              aria-label="Quick filters"
+              className="rail -mx-4 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:px-0"
             >
-              <IconCalendar size={18} /> Available today
-            </Link>
-            <Link
-              href={q({ sort: 'rating' })}
-              className={`${intent} border-line-200 bg-surface-0 hover:border-accent-600`}
-            >
-              <IconStar size={16} className="text-accent-600" /> Top rated
-            </Link>
-            <Link
-              href={q({ sort: 'soonest' })}
-              className={`${intent} border-line-200 bg-surface-0 hover:border-accent-600`}
-            >
-              Soonest available
-            </Link>
-          </nav>
+              <Link
+                href={q({ available_today: '1' })}
+                className={`${intent} border-accent-600 bg-accent-600 text-white hover:bg-accent-700`}
+              >
+                <IconCalendar size={18} /> Available today
+              </Link>
+              <Link
+                href={q({ sort: 'rating' })}
+                className={`${intent} border-line-200 bg-surface-0 hover:border-accent-600`}
+              >
+                <IconStar size={16} className="text-accent-600" /> Top rated
+              </Link>
+              <Link
+                href={q({ sort: 'soonest' })}
+                className={`${intent} border-line-200 bg-surface-0 hover:border-accent-600`}
+              >
+                Soonest available
+              </Link>
+            </nav>
+          </div>
         </section>
 
         {home.categories.length ? (
           <nav
             aria-label="Categories"
-            className="rail -mx-4 flex gap-3 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:px-0 lg:gap-4"
+            className="rail -mx-4 -mt-1 flex gap-3 overflow-x-auto px-4 sm:mx-0 sm:px-0 md:mt-0 md:flex-wrap md:gap-2"
           >
             {home.categories.map((c) => (
               <Link
                 key={c.id}
                 href={q({ category: c.id, q: c.name })}
-                className="flex w-[76px] shrink-0 flex-col items-center gap-2 text-center text-xs font-medium text-ink-900 sm:w-[88px] lg:text-sm"
+                className="group flex w-[72px] shrink-0 flex-col items-center gap-1.5 text-center text-xs font-medium text-ink-900 md:h-11 md:w-auto md:flex-row md:gap-2 md:rounded-full md:border md:border-line-200 md:bg-surface-0 md:pe-4 md:ps-1.5 md:text-sm md:hover:border-accent-600"
               >
-                <span className="grid size-16 place-items-center rounded-full bg-surface-100 text-accent-600 transition-colors hover:bg-accent-50 lg:size-[72px]">
+                <span className="grid size-14 place-items-center rounded-full bg-surface-100 text-accent-600 transition-colors group-hover:bg-accent-50 md:size-8 md:[&>svg]:size-[18px]">
                   <CategoryIcon icon={c.icon} />
                 </span>
-                <span className="line-clamp-2">{c.name}</span>
+                <span className="line-clamp-2 md:line-clamp-1 md:whitespace-nowrap">{c.name}</span>
               </Link>
             ))}
           </nav>
@@ -135,7 +140,7 @@ export default async function Home({ searchParams }: Props) {
           </Section>
         ) : null}
         {home.popular_services.length ? (
-          <Section title="Popular services" grid="sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-6">
+          <Section title="Popular services" grid="sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
             {home.popular_services.map((s) => (
               <ServiceTile
                 key={s.id}
@@ -164,7 +169,7 @@ export default async function Home({ searchParams }: Props) {
           </p>
         ) : null}
 
-        <footer className="flex flex-wrap gap-x-5 gap-y-2 border-t border-line-200 pt-6 text-sm text-ink-500">
+        <footer className="flex flex-wrap gap-x-5 gap-y-2 border-t border-line-200 pt-5 text-sm text-ink-500">
           {home.clusters.map((c) => (
             <Link key={c.id} href={`/?cluster=${c.slug}`} className="hover:underline">
               {c.name}
