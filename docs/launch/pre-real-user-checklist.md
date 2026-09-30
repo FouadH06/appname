@@ -45,7 +45,7 @@ Staging (`oplwsnpyavnqnhlzyhxr`) still runs the **M3 schema**. Apply everything 
 - [ ] Anthropic key as a Supabase secret; moderation eval gate (0 harmful blind held-out published) before `MODERATION_AUTO_PUBLISH=true`; image eval (≥ 90 % correct automatic decisions, 0 falsely public) before `MEDIA_AUTO_PUBLISH=true`
 - [ ] Domain chosen; brand name replaces `APP_NAME` / `platform.com` placeholders (web, app, messages)
 - [ ] Supabase paid plan with **PITR** enabled
-- [ ] Uptime monitor on `/api/health?deep=1`; optional error tracking (Sentry) — decision
+- [ ] Uptime monitor on `/api/health?deep=1`; Sentry (or equivalent) at pilot start (decision 2026-09-30)
 
 ## C. Production configuration — Owner: Both
 
@@ -81,7 +81,7 @@ on the Expo web build.
 
 - [ ] Terms of use, Privacy policy (Law 81/2018), Review & photo guidelines written and published (placeholders at `/terms`, `/privacy`, `/review-guidelines`)
 - [ ] Account deletion policy text matches the implementation (reviews/photos removed; Auth record scrubbed; business keeps its own customer record)
-- [ ] Decision on the auth-record approach (scrub in place vs hard delete) — see M14 report
+- [ ] Privacy policy describes the approved deletion behaviour: Auth record scrubbed in place (decision 2026-09-30)
 
 ## G. Launch performance & security on production-like hosting — Owner: Both
 

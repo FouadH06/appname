@@ -1,6 +1,6 @@
 # M14 — Analytics, hardening & launch preparation: launch-readiness report
 
-Status: **implemented, awaiting review** · branch `m14-launch` · branch CI green on `1c1d5a1` (run 36712513599: format/lint/typecheck/unit/audit, build, pgTAP, web + admin + app e2e)
+Status: **approved 2026-09-30** (decisions below) · branch `m14-launch` · branch CI green on `1c1d5a1` (run 36712513599: format/lint/typecheck/unit/audit, build, pgTAP, web + admin + app e2e)
 
 Lean scope per the PO: real launch risks only. This report separates what the code proves from what only
 staging, real devices and real providers can prove — **CI green does not mean launch-ready.**
@@ -88,22 +88,15 @@ node scripts/load-check.mjs --seconds 60 --readers 25 --holders 10
 npx supabase db reset   # removes the dataset
 ```
 
-## Decisions needed from you
+## Decisions (approved by the PO, 2026-09-30)
 
-1. **Deleted accounts' Auth record: scrub in place (implemented) vs hard delete (spec).** The spec says the
-   `auth.users` row is deleted last. ~20 relations reference it without `ON DELETE` (reviews, disputes,
-   reports, notes, audit-style `created_by` columns), so a hard delete fails unless each is changed to
-   `SET NULL` — a Phase 3 schema change. Implemented instead: phone, email, metadata, sessions, identities and
-   MFA factors removed and sign-in blocked, so the remaining UUID identifies no one. Recommended: keep the scrub
-   (store and Law 81/2018 compatible when described in the privacy policy); revisit hard delete post-launch.
-2. **Restore ownership.** A logical restore must run as a role that can `SET ROLE app_owner` (Supabase
-   PITR/physical restores preserve it). Recommended: rely on PITR; the restore drill on staging (checklist §A)
-   verifies it with `010` + `340`.
-3. **Error tracking** (Sentry or similar): not integrated — needs an account. Recommended: add at pilot start
-   (web, admin, app, Edge Functions); System page + uptime monitor cover the basics until then.
-4. **Reception on Analytics**: reception now sees the Analytics screen without revenue (Phase 2 B11 edge case).
-   Confirm, or keep Analytics owner/manager-only.
-5. External accounts and dates for §B/§D (Meta, Twilio, Apple, Google, domain, Turnstile, PITR plan).
+1. Deleted accounts: keep the **scrubbed Auth record** (phone, email, sessions, sign-in methods removed; sign-in
+   blocked; pseudonymous UUID kept for integrity); the Privacy policy must describe this accurately.
+2. Restores: rely on **Supabase point-in-time restore**; verify ownership and grants in the staging restore drill.
+3. **Sentry (or equivalent) at pilot start**, not an M14 blocker.
+4. **Reception may open Analytics without revenue**, unless the owner enables revenue visibility.
+5. Meta, Twilio, Apple, Google, domain, Turnstile and production Supabase configuration remain **explicit
+   pre-pilot blockers** (checklist §B–D).
 
 ## Known limitations
 
