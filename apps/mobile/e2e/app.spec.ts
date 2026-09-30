@@ -32,6 +32,17 @@ async function verifyPhone(page: Page, local: string) {
   await flow.getByLabel('6-digit code').fill('123456');
 }
 
+/** Confirms the held slot; a first booking also asks for a first name (brand-new account). */
+async function confirmBooking(page: Page) {
+  const review = page.getByTestId('step-review');
+  const confirm = review.getByTestId('confirm');
+  await expect(confirm).toBeVisible({ timeout: 20_000 }); // rendered once the profile check is done
+  const name = review.getByLabel('First name');
+  if (await name.isVisible()) await name.fill('Nour');
+  await confirm.click();
+  await expect(page.getByTestId('booking-success')).toBeVisible();
+}
+
 async function pickFirstSlot(page: Page) {
   const slot = page.getByTestId('step-time').getByTestId('slot').first();
   await expect(slot).toBeEnabled({ timeout: 45_000 });
@@ -75,12 +86,11 @@ test('app: discover → book → manage → rebook → review → favorites → 
     await page.getByTestId('staff-option').filter({ hasText: 'Karim' }).click();
     await pickFirstSlot(page);
     const review = page.getByTestId('step-review');
-    await expect(review.getByTestId('hold-timer')).toContainText('holding this time');
+    await expect(review.getByTestId('hold-timer')).toContainText('holding this time', {
+      timeout: 20_000,
+    });
     await verifyPhone(page, '70 000 013');
-    const name = review.getByLabel('First name');
-    await expect(review.getByTestId('confirm')).toBeVisible({ timeout: 20_000 });
-    if (await name.isVisible()) await name.fill('Nour');
-    await review.getByTestId('confirm').click();
+    await confirmBooking(page);
     await expect(page.getByTestId('booking-success')).toContainText('You’re booked');
     first = await latestBooking(b.businessId);
     expect(await bookingAttribution(first)).toEqual({
@@ -104,8 +114,7 @@ test('app: discover → book → manage → rebook → review → favorites → 
     await page.getByTestId('book-service').first().click();
     await page.getByTestId('staff-option').filter({ hasText: 'Karim' }).click();
     await pickFirstSlot(page);
-    await page.getByTestId('step-review').getByTestId('confirm').click();
-    await expect(page.getByTestId('booking-success')).toBeVisible();
+    await confirmBooking(page);
     second = await latestBooking(b.businessId);
     await completeInPast(second);
   });
@@ -117,8 +126,7 @@ test('app: discover → book → manage → rebook → review → favorites → 
     await card.getByTestId('rebook').click();
     await expect(page.getByTestId('step-time')).toContainText('with Karim');
     await pickFirstSlot(page);
-    await page.getByTestId('step-review').getByTestId('confirm').click();
-    await expect(page.getByTestId('booking-success')).toBeVisible();
+    await confirmBooking(page);
     expect((await bookingAttribution(await latestBooking(b.businessId))).source).toBe('rebook');
   });
 

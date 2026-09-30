@@ -11,6 +11,7 @@ import {
   CUSTOMER_ROLES,
   DISPUTE_ROLES,
   MODERATION_ROLES,
+  OPS_ROLES,
   RANKING_ROLES,
   REVIEW_ROLES,
   canSee,
@@ -118,6 +119,8 @@ const NAV: [string, string, readonly string[]][] = [
   ['/disputes', 'Disputes', DISPUTE_ROLES],
   ['/catalog', 'Catalog', CATALOG_ROLES],
   ['/ranking', 'Ranking', RANKING_ROLES],
+  ['/system', 'System', OPS_ROLES],
+  ['/launch', 'Launch', OPS_ROLES],
   ['/audit', 'Audit log', []],
 ];
 

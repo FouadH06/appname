@@ -564,6 +564,90 @@ export type Database = {
           },
         ];
       };
+      business_daily_metrics: {
+        Row: {
+          available_minutes: number;
+          booked_minutes: number;
+          bookings_completed: number;
+          bookings_created: number;
+          built_at: string;
+          business_id: string;
+          cancellations_business: number;
+          cancellations_customer: number;
+          day: string;
+          late_cancels: number;
+          location_id: string;
+          new_customers: number;
+          no_shows: number;
+          returning_customers: number;
+          revenue_max: number;
+          revenue_min: number;
+          src_business_link: number;
+          src_manual: number;
+          src_marketplace: number;
+          src_rebook: number;
+        };
+        Insert: {
+          available_minutes?: number;
+          booked_minutes?: number;
+          bookings_completed?: number;
+          bookings_created?: number;
+          built_at?: string;
+          business_id: string;
+          cancellations_business?: number;
+          cancellations_customer?: number;
+          day: string;
+          late_cancels?: number;
+          location_id: string;
+          new_customers?: number;
+          no_shows?: number;
+          returning_customers?: number;
+          revenue_max?: number;
+          revenue_min?: number;
+          src_business_link?: number;
+          src_manual?: number;
+          src_marketplace?: number;
+          src_rebook?: number;
+        };
+        Update: {
+          available_minutes?: number;
+          booked_minutes?: number;
+          bookings_completed?: number;
+          bookings_created?: number;
+          built_at?: string;
+          business_id?: string;
+          cancellations_business?: number;
+          cancellations_customer?: number;
+          day?: string;
+          late_cancels?: number;
+          location_id?: string;
+          new_customers?: number;
+          no_shows?: number;
+          returning_customers?: number;
+          revenue_max?: number;
+          revenue_min?: number;
+          src_business_link?: number;
+          src_manual?: number;
+          src_marketplace?: number;
+          src_rebook?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'business_daily_metrics_business_id_fkey';
+            columns: ['business_id'];
+            isOneToOne: false;
+            referencedRelation: 'businesses';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'business_daily_metrics_location_id_fkey';
+            columns: ['location_id'];
+            isOneToOne: false;
+            referencedRelation: 'business_locations';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       business_labels: {
         Row: {
           business_id: string;
@@ -2022,6 +2106,7 @@ export type Database = {
           attempts: number;
           booking_id: string | null;
           channel_override: Database['public']['Enums']['notification_channel'] | null;
+          claimed_at: string | null;
           created_at: string;
           dedupe_key: string | null;
           id: string;
@@ -2042,6 +2127,7 @@ export type Database = {
           attempts?: number;
           booking_id?: string | null;
           channel_override?: Database['public']['Enums']['notification_channel'] | null;
+          claimed_at?: string | null;
           created_at?: string;
           dedupe_key?: string | null;
           id?: string;
@@ -2062,6 +2148,7 @@ export type Database = {
           attempts?: number;
           booking_id?: string | null;
           channel_override?: Database['public']['Enums']['notification_channel'] | null;
+          claimed_at?: string | null;
           created_at?: string;
           dedupe_key?: string | null;
           id?: string;
@@ -3093,6 +3180,60 @@ export type Database = {
           },
         ];
       };
+      staff_daily_metrics: {
+        Row: {
+          available_minutes: number;
+          booked_minutes: number;
+          bookings_completed: number;
+          built_at: string;
+          business_id: string;
+          day: string;
+          no_shows: number;
+          revenue_min: number;
+          specifically_requested: number;
+          staff_id: string;
+        };
+        Insert: {
+          available_minutes?: number;
+          booked_minutes?: number;
+          bookings_completed?: number;
+          built_at?: string;
+          business_id: string;
+          day: string;
+          no_shows?: number;
+          revenue_min?: number;
+          specifically_requested?: number;
+          staff_id: string;
+        };
+        Update: {
+          available_minutes?: number;
+          booked_minutes?: number;
+          bookings_completed?: number;
+          built_at?: string;
+          business_id?: string;
+          day?: string;
+          no_shows?: number;
+          revenue_min?: number;
+          specifically_requested?: number;
+          staff_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'staff_daily_metrics_business_id_fkey';
+            columns: ['business_id'];
+            isOneToOne: false;
+            referencedRelation: 'businesses';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'staff_daily_metrics_staff_id_fkey';
+            columns: ['staff_id'];
+            isOneToOne: false;
+            referencedRelation: 'staff_members';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       staff_locations: {
         Row: {
           business_id: string;
@@ -3600,6 +3741,7 @@ export type Database = {
       admin_get_dispute: { Args: { p_dispute_id: string }; Returns: Json };
       admin_get_media_case: { Args: { p_case_id: string }; Returns: Json };
       admin_get_review: { Args: { p_review_id: string }; Returns: Json };
+      admin_launch_readiness: { Args: Record<PropertyKey, never>; Returns: Json };
       admin_list_businesses: {
         Args: {
           p_cluster_id?: string;
@@ -3746,6 +3888,7 @@ export type Database = {
         };
         Returns: undefined;
       };
+      admin_system_health: { Args: Record<PropertyKey, never>; Returns: Json };
       admin_verify_business: {
         Args: { p_business_id: string; p_note?: string; p_reason: string; p_verified: boolean };
         Returns: undefined;
@@ -3841,6 +3984,10 @@ export type Database = {
           reliability_label: string;
           visit_count: number;
         }[];
+      };
+      biz_get_analytics: {
+        Args: { p_business_id: string; p_from: string; p_to: string };
+        Returns: Json;
       };
       biz_get_available_slots: {
         Args: { p_date?: string; p_location_id: string; p_service_id: string; p_staff_id?: string };
@@ -4388,6 +4535,7 @@ export type Database = {
       get_review_context: { Args: { p_booking_id: string }; Returns: Json };
       get_staff_options: { Args: { p_location_id: string; p_service_id: string }; Returns: Json };
       get_unread_notification_count: { Args: Record<PropertyKey, never>; Returns: number };
+      health_ping: { Args: Record<PropertyKey, never>; Returns: string };
       invite_member: {
         Args: {
           p_business_id: string;
