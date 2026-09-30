@@ -7,6 +7,14 @@ export interface ClientConfig {
   url: string;
   /** Publishable (anon) key. Never pass the service-role key to a client bundle. */
   anonKey: string;
+  /** Session storage (mobile: device secure storage). Defaults to the browser's localStorage. */
+  storage?: {
+    getItem(key: string): Promise<string | null> | string | null;
+    setItem(key: string, value: string): Promise<void> | void;
+    removeItem(key: string): Promise<void> | void;
+  };
+  /** Mobile apps don't receive sessions in URLs. */
+  detectSessionInUrl?: boolean;
 }
 
 /**
@@ -18,6 +26,11 @@ export function createAppClient(config: ClientConfig): AppSupabaseClient {
     throw new Error('createAppClient: url and anonKey are required');
   }
   return createClient<Database>(config.url, config.anonKey, {
-    auth: { persistSession: true, autoRefreshToken: true },
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      ...(config.storage ? { storage: config.storage } : {}),
+      ...(config.detectSessionInUrl === false ? { detectSessionInUrl: false } : {}),
+    },
   });
 }

@@ -209,6 +209,9 @@ language sql stable security definer set search_path = '' as $$
     and n.created_at > now() - interval '90 days'
 $$;
 
+-- /captcha is the app's captcha bridge on the web; /sign-in is an app route
+insert into public.reserved_slugs (slug) values ('captcha'), ('sign-in') on conflict do nothing;
+
 -- ─── Grants ────────────────────────────────────────────────────────────────
 revoke execute on function public.push_tokens_invalid(text[]) from public, anon, authenticated;
 grant execute on function public.push_tokens_invalid(text[]) to service_role;

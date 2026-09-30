@@ -8,14 +8,71 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.appname.customer"
+      "bundleIdentifier": "com.appname.customer",
+      "associatedDomains": [
+        "applinks:platform.com"
+      ],
+      "infoPlist": {
+        "NSCameraUsageDescription": "Take a photo of your result to add it to your review.",
+        "NSPhotoLibraryUsageDescription": "Choose photos of your result to add them to your review."
+      }
     },
     "android": {
-      "package": "com.appname.customer"
+      "package": "com.appname.customer",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "platform.com"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ],
+      "permissions": [
+        "android.permission.POST_NOTIFICATIONS"
+      ]
     },
     "extra": {
-      "supportsRTL": true
+      "supportsRTL": true,
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": null
+      }
     },
-    "plugins": ["expo-status-bar"]
+    "plugins": [
+      "expo-router",
+      "expo-status-bar",
+      "expo-secure-store",
+      "expo-web-browser",
+      [
+        "expo-notifications",
+        {
+          "color": "#C8553D"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Choose photos of your result to add them to your review.",
+          "cameraPermission": "Take a photo of your result to add it to your review."
+        }
+      ]
+    ],
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    },
+    "experiments": {
+      "typedRoutes": false
+    }
   }
 }
