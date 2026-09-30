@@ -61,25 +61,29 @@ async function deliver(
   let lastError = n.channels.length ? '' : 'no enabled channel';
   let retryable = false;
 
+  // push reuses the message text (the WhatsApp/SMS copy); no provider approval needed
+  const sendPush = async (): Promise<{ ok: boolean; error: string | null; retryable: boolean }> => {
+    const t = n.templates.push ?? n.templates.whatsapp ?? n.templates.sms;
+    if (!t) return { ok: false, error: 'no template for push', retryable: false };
+    if (!deps.push) return { ok: false, error: 'push not configured', retryable: false };
+    const r = await deps.push.send(n.push_tokens ?? [], {
+      title: vars.business_name || 'APP_NAME',
+      body: fill(t.body, vars),
+      path: pushPath(n.type, n.payload),
+    });
+    if (r.invalidTokens.length) await deps.store.disablePushTokens?.(r.invalidTokens);
+    await deps.store.recordAttempt(n.id, 'push', deps.push.provider, r.messageId, r.ok, r.error);
+    return { ok: r.ok, error: r.error ?? (r.ok ? null : 'push failed'), retryable: r.retryable };
+  };
+
+  // dispute outcomes: a push alongside WhatsApp, once (a WhatsApp retry never repeats the push)
+  let extraPushOk = false;
+  if (n.also_push && n.attempts <= 1) extraPushOk = (await sendPush()).ok;
+  if (extraPushOk && !n.channels.length) return { outcome: 'sent', error: null };
+
   for (const channel of n.channels) {
     if (channel === 'push') {
-      // push reuses the message text (the WhatsApp/SMS copy); no provider approval needed
-      const t = n.templates.push ?? n.templates.whatsapp ?? n.templates.sms;
-      if (!t) {
-        lastError = 'no template for push';
-        continue;
-      }
-      if (!deps.push) {
-        lastError = 'push not configured';
-        continue;
-      }
-      const r = await deps.push.send(n.push_tokens ?? [], {
-        title: vars.business_name || 'APP_NAME',
-        body: fill(t.body, vars),
-        path: pushPath(n.type, n.payload),
-      });
-      if (r.invalidTokens.length) await deps.store.disablePushTokens?.(r.invalidTokens);
-      await deps.store.recordAttempt(n.id, 'push', deps.push.provider, r.messageId, r.ok, r.error);
+      const r = await sendPush();
       if (r.ok) return { outcome: 'sent', error: null };
       lastError = r.error ?? 'push failed';
       retryable ||= r.retryable;

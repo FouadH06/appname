@@ -488,6 +488,47 @@ describe('push (M13)', () => {
     expect(store.attempts[0]).toMatchObject({ channel: 'push', provider: 'expo', ok: true });
   });
 
+  it('dispute outcome: WhatsApp and a push; a WhatsApp retry does not repeat the push', async () => {
+    const push = {
+      provider: 'expo',
+      send: vi.fn(async () => ({
+        ok: true,
+        messageId: 't-2',
+        error: null,
+        retryable: false,
+        invalidTokens: [],
+      })),
+    };
+    const whatsapp = {
+      provider: 'meta',
+      sendTemplate: vi.fn(async () => ({ ok: true as const, messageId: 'wa-1' })),
+    };
+    const dispute = {
+      type: 'dispute_update',
+      channels: ['whatsapp' as const],
+      also_push: true,
+      push_tokens: ['ExponentPushToken[a]'],
+      templates: { whatsapp: tpl({ type: 'dispute_update', body: 'Update on your report' }) },
+    };
+    const first = fakeStore([row({ ...dispute, attempts: 1 })]);
+    expect((await runDispatch({ store: first, push, whatsapp, mode: 'log' } as never)).sent).toBe(
+      1,
+    );
+    expect(push.send).toHaveBeenCalledTimes(1);
+    expect(whatsapp.sendTemplate).toHaveBeenCalledTimes(1);
+    expect(first.attempts.map((a) => a.channel)).toEqual(['push', 'whatsapp']);
+
+    const retry = fakeStore([row({ ...dispute, attempts: 2 })]);
+    await runDispatch({ store: retry, push, whatsapp, mode: 'log' } as never);
+    expect(push.send).toHaveBeenCalledTimes(1);
+    expect(retry.attempts.map((a) => a.channel)).toEqual(['whatsapp']);
+
+    const appOnly = fakeStore([row({ ...dispute, channels: [], phone: '', attempts: 1 })]);
+    expect((await runDispatch({ store: appOnly, push, whatsapp, mode: 'log' } as never)).sent).toBe(
+      1,
+    );
+  });
+
   it('deep links: booking detail by default, review / result screens where they exist', () => {
     expect(pushPath('dispute_update', { booking_id: 'b-9' })).toBe('/bookings/b-9');
     expect(pushPath('result_published', { result_id: 'r-1', booking_id: 'b-9' })).toBe('/r/r-1');

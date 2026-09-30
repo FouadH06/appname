@@ -219,7 +219,19 @@ export default function Profile() {
 function Legal() {
   return (
     <Card>
-      <H2>Legal</H2>
+      <H2>Help & legal</H2>
+      {ENV.supportUrl ? (
+        <Text
+          style={{ color: C.accent }}
+          onPress={() => void Linking.openURL(ENV.supportUrl)}
+          accessibilityRole="link"
+          testID="contact-support"
+        >
+          Contact Support
+        </Text>
+      ) : (
+        <Muted testID="contact-support">Contact Support · not configured yet</Muted>
+      )}
       <Text style={{ color: C.accent }} onPress={() => void Linking.openURL(`${ENV.webUrl}/terms`)}>
         Terms
       </Text>

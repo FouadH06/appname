@@ -7,6 +7,8 @@ export const ENV = {
   supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL ?? '',
   anonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '',
   webUrl: (process.env.EXPO_PUBLIC_WEB_URL ?? 'https://platform.com').replace(/\/$/, ''),
+  /** Contact Support destination (https://wa.me/961… or mailto:…); empty until configured for launch */
+  supportUrl: process.env.EXPO_PUBLIC_SUPPORT_URL ?? '',
 };
 
 // Sessions live in the device keychain / keystore. SecureStore entries are limited (~2 KB), so the

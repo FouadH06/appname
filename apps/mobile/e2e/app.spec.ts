@@ -182,6 +182,7 @@ test('app: discover → book → manage → rebook → review → favorites → 
   await test.step('profile: preferences load; log out returns to signed-out state', async () => {
     await page.goto('/profile');
     await expect(page.getByTestId('notification-preferences')).toContainText('WhatsApp');
+    await expect(page.getByTestId('contact-support')).toContainText('Contact Support');
     await page.getByTestId('log-out').click();
     await page.goto('/bookings');
     await expect(page.getByTestId('phone-sign-in')).toBeVisible();

@@ -32,6 +32,8 @@ export interface Claimed {
   templates: Partial<Record<NotifyChannel, Template>>;
   /** active Expo push tokens of the recipient (M13; empty for web-only customers) */
   push_tokens?: string[];
+  /** also send a push alongside the channels (dispute outcomes; first attempt only, best effort) */
+  also_push?: boolean;
 }
 
 export type Outcome = 'sent' | 'retry' | 'failed';

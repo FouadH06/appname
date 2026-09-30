@@ -1,6 +1,6 @@
 # M13 — Expo customer app: report
 
-Status: **implemented, awaiting review** · branch `m13-app` · branch CI green on `1a83a81` (run 36697780462: format/lint/typecheck/unit, build, pgTAP, web + admin + app e2e)
+Status: **approved 2026-09-30** (decisions below) · branch `m13-app` · branch CI green on `1a83a81` (run 36697780462: format/lint/typecheck/unit, build, pgTAP, web + admin + app e2e)
 
 Lean scope: the Phase 2 customer screens as a native app on the existing RPCs, plus the retention backend
 (favorites, rebook suggestions, push, inbox). No new booking logic; M12 search untouched. Store builds
@@ -17,18 +17,20 @@ and device testing need the PO's Apple/Google accounts (M4 checklist → app rel
 | Push permission | Asked only on the first booking's success screen ("Want a reminder…?"); "Not now" never asks again (switch in Profile) |
 | Links | Routes mirror web URLs; `scheme appname`, iOS associated domains, Android verified intent filter; web serves `/.well-known/apple-app-site-association` and `/.well-known/assetlinks.json` from `APPLE_TEAM_ID` / `ANDROID_CERT_SHA256` (empty until set) |
 
-## Decisions (please confirm)
+## Decisions (approved by the PO, 2026-09-30)
 
-1. **Push replaces WhatsApp** for the six non-booking message types when the app can receive it; booking
-   confirmations, reminders and changes always stay WhatsApp + SMS (reliability; Confirm/Cancel buttons).
-2. **No session hand-off from web to app** via links (a link that carries a session is a takeover risk).
-   Someone who installs the app verifies their phone once; the same account then works on both, and
-   `/m/{token}` + `/review/{token}` links still open the right screen.
-3. **Favorites do not affect search ranking.** The Phase spec lists favorite = 1.0 in the personal score,
-   but M12 is locked ("no extra personalization") — not changed. Your call (see below).
-4. The Expo **web build is a test harness**, not a product: customers use the Next.js site. The app e2e runs
-   on it because this machine has no Android SDK/emulator.
-5. Profile shows Terms and Privacy; **no Help page exists yet** on the web, so none is linked.
+1. Review-request, review-status and photo-result messages go **by push instead of WhatsApp** when the customer
+   has the app with push enabled; otherwise WhatsApp. Booking messages always stay WhatsApp + SMS.
+2. **Dispute outcomes send WhatsApp and push** (important account/booking events): route `{whatsapp}` +
+   `also_push`; the push goes out once on the first attempt (WhatsApp retries never repeat it); an app-only
+   account without a phone still gets the push.
+3. **No web→app session hand-off**; customers verify their phone once in the app.
+4. **Favorites do not affect search ranking**; M12 unchanged.
+5. The Expo **web build is a test harness only**; customers use the website on the web.
+6. Profile has one **Contact Support** entry from `EXPO_PUBLIC_SUPPORT_URL` (WhatsApp or mailto link);
+   shown as "not configured yet" until set (launch checklist). No help center.
+7. Apple Developer, Google Play and `eas init` are deferred to the real-device/release gate (tracked as
+   launch blockers in M14).
 
 ## Migrations / schema
 
@@ -48,8 +50,8 @@ private-first path and consent version.
 
 | Layer | Result |
 |---|---|
-| pgTAP | **930/930** (31 in `320_app`: favorites RLS/toggle/order/unavailable, rebook staff rules + live/online filters, push token format/move/unregister/service-role guard, push-vs-WhatsApp routing incl. disabled push, inbox filtering/retention/unread, reserved slugs) |
-| Edge unit | 96 passed, 2 skipped (push: Expo request, invalid-token disable, fallback, deep-link paths) |
+| pgTAP | **932/932** (33 in `320_app`: favorites RLS/toggle/order/unavailable, rebook staff rules + live/online filters, push token format/move/unregister/service-role guard, push-vs-WhatsApp routing incl. disabled push, disputes WhatsApp + push, inbox filtering/retention/unread, reserved slugs) |
+| Edge unit | 97 passed, 2 skipped (push: dispute WhatsApp + push once, Expo request, invalid-token disable, fallback, deep-link paths) |
 | API unit | 21 |
 | App e2e (web build, phone viewport) | **1 flow, 13 steps, passing (~22 s)**: search suggestion → profile; ♡ signed out → sign-in; guest booking with captcha + OTP (attribution `app`); detail → cancel; signed-in booking; Home **Book again with Karim** → preset time step (`rebook` source); past visit → review → photo consent; favorites save/list/remove; inbox → booking; deep links (magic link, removed result, unknown page); offline banner; preferences + log out |
 | Web e2e | **15 passed**, 13 skipped (project split). Full run with 2 workers: 12 passed, 3 failed (auth OTP, public booking, results — captcha/cold-server timeouts under parallel load); those 3 specs rerun serially: all pass. No web code changed except the `/captcha` bridge and `.well-known` routes |
@@ -85,10 +87,3 @@ Search and booking paths are unchanged (M12/M3 numbers stand).
 - `extra.eas.projectId` is null until `eas init`; push stays off until then.
 - English-first UI (Arabic/RTL follow-up, as on web).
 - Hosted M4–M13 verification remains mandatory before real users.
-
-## Decisions needed from you
-
-1. Approve decisions 1–5 above (push replaces WhatsApp for non-booking messages; no web→app session hand-off;
-   favorites not in ranking; web build = test harness; no Help link yet).
-2. Favorites in the search personal score: keep off (recommended, M12 locked) or add later?
-3. Apple Developer + Google Play accounts and `eas init` to unlock device builds, push and store submission.

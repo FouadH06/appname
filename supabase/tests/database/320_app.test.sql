@@ -5,7 +5,7 @@ create extension if not exists pgtap with schema extensions;
 set local search_path = extensions, public;
 set local role postgres;
 \ir ../helpers/fixtures.psql
-select plan(31);
+select plan(33);
 
 select tests.new_user('owner', '96170320100');
 select tests.new_user('c1', '96170320001');
@@ -123,14 +123,15 @@ select tests.act_as('c1');
 select throws_ok($$ select public.push_tokens_invalid(array['ExponentPushToken[c1device00001]']) $$, '42501', null,
   'only the dispatcher (service role) can disable tokens');
 
--- ═══ routing: push for app users on review/result/dispute messages, WhatsApp otherwise ═══
+-- ═══ routing: push instead of WhatsApp for review/result messages; disputes WhatsApp + push ═══
 select tests.as_postgres();
 insert into public.notifications (type, recipient_user_id, recipient_phone, booking_id, payload) values
   ('review_request', tests.id('c1'), '+96170320001', tests.id('v_cut'), '{"business_name":"Business biz"}'),
   ('booking_confirmed', tests.id('c1'), '+96170320001', tests.id('v_cut'), '{"business_name":"Business biz"}'),
   ('review_request', tests.id('c2'), '+96170320002', null, '{}'),
   ('review_request', tests.id('owner'), '+96170320100', null, '{}'),
-  ('dispute_update', tests.id('apponly'), null, null, '{}');
+  ('dispute_update', tests.id('apponly'), null, null, '{}'),
+  ('dispute_update', tests.id('c1'), '+96170320001', tests.id('v_cut'), '{}');
 select tests.as_service();
 insert into tests.v values ('claim', public.notify_claim(50));
 select tests.as_postgres();
@@ -142,15 +143,21 @@ select is(tests.claimed('booking_confirmed', 'c1') -> 'channels', '["whatsapp", 
 select is(tests.claimed('review_request', 'c2') -> 'channels', '["push"]'::jsonb,
   'the device that moved to c2 receives c2''s push (c1''s unregister did not touch it)');
 select is(tests.claimed('review_request', 'owner') -> 'channels', '["whatsapp"]'::jsonb, 'web-only customer → WhatsApp');
-select is(tests.claimed('dispute_update', 'apponly') -> 'channels', '["push"]'::jsonb, 'app-only account without a phone is reached by push');
+select results_eq($$ select tests.claimed('dispute_update', 'c1') -> 'channels', tests.claimed('dispute_update', 'c1') -> 'also_push' $$,
+                  $$ values ('["whatsapp"]'::jsonb, 'true'::jsonb) $$,
+                  'dispute outcome: WhatsApp as usual and a push as well');
+select results_eq($$ select tests.claimed('dispute_update', 'apponly') -> 'channels', tests.claimed('dispute_update', 'apponly') -> 'also_push' $$,
+                  $$ values ('[]'::jsonb, 'true'::jsonb) $$,
+                  'app-only account without a phone: the dispute push still reaches them');
 -- push disabled in settings → WhatsApp
 select tests.as_postgres();
 insert into public.notification_preferences (user_id, channel, enabled) values (tests.id('c1'), 'push', false);
-update public.notifications set status = 'queued' where type = 'review_request' and recipient_user_id = tests.id('c1');
+update public.notifications set status = 'queued' where type in ('review_request', 'dispute_update') and recipient_user_id = tests.id('c1');
 select tests.as_service();
 update tests.v set j = public.notify_claim(50) where k = 'claim';
 select tests.as_postgres();
 select is(tests.claimed('review_request', 'c1') -> 'channels', '["whatsapp"]'::jsonb, 'push turned off → WhatsApp');
+select is(tests.claimed('dispute_update', 'c1') -> 'also_push', 'false'::jsonb, 'push turned off → no dispute push');
 select tests.as_service();
 select is(public.push_tokens_invalid(array['ExponentPushToken[apponly000001]']), 1, 'dispatcher disables an unregistered device');
 

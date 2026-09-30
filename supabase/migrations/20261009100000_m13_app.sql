@@ -133,10 +133,14 @@ language sql stable security definer set search_path = '' as $$
      and not exists (select 1 from public.notification_preferences p where p.user_id = p_user_id and p.channel = 'push' and not p.enabled)
 $$;
 
--- Routing (Part 5 §6): review / result / dispute messages go by push to app users, WhatsApp to web-only
--- customers. '{push,whatsapp}' means "push when the customer has the app, else WhatsApp".
+-- Routing (Part 5 §6, PO decision at M13 review): review and photo-result messages go by push to app
+-- users, WhatsApp to web-only customers ('{push,whatsapp}' = "push when the customer has the app, else
+-- WhatsApp"). Dispute outcomes are important account/booking events: WhatsApp as usual AND a push
+-- (`also_push`, sent once on the first attempt, never instead of WhatsApp).
+alter table private.notification_routes add column also_push boolean not null default false;
 update private.notification_routes set primary_channels = '{push,whatsapp}'
- where type in ('review_request', 'review_published', 'review_needs_changes', 'result_published', 'result_rejected', 'dispute_update');
+ where type in ('review_request', 'review_published', 'review_needs_changes', 'result_published', 'result_rejected');
+update private.notification_routes set primary_channels = '{whatsapp}', also_push = true where type = 'dispute_update';
 
 -- Claim: rows for app-only customers (no phone, a push token) are due too; channels resolve push vs WhatsApp.
 create or replace function public.notify_claim(p_limit int default 50) returns jsonb
@@ -175,6 +179,7 @@ begin
                           and (ch = 'push' or c.recipient_phone is not null)
                           and not exists (select 1 from public.notification_preferences p
                                           where p.user_id = c.recipient_user_id and p.channel = ch and not p.enabled)),
+           'also_push', coalesce(r.also_push, false) and c.channel_override is null and private.has_push(c.recipient_user_id),
            'push_tokens', (select coalesce(jsonb_agg(t.expo_token), '[]') from public.push_tokens t
                            where t.user_id = c.recipient_user_id and t.disabled_at is null),
            'templates', (select coalesce(jsonb_object_agg(t.channel, to_jsonb(t) - 'created_at'), '{}')
