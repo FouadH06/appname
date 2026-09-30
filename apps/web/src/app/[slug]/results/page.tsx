@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { CustomerShell } from '@/components/customer/shell';
 import { notFound, permanentRedirect } from 'next/navigation';
 import { ResultsGrid } from '@/components/public/results';
 import { getBusinessPage, getBusinessResults } from '@/lib/public/server';
@@ -33,22 +34,25 @@ export default async function ResultsPage({ params }: Params) {
   const results = await getBusinessResults(p.business.id, p.business.slug, 24);
   const services = p.services.map((s) => ({ id: s.id, name: s.name }));
   return (
-    <main className="mx-auto flex min-h-dvh max-w-5xl flex-col gap-4 px-4 py-6">
-      <Link href={`/${p.business.slug}`} className="text-sm text-accent-600">
-        ← {p.business.name}
-      </Link>
-      <div>
-        <h1 className="text-xl font-semibold">Customer results</h1>
-        <p className="text-sm text-ink-500">
-          Real photos from verified visits. {p.business.name} can feature some, but can’t hide any.
-        </p>
-      </div>
-      <ResultsGrid
-        businessId={p.business.id}
-        businessName={p.business.name}
-        initial={results}
-        services={services}
-      />
-    </main>
+    <CustomerShell>
+      <main className="mx-auto flex min-h-[60dvh] max-w-5xl flex-col gap-4 px-4 py-6">
+        <Link href={`/${p.business.slug}`} className="text-sm text-accent-600">
+          ← {p.business.name}
+        </Link>
+        <div>
+          <h1 className="text-xl font-semibold">Customer results</h1>
+          <p className="text-sm text-ink-500">
+            Real photos from verified visits. {p.business.name} can feature some, but can’t hide
+            any.
+          </p>
+        </div>
+        <ResultsGrid
+          businessId={p.business.id}
+          businessName={p.business.name}
+          initial={results}
+          services={services}
+        />
+      </main>
+    </CustomerShell>
   );
 }

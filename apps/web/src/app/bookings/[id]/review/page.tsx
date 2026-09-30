@@ -11,7 +11,7 @@ export default function BookingReviewPage({ params }: { params: Promise<{ id: st
   const { id } = use(params);
   const { loading, signedIn } = useSession();
   return (
-    <Card title="Leave a review">
+    <Card customer title="Leave a review">
       {loading ? null : signedIn ? (
         <ReviewForm bookingId={id} />
       ) : (

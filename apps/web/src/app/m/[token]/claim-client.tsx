@@ -83,7 +83,9 @@ export function ClaimClient({ token }: { token: string }) {
 
   if (!summary) {
     return (
-      <Card title="…">{error ? <p className="text-sm text-danger-600">{error}</p> : null}</Card>
+      <Card customer title="…">
+        {error ? <p className="text-sm text-danger-600">{error}</p> : null}
+      </Card>
     );
   }
   const b = summary.booking;
@@ -103,7 +105,7 @@ export function ClaimClient({ token }: { token: string }) {
   const title = format(t.pages.claim.title, { business: b.business_name });
 
   return (
-    <Card title={title}>
+    <Card customer title={title}>
       {details}
       {claimed ? (
         <>

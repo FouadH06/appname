@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { BusinessCard, SiteHeader } from '@/components/public/business-card';
+import { BusinessCard } from '@/components/customer/cards';
+import { CustomerShell } from '@/components/customer/shell';
 import { getLanding } from '@/lib/public/search';
 
 // SEO landing — platform.com/{area}/{category} (area or cluster slug; both are reserved words, so they
@@ -29,9 +30,8 @@ export default async function Landing({ params }: Params) {
   const where = l.area?.name ?? l.cluster?.name ?? '';
   const clusterId = l.cluster?.id ?? l.area?.cluster?.id ?? null;
   return (
-    <>
-      <SiteHeader cluster={clusterId} />
-      <main className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-6">
+    <CustomerShell>
+      <main className="mx-auto flex w-full max-w-[1320px] flex-col sm:px-6 lg:px-8 lg:py-10 gap-4 px-4 py-6">
         <nav className="text-sm text-ink-500" aria-label="Breadcrumb">
           <Link href="/" className="hover:underline">
             Home
@@ -74,6 +74,6 @@ export default async function Landing({ params }: Params) {
           ))}
         </div>
       </main>
-    </>
+    </CustomerShell>
   );
 }

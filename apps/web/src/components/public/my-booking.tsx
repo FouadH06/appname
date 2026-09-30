@@ -2,6 +2,16 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
+import {
+  IconCalendar,
+  IconCheck,
+  IconChevron,
+  IconNavigate,
+  IconNote,
+  IconPhone,
+  IconPin,
+  IconUser,
+} from '@/components/customer/icons';
 import { beirutParts } from '@/lib/biz/schedule';
 import { useNow } from '@/lib/biz/use-now';
 import { describeError } from '@/lib/copy';
@@ -183,32 +193,10 @@ export function BookingDetail({
   const s = STATUS[b.status];
   const wa = waLink(b.location.whatsapp, `Hi ${b.business.name}, about my booking ${b.ref}`);
   const withinWindow = Date.parse(b.starts_at) - now < b.cancellation_window_minutes * 60_000;
+  if (isNew) return <SuccessView b={b} phone={phone} wa={wa} />;
 
   return (
     <div className="flex flex-col gap-4">
-      {isNew ? (
-        <section
-          className="flex flex-col items-center gap-1 text-center"
-          data-testid="booking-success"
-        >
-          <span className="grid size-14 place-items-center rounded-full bg-success-600 text-2xl text-white">
-            ✓
-          </span>
-          <h1 className="text-2xl font-semibold">
-            {b.status === 'pending' ? 'Request sent' : 'You’re booked'}
-          </h1>
-          {b.status === 'pending' ? (
-            <p className="text-sm text-ink-700">
-              We’ll message you when {b.business.name} confirms. If they don’t reply in time, the
-              request expires automatically.
-            </p>
-          ) : null}
-          {maskPhone(phone) ? (
-            <p className="text-sm text-ink-500">Confirmation sent to WhatsApp {maskPhone(phone)}</p>
-          ) : null}
-        </section>
-      ) : null}
-
       {b.staff_changed && b.status === 'confirmed' ? (
         <p className="rounded-control bg-info-600 px-3 py-2 text-sm text-white">
           Your appointment is now with {b.staff_first_name} (changed by {b.business.name}).
@@ -382,6 +370,146 @@ export function BookingDetail({
           </ol>
         </section>
       ) : null}
+    </div>
+  );
+}
+
+/** C11 post-booking state (locked reference): reassurance first, then the useful next actions. */
+function SuccessView({
+  b,
+  phone,
+  wa,
+}: {
+  b: MyBookingDetail;
+  phone: string | undefined;
+  wa: string | null;
+}) {
+  const pending = b.status === 'pending';
+  const s = STATUS[b.status];
+  const row =
+    'flex min-h-14 items-center gap-4 rounded-card border border-line-200 bg-surface-0 px-4 font-medium hover:border-accent-600';
+  const iconBox =
+    'grid size-10 shrink-0 place-items-center rounded-full bg-accent-50 text-accent-600';
+  const contact = wa ?? (b.location.phone ? `tel:${b.location.phone}` : null);
+  return (
+    <div className="flex flex-col gap-5" data-testid="booking-success">
+      <div className="flex flex-col items-center gap-3 pt-2 text-center">
+        <span className="grid size-24 place-items-center rounded-full bg-accent-50">
+          <span className="grid size-16 place-items-center rounded-full bg-accent-100 text-accent-600">
+            <IconCheck size={36} strokeWidth={2.5} />
+          </span>
+        </span>
+        <h1 className="text-3xl font-semibold tracking-tight">
+          {pending ? 'Request sent' : 'Booking confirmed!'}
+        </h1>
+        <p className="max-w-sm text-ink-700">
+          {pending
+            ? `We’ll message you when ${b.business.name} confirms. If they don’t reply in time, the request expires automatically.`
+            : 'Your appointment is all set. We look forward to seeing you!'}
+        </p>
+        {maskPhone(phone) ? (
+          <p className="text-sm text-ink-500">Confirmation sent to WhatsApp {maskPhone(phone)}</p>
+        ) : null}
+      </div>
+
+      <div
+        className="overflow-hidden rounded-card border border-line-200 bg-surface-0"
+        data-testid="booking-detail"
+      >
+        <ul className="divide-y divide-line-200">
+          <li className="flex items-center gap-4 p-4">
+            <span className="grid size-10 shrink-0 place-items-center rounded-full bg-accent-50 text-accent-600">
+              <IconCalendar size={20} />
+            </span>
+            <span className="flex min-w-0 flex-1 flex-col">
+              <span className="font-semibold">
+                {relativeDay(beirutParts(b.starts_at).date, beirutToday())} ·{' '}
+                {timeText(b.starts_at)}
+              </span>
+              <span className="text-sm text-ink-500">
+                {dateTimeText(b.starts_at)} · {durationText(b.duration_min)}
+              </span>
+            </span>
+            <span
+              className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium text-white ${s.tone}`}
+              data-testid="booking-status"
+            >
+              {s.label}
+            </span>
+          </li>
+          <li className="flex items-center gap-4 p-4">
+            <span className="grid size-10 shrink-0 place-items-center rounded-full bg-accent-50 text-accent-600">
+              <IconUser size={20} />
+            </span>
+            <span className="flex flex-col">
+              <span className="font-semibold">{b.service_name}</span>
+              <span className="text-sm text-ink-500">
+                with {b.staff_first_name} · {priceText(b)} · pay at the business
+              </span>
+            </span>
+          </li>
+          <li className="flex items-center gap-4 p-4">
+            <span className="grid size-10 shrink-0 place-items-center rounded-full bg-accent-50 text-accent-600">
+              <IconPin size={20} />
+            </span>
+            <span className="flex flex-col">
+              <Link
+                href={`/${b.business.slug}`}
+                className="font-semibold hover:underline"
+                dir="auto"
+              >
+                {b.business.name}
+              </Link>
+              <span className="text-sm text-ink-500">
+                {[b.location.address_line, b.location.area].filter(Boolean).join(', ')}
+                {b.location.landmark ? ` · ${b.location.landmark}` : ''}
+              </span>
+            </span>
+          </li>
+        </ul>
+      </div>
+
+      <div className="grid gap-2 sm:grid-cols-2">
+        <a className={row} href={icsFor(b)} download={`booking-${b.ref}.ics`}>
+          <span className={iconBox}>
+            <IconCalendar size={18} />
+          </span>
+          <span className="flex-1">Add to calendar</span>
+          <IconChevron size={18} className="text-ink-500 rtl:rotate-180" />
+        </a>
+        <a
+          className={row}
+          href={mapsLink(b.location.lat, b.location.lng)}
+          target="_blank"
+          rel="noreferrer"
+        >
+          <span className={iconBox}>
+            <IconNavigate size={18} />
+          </span>
+          <span className="flex-1">Directions</span>
+          <IconChevron size={18} className="text-ink-500 rtl:rotate-180" />
+        </a>
+        {contact ? (
+          <a className={row} href={contact}>
+            <span className={iconBox}>
+              <IconPhone size={18} />
+            </span>
+            <span className="flex-1">Contact business</span>
+            <IconChevron size={18} className="text-ink-500 rtl:rotate-180" />
+          </a>
+        ) : null}
+        <Link className={row} href={`/bookings/${b.id}`} data-testid="view-booking">
+          <span className={iconBox}>
+            <IconNote size={18} />
+          </span>
+          <span className="flex-1">View booking</span>
+          <IconChevron size={18} className="text-ink-500 rtl:rotate-180" />
+        </Link>
+      </div>
+      <Link href="/" className={primary}>
+        Done
+      </Link>
+      <p className="text-center text-xs text-ink-500">Ref {b.ref}</p>
     </div>
   );
 }

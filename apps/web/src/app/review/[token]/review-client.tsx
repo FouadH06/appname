@@ -47,7 +47,7 @@ export function ReviewTokenClient({ token }: { token: string }) {
 
   const title = summary ? `Review ${summary.booking.business_name}` : 'Leave a review';
   return (
-    <Card title={title}>
+    <Card customer title={title}>
       {error ? (
         <p className="text-sm text-danger-600" role="alert" data-testid="review-link-error">
           {error}

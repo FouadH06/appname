@@ -1,16 +1,22 @@
 import type { ReactNode } from 'react';
+import { CustomerShell } from '@/components/customer/shell';
 
 export function Card({
   title,
   subtitle,
   children,
+  customer = false,
 }: {
   title: string;
   subtitle?: ReactNode;
   children: ReactNode;
+  /** customer pages: inside the customer shell (tokens, header, tab bar) */
+  customer?: boolean;
 }) {
-  return (
-    <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-4 py-10">
+  const body = (
+    <main
+      className={`mx-auto flex max-w-md flex-col justify-center px-4 py-10 ${customer ? 'min-h-[70dvh]' : 'min-h-dvh'}`}
+    >
       <div className="rounded-card border border-line-200 bg-surface-0 p-6 shadow-sm">
         <h1 className="text-xl font-semibold text-ink-900">{title}</h1>
         {subtitle ? <div className="mt-1 text-sm text-ink-700">{subtitle}</div> : null}
@@ -18,6 +24,7 @@ export function Card({
       </div>
     </main>
   );
+  return customer ? <CustomerShell>{body}</CustomerShell> : body;
 }
 
 export const primaryButton =

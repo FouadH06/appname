@@ -9,7 +9,7 @@ import { useSession } from '@/lib/session';
 export default function AccountNotificationsPage() {
   const { loading, signedIn } = useSession();
   return (
-    <Card title="Notifications" subtitle="How we send your booking messages.">
+    <Card customer title="Notifications" subtitle="How we send your booking messages.">
       {loading ? null : signedIn ? (
         <NotificationPreferences />
       ) : (

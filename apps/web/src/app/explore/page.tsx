@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { SiteHeader } from '@/components/public/business-card';
+import { CustomerShell } from '@/components/customer/shell';
 import { getReference } from '@/lib/public/search';
 
 // C3 browse (web): categories → services, and links to the area landing pages (/{area}/{category}).
@@ -43,9 +43,8 @@ export default async function Explore() {
     ),
   ]);
   return (
-    <>
-      <SiteHeader />
-      <main className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6">
+    <CustomerShell>
+      <main className="mx-auto flex w-full max-w-[1320px] flex-col sm:px-6 lg:px-8 lg:py-10 gap-6 px-4 py-6">
         <h1 className="text-xl font-semibold">Explore</h1>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3" data-testid="explore">
           {cats.map((c) => (
@@ -83,6 +82,6 @@ export default async function Explore() {
           ))}
         </div>
       </main>
-    </>
+    </CustomerShell>
   );
 }

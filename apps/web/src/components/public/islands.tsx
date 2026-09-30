@@ -209,19 +209,23 @@ export function TeamStrip({
   const theirs = open ? services.filter((s) => s.online && s.staff_ids.includes(open.id)) : [];
   return (
     <>
-      <ul className="flex gap-4 overflow-x-auto pb-1" data-testid="team">
+      <ul className="rail -mx-4 flex gap-3 overflow-x-auto px-4 sm:mx-0 sm:px-0" data-testid="team">
         {staff.map((s) => (
-          <li key={s.id}>
+          <li key={s.id} className="shrink-0">
             <button
               type="button"
-              className="flex w-20 flex-col items-center gap-1 text-center"
+              className="flex h-full w-52 items-center gap-3 rounded-card border border-line-200 bg-surface-0 p-3 text-start hover:border-accent-600"
               onClick={() => setOpen(s)}
             >
-              <Avatar name={s.name} url={photoUrls[s.id] ?? null} size="size-16" />
-              <span className="line-clamp-1 text-sm font-medium">{s.name.split(' ')[0]}</span>
-              {s.role_title ? (
-                <span className="line-clamp-1 text-xs text-ink-500">{s.role_title}</span>
-              ) : null}
+              <Avatar name={s.name} url={photoUrls[s.id] ?? null} size="size-12" />
+              <span className="flex min-w-0 flex-col">
+                <span className="line-clamp-1 font-semibold">{s.name.split(' ')[0]}</span>
+                {s.role_title ? (
+                  <span className="line-clamp-1 text-sm text-ink-500">{s.role_title}</span>
+                ) : s.specialties.length ? (
+                  <span className="line-clamp-1 text-sm text-ink-500">{s.specialties[0]}</span>
+                ) : null}
+              </span>
             </button>
           </li>
         ))}
@@ -243,7 +247,6 @@ export function TeamStrip({
               <div>
                 <h3 className="text-lg font-semibold">{open.name}</h3>
                 {open.role_title ? <p className="text-sm text-ink-500">{open.role_title}</p> : null}
-                <p className="text-xs text-ink-500">New to APP_NAME</p>
               </div>
             </div>
             {open.bio ? (
