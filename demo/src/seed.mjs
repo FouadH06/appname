@@ -8,9 +8,14 @@
 // Media: each chosen asset is loaded once (generated files from the package; stock previews fetched once into
 // demo/.cache), processed with sharp into the same derivative layout M10 produces (business photo ≤ 1600 px WebP;
 // results thumb 320 / card 800 / full ≤ 2048), uploaded to the existing buckets, and recorded as approved
-// media_assets (processor 'external', processor_version 'demo-import:<library version>:<asset id>') — the link
-// back to the manifest, which keeps provider, source page, photographer, original URL and category.
-import { execSync } from 'node:child_process';
+// media_assets. The durable demo marker is the storage path `…/demo/<library asset id>…` (plus the `demo-` slug):
+// it links back to the manifest, which keeps provider, source page, photographer, original URL and category.
+// processor_version starts as 'demo-import:<library version>:<asset id>'; business photos then go through the
+// normal M10 safety check (it is not bypassed), which records its own processor version. The seeder runs that
+// pipeline to completion so no demo backlog is left in the media queues.
+import { execFileSync, execSync } from 'node:child_process';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import pg from 'pg';
 import sharp from 'sharp';
 import { bytesOf, library, pickUsable, unavailable } from './adapter.mjs';
@@ -437,7 +442,46 @@ for (const [bi, f] of BUSINESSES.entries()) {
   }
 }
 
+/**
+ * Business photos are registered like any upload, so M10 queues a transform + safety check for each. Run the
+ * local media worker and orchestrator until the queues are empty (deterministic, nothing left behind).
+ */
+async function drainMediaPipeline() {
+  const repo = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
+  const secret = process.env.DEMO_MEDIA_SECRET ?? (isLocal(env.url) ? 'local-media-secret' : null);
+  if (!secret) {
+    console.log('media pipeline not drained (set DEMO_MEDIA_SECRET for a remote demo environment)');
+    return;
+  }
+  const pending = async () =>
+    Number(
+      (
+        await one(`select (select count(*) from pgmq.q_media_transform) + (select count(*) from pgmq.q_media_classify)
+                        + (select count(*) from pgmq.q_media_publish) as n`)
+      ).n,
+    );
+  for (let round = 0; round < 50 && (await pending()) > 0; round += 1) {
+    execFileSync(process.execPath, ['--experimental-strip-types', 'src/once.ts'], {
+      cwd: resolve(repo, 'apps/media-worker'),
+      env: { ...process.env, SUPABASE_URL: env.url, SUPABASE_SERVICE_ROLE_KEY: env.key },
+      stdio: 'ignore',
+    });
+    const res = await fetch(`${env.url}/functions/v1/media-orchestrator`, {
+      method: 'POST',
+      headers: { 'x-media-secret': secret },
+    });
+    if (!res.ok) throw new Error(`media orchestrator: ${res.status} ${await res.text()}`);
+  }
+  const left = await pending();
+  const removed = await one(
+    `select count(*) as n from public.business_media bm join public.media_assets m on m.id = bm.media_asset_id
+      where m.private_path like '%/demo/%' and bm.state <> 'approved'`,
+  );
+  console.log(`M10 safety check: ${left} jobs left, ${removed.n} demo photos not approved`);
+}
+
 if (seeded) {
+  await drainMediaPipeline();
   await q(`select private.compute_quality_scores()`);
   await q(`select private.job_search_refresh(100000)`);
 }

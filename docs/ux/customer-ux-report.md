@@ -64,6 +64,39 @@ service) and a compact row layout for result lists, `Rating`, `ServiceTile`, `Se
    `NEXT_PUBLIC_IMAGE_TRANSFORMS=true` switch requests width-limited renditions where Supabase image
    transformations are available (paid plan). Customer-result tiles already use M10 thumbnails.
 
+## Demo media (UX-level demo data)
+
+- **Library**: `demo/media-library/` (the delivered package, manifest canonical). **Resolution**:
+  `demo/src/adapter.mjs` selects deterministically by `category` / `subcategory` / `intended_usage`
+  (seeded per business; no image reused across businesses); components only receive normal stored media.
+- **Seeder**: `pnpm seed:demo` (local stack only; `DEMO_ALLOW_REMOTE=1` required for a dedicated demo
+  environment). 11 fictional businesses: 2 barbers, 2 hair salons, 2 nail studios, 2 brows/lashes, 1 spa,
+  2 beauty centers (one contact-only) — instant, request and "ask about availability" examples, 0–31 reviews,
+  0–8 results, short and long descriptions, 1–4 staff.
+- **Used**: business interiors (barbers, hair-salons, nails, brows-lashes, spas, beauty-salons — stock,
+  landscape first), customer results (mens-hair, beard, womens-haircut-styling, hair-color, balayage,
+  blowout-styling, manicure, nail-art, pedicure, brows, lashes — stock), staff portraits (**generated** only).
+  Not used: generated covers/logos (abstract placeholders; the UI has no logo slot and real interiors make
+  better covers), stock staff photos (real people must not be presented as fictional employees).
+- **Downloaded / imported**: yes — each selected stock asset's *optimized preview* was fetched once into
+  `demo/.cache/` (git-ignored), processed with sharp into the M10 derivative layout and uploaded to the local
+  `business-media` / `ugc-public` buckets. **No image is externally referenced** by the product.
+- **Source / licence metadata**: stays in the manifest (provider, source page, photographer, original URL,
+  category, subcategory, usage, stock/generated flag). Every imported file is stored under
+  `…/demo/<library asset id>…` — the durable demo marker and link to that record (it survives M10 processing);
+  slugs start with `demo-`; `processor_version` starts as `demo-import:<version>:<asset id>`.
+- **M10 not bypassed**: demo business photos pass through the normal M10 transform + safety check (all 47
+  approved); the seeder drains the local pipeline so no backlog is left (a backlog first made the results e2e
+  time out — fixed in the seeder, no product change).
+- **Unavailable**: 2 stock sources returned 404 (`pexels-5484948`, `pexels-5484947`) — skipped
+  deterministically, replaced by the next candidate.
+- **Insufficient in the library**: spa/massage and waxing/threading **results** (spa and beauty centers show
+  no results — honest), makeup (no businesses seeded; the Makeup category still shows because it is live in
+  the catalog), and enough generated staff portraits (3 per role, abstract): staff beyond that show initials.
+  No non-beauty categories (fitness, pets, home services) — none were faked.
+- Stored business photos are ≤ 1600 px WebP (~100–250 KB); cards use them lazily in fixed-ratio frames until
+  image transformations are enabled (`NEXT_PUBLIC_IMAGE_TRANSFORMS`); results use the 320/800/2048 derivatives.
+
 ## Tests
 
 | Check | Result |
@@ -71,13 +104,15 @@ service) and a compact row layout for result lists, `Rating`, `ServiceTile`, `Se
 | Lint · typecheck · format | ✅ |
 | Unit | 197 passed |
 | pgTAP (unchanged backend) | 973/973 |
-| Web e2e | _see final run_ — booking, search, reviews, results specs updated for the new UI (pick + Continue, copy), new responsive guard |
-| Admin e2e · App e2e · builds | _see final run_ |
+| Web e2e (full, demo data seeded) | 23/23 (15 are device-project skips by design); `results` first timed out behind the demo media backlog → seeder fixed to drain M10, rerun ✅; calendar captcha flake did not recur |
+| Responsive guard (`ux-responsive.spec.ts`) | ✅ 7 routes × 9 widths, no overflow |
+| Admin e2e · App e2e | 1/1 · 1/1 |
+| Builds (web, admin) · Expo web export | ✅ · ✅ |
+| Demo seed from a clean reset | 11 businesses, 78 media, M10 queues empty, 0 photos rejected (~25 s) |
 
 ## Remaining visual issues / notes
 
-- The local data has no photos, so screenshots show neutral image placeholders; the design relies on real
-  photography (the packed demo will show it).
+- Home's Available today is empty after the demo businesses close (20:00 Beirut) — correct behaviour.
 - Date strip shows 10 of 14 days at 1440 px (the rest scroll horizontally).
 - The "You're booked" banner on a business page still uses the older success-green bar.
 - Expo app: palette/radii only; its screens still follow the M13 layout.

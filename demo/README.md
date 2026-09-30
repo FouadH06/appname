@@ -26,9 +26,13 @@ pnpm seed:demo          # UX level: 11 businesses (local stack; `npx supabase db
    hotlinks Pexels. Generated SVGs are rasterised.
 3. Processing uses sharp into the same layout M10 produces: business photos ≤ 1600 px WebP in `business-media`;
    customer results as `thumb` 320 / `card` 800 / `full` ≤ 2048 WebP in `ugc-public` (paths `demo/<asset id>/…`).
-4. Rows: approved `media_assets` with `processor = 'external'` and
-   `processor_version = 'demo-import:<library version>:<asset id>'` — the demo marker and the link back to the
+4. Rows: approved `media_assets` (`processor = 'external'`, initial `processor_version =
+'demo-import:<library version>:<asset id>'`). The **durable demo marker** is the storage path
+   (`<business>/demo/<asset id>.webp`, `demo/<asset id>/…`) — it survives processing and links back to the
    manifest record that holds the licence/source metadata. Business slugs start with `demo-`.
+   Business photos go through the normal M10 safety check (not bypassed; M10 then records its own processor
+   version); the seeder runs the local media worker + orchestrator until the queues are empty, so no demo
+   backlog is left behind (remote demo environments need `DEMO_MEDIA_SECRET`).
 5. Named fictional staff get generated (non-identifiable) portraits; when those run out they show initials —
    no stock person is presented as a fictional employee.
 
